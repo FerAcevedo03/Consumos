@@ -2,16 +2,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const listaPersonas = document.getElementById("listaPersonas");
     const btnAgregar = document.getElementById("btnAgregar");
     const inputNuevo = document.getElementById("nuevoNombre");
-    const buscadorNombres = document.getElementById("buscadorNombres"); // El nuevo buscador
+    const buscadorNombres = document.getElementById("buscadorNombres"); 
+
+    // 1. BLINDAJE: Verificamos que los botones existan en el HTML
+    if (!listaPersonas || !btnAgregar || !inputNuevo) {
+        console.error("Error: No se encontraron los campos en el HTML.");
+        return; 
+    }
+
+    // 2. Detectar en qué página estamos (Profes, Alumnos o Admin)
+    let tipo = document.body.getAttribute("data-tipo");
     
-    // Detecta qué tipo de persona estamos gestionando (profesores, alumnos, administrativos)
-    const tipo = document.body.getAttribute("data-tipo"); 
+    // Si el HTML no tiene el data-tipo, lo deducimos por el nombre del archivo (Respaldo)
+    if (!tipo) {
+        if (window.location.href.includes("alumnos")) tipo = "alumnos";
+        else if (window.location.href.includes("administrativos")) tipo = "administrativos";
+        else tipo = "profesores"; 
+    }
+
     const storageKey = `lista_${tipo}`;
 
-    // Cargar de localStorage o iniciar vacío
-    let personas = JSON.parse(localStorage.getItem(storageKey)) || [];
+    // 3. BLINDAJE ANTI-DATOS CORRUPTOS: Cargar de localStorage
+    let personas = [];
+    try {
+        const guardado = JSON.parse(localStorage.getItem(storageKey));
+        // Verificamos que lo que haya guardado sea realmente una lista (Array)
+        if (Array.isArray(guardado)) {
+            personas = guardado;
+        } else {
+            personas = []; // Si era un texto o un error, empezamos de cero
+        }
+    } catch (e) {
+        personas = []; // Si el JSON está roto, empezamos de cero
+    }
 
-    // Función para mostrar las tarjetas. Recibe un array (por defecto todos)
+    // Función para mostrar las tarjetas
     function mostrarPersonas(personasAMostrar = personas) {
         listaPersonas.innerHTML = "";
 
@@ -21,7 +46,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         personasAMostrar.forEach((persona) => {
-            // Guardamos el índice original para evitar errores al eliminar buscando
             const indexOriginal = personas.indexOf(persona);
             
             let col = document.createElement("div");
@@ -42,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Evento del buscador en tiempo real
+    // Evento del buscador 
     if (buscadorNombres) {
         buscadorNombres.addEventListener("input", (e) => {
             const textoBusqueda = e.target.value.toLowerCase().trim();
@@ -59,13 +83,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const nombre = inputNuevo.value.trim();
         if (nombre !== "") {
             personas.push(nombre);
-            // Ordenar alfabéticamente para mantener el orden
-            personas.sort((a, b) => a.localeCompare(b));
+            personas.sort((a, b) => a.localeCompare(b)); // Ordenar alfabéticamente
             
+            // Forzamos el guardado
             localStorage.setItem(storageKey, JSON.stringify(personas));
-            inputNuevo.value = "";
             
-            if (buscadorNombres) buscadorNombres.value = ""; // Limpiar buscador
+            inputNuevo.value = "";
+            if (buscadorNombres) buscadorNombres.value = ""; 
             mostrarPersonas();
         } else {
             alert("Por favor escribe un nombre válido.");
@@ -74,11 +98,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Eliminar persona
     window.eliminarPersona = (index) => {
-        if(confirm("¿Seguro que deseas eliminar este registro? (Se mantendrá su historial de consumos guardado por seguridad)")) {
+        if(confirm("¿Seguro que deseas eliminar este registro? (Se mantendrá su historial de consumos guardado)")) {
             personas.splice(index, 1);
             localStorage.setItem(storageKey, JSON.stringify(personas));
             
-            if (buscadorNombres) buscadorNombres.dispatchEvent(new Event('input')); // Mantener filtro activo
+            if (buscadorNombres) buscadorNombres.dispatchEvent(new Event('input')); 
             else mostrarPersonas();
         }
     };
