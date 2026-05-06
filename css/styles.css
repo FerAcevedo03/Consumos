@@ -70,3 +70,9 @@ body.bg-profes {
   transform: translateY(-10px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
 }
+
+btn-eliminar-img {
+      padding: 0px 6px;
+      font-size: 1.2rem;
+      line-height: 1.2;
+    }

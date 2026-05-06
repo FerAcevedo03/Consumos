@@ -3,29 +3,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const tablaProductos = document.getElementById("tablaProductos");
     const buscadorProductos = document.getElementById("buscadorProductos");
 
-    // 1. BLINDAJE: Verificar que el HTML esté correcto
     if (!formProducto || !tablaProductos) {
-        console.error("Error: No se encontraron los elementos del formulario de productos en el HTML.");
+        console.error("Error: No se encontraron los elementos del formulario en el HTML.");
         return;
     }
 
-    // 2. BLINDAJE ANTI-DATOS CORRUPTOS
     let productosDB = [];
     try {
         const guardado = JSON.parse(localStorage.getItem("base_productos"));
         if (Array.isArray(guardado)) {
             productosDB = guardado;
         } else {
-            productosDB = []; // Limpiar si hay basura
+            productosDB = [];
         }
     } catch (e) {
-        productosDB = []; // Limpiar si el formato se rompió
+        productosDB = [];
     }
 
-    // Función para mostrar los productos en formato de lista (Tabla)
     function renderizarProductos(productosAMostrar = productosDB) {
         tablaProductos.innerHTML = "";
-        
+
         if (productosAMostrar.length === 0) {
             tablaProductos.innerHTML = `
                 <tr>
@@ -37,16 +34,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         productosAMostrar.forEach((prod) => {
-            // Encontrar el índice original en la base de datos general
             const originalIndex = productosDB.indexOf(prod);
-            
-            // Si no hay imagen, usamos un cuadro de imagen por defecto
-            const imagenSrc = prod.imagen ? prod.imagen : "https://via.placeholder.com/50?text=Img";
+
+            // --- MAGIA VISUAL: Usamos los mismos Emojis exactos del menú ---
+            let emoji = "📦";
+            const cat = prod.categoria || "otro";
+
+            switch (cat) {
+                case "comida": emoji = "🍛"; break;
+                case "bebida": emoji = "🥤"; break;
+                case "pan": emoji = "🥖"; break;
+                case "galleta": emoji = "🍪"; break;
+                case "keke": emoji = "🧁"; break;
+                case "postre": emoji = "🍮"; break;
+                case "dulce": emoji = "🍬"; break;
+                case "snack": emoji = "🍟"; break;
+                case "utiles": emoji = "✏️"; break;
+                default: emoji = "📦"; break;
+            }
 
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="text-center">
-                    <img src="${imagenSrc}" alt="${prod.nombre}" class="img-thumbnail rounded" style="width: 45px; height: 45px; object-fit: cover;">
+                    <div class="bg-white border rounded d-inline-flex shadow-sm fs-4" style="width: 40px; height: 40px; align-items: center; justify-content: center; line-height: 1;">
+                        ${emoji}
+                    </div>
                 </td>
                 <td class="fw-bold text-dark">${prod.nombre}</td>
                 <td class="text-success fw-bold">S/ ${parseFloat(prod.precio).toFixed(2)}</td>
@@ -63,59 +75,53 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Evento del buscador en tiempo real
     if (buscadorProductos) {
         buscadorProductos.addEventListener("input", (e) => {
             const textoBusqueda = e.target.value.toLowerCase().trim();
-            const productosFiltrados = productosDB.filter(prod => 
+            const productosFiltrados = productosDB.filter(prod =>
                 prod.nombre.toLowerCase().includes(textoBusqueda)
             );
             renderizarProductos(productosFiltrados);
         });
     }
 
-    // Evento al enviar el formulario (Agregar nuevo producto)
     formProducto.addEventListener("submit", (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
 
         const nombre = document.getElementById("prodNombre").value.trim();
         const precio = parseFloat(document.getElementById("prodPrecio").value);
-        const imagen = document.getElementById("prodImagen").value.trim();
+        const categoria = document.getElementById("prodCategoria").value;
 
-        if (nombre !== "" && !isNaN(precio)) {
+        if (nombre !== "" && !isNaN(precio) && categoria !== "") {
             productosDB.push({
                 nombre: nombre,
                 precio: precio,
-                imagen: imagen
+                categoria: categoria
             });
 
-            // Forzamos el guardado en memoria
             localStorage.setItem("base_productos", JSON.stringify(productosDB));
             formProducto.reset();
-            
-            // Limpiamos el buscador si agregamos algo nuevo para que se vea completo
-            if (buscadorProductos) buscadorProductos.value = ""; 
+
+            if (buscadorProductos) buscadorProductos.value = "";
             renderizarProductos();
         } else {
-            alert("Por favor, asegúrate de poner un nombre y un precio válido.");
+            alert("Por favor, asegúrate de llenar el nombre, el precio y seleccionar una categoría.");
         }
     });
 
-    // Función para editar el precio de un producto existente
     window.editarPrecio = (index) => {
         const productoActual = productosDB[index];
         const nuevoPrecioStr = prompt(`Ingresa el nuevo precio para "${productoActual.nombre}":`, productoActual.precio);
-        
-        if (nuevoPrecioStr !== null) { // Si el usuario no canceló
+
+        if (nuevoPrecioStr !== null) {
             const nuevoPrecio = parseFloat(nuevoPrecioStr);
-            
+
             if (!isNaN(nuevoPrecio) && nuevoPrecio >= 0) {
-                productosDB[index].precio = nuevoPrecio; 
-                localStorage.setItem("base_productos", JSON.stringify(productosDB)); 
-                
-                // Actualizar vista
+                productosDB[index].precio = nuevoPrecio;
+                localStorage.setItem("base_productos", JSON.stringify(productosDB));
+
                 if (buscadorProductos && buscadorProductos.value !== "") {
-                    buscadorProductos.dispatchEvent(new Event('input')); 
+                    buscadorProductos.dispatchEvent(new Event('input'));
                 } else {
                     renderizarProductos();
                 }
@@ -125,13 +131,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Función para eliminar un producto
     window.eliminarProducto = (index) => {
         if (confirm(`¿Estás seguro de eliminar "${productosDB[index].nombre}"?`)) {
             productosDB.splice(index, 1);
             localStorage.setItem("base_productos", JSON.stringify(productosDB));
-            
-            // Actualizar vista
+
             if (buscadorProductos && buscadorProductos.value !== "") {
                 buscadorProductos.dispatchEvent(new Event('input'));
             } else {
@@ -140,6 +144,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Renderizar la tabla la primera vez que carga la página
     renderizarProductos();
 });

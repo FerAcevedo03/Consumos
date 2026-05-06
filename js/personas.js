@@ -4,13 +4,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputNuevo = document.getElementById("nuevoNombre");
     const buscadorNombres = document.getElementById("buscadorNombres"); 
 
-    // 1. BLINDAJE: Verificamos que los botones existan en el HTML
+    // 1.BLINDAJE: Verificamos que los botones existan en el HTML
     if (!listaPersonas || !btnAgregar || !inputNuevo) {
         console.error("Error: No se encontraron los campos en el HTML.");
         return; 
     }
 
-    // 2. Detectar en qué página estamos (Profes, Alumnos o Admin)
+    // 2.Detectar en qué página estamos (Profes, Alumnos o Admin)
     let tipo = document.body.getAttribute("data-tipo");
     
     // Si el HTML no tiene el data-tipo, lo deducimos por el nombre del archivo (Respaldo)
