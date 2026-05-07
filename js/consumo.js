@@ -396,7 +396,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 const nombreDia = diasSemana[dateObj.getDay()];
 
                 let fechaCorta = `${nombreDia} ${d}/${m}`;
-                mensaje += `- *${fechaCorta}*: ${registro.productoNombre} (S/ ${registro.precio.toFixed(2)})\n`;
+                
+                let detalleParaWA = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/)
+                    .map(item => item.trim().replace(/^\+\s*/, ''))
+                    .filter(item => item !== '')
+                    .join(" + ");
+
+                mensaje += `- *${fechaCorta}*: ${detalleParaWA} (S/ ${registro.precio.toFixed(2)})\n`;
             });
 
             mensaje += `\n*TOTAL A PAGAR: S/ ${sumaTotal.toFixed(2)}*\n\n`;
@@ -411,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 7. EXPORTAR A PDF 
+    // 7. EXPORTAR A PDF - NUEVO DISEÑO CALCO DE LA IMAGEN
     if (btnExportarPDF) {
         btnExportarPDF.addEventListener("click", () => {
             const mesSeleccionado = mesFiltro.value;
@@ -439,7 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let htmlContenido = `
                 <div style="text-align: center; border-bottom: 2px solid #0d6efd; padding-bottom: 15px; margin-bottom: 25px;">
                     <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: bold;">Nobel School</h1>
-                    <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 18px;">Registro de los consumo mensuales en el quiosco</h3>
+                    <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 18px;">Estado de Cuenta - Consumo mensual en el quiosco</h3>
                 </div>
                 
                 <div style="border: 1px solid #eef0f2; border-radius: 10px; background-color: #fcfcfc; margin-bottom: 25px; padding: 20px; box-sizing: border-box;">
