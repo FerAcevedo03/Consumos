@@ -15,11 +15,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Referencias exactas a tus IDs del HTML
     const formProducto = document.getElementById("formProducto");
-    const inputNombre = document.getElementById("nombreProducto");
-    const inputPrecio = document.getElementById("precioProducto");
-    const selectCategoria = document.getElementById("categoriaProducto");
-    const tablaInventario = document.getElementById("tablaInventario");
+    const inputNombre = document.getElementById("prodNombre");
+    const inputPrecio = document.getElementById("prodPrecio");
+    const selectCategoria = document.getElementById("prodCategoria");
+    const tablaInventario = document.getElementById("tablaProductos");
     const buscadorProductos = document.getElementById("buscadorProductos");
 
     const btnGuardar = document.getElementById("btnGuardar");
@@ -27,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tituloFormulario = document.getElementById("tituloFormulario");
 
     let productos = [];
-    let idEdicionActual = null; // Variable para saber si estamos editando o creando nuevo
+    let idEdicionActual = null;
 
     // --- LECTURA EN TIEMPO REAL DESDE FIREBASE ---
     onSnapshot(collection(db, "productos"), (snapshot) => {
@@ -36,11 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
             productos.push({ id: doc.id, ...doc.data() });
         });
 
-        // **VITAL:** Guardamos una copia en el localStorage de la PC/Celular actual 
-        // para que la página de consumos sepa qué cobrar sin tener que buscar en internet.
         localStorage.setItem("base_productos", JSON.stringify(productos));
-
-        // Aplicamos el buscador si hay texto escrito
         filtrarYRenderizar();
     });
 
@@ -60,8 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td class="text-center"><span class="fs-4">${obtenerEmoji(prod.categoria)}</span></td>
                 <td class="fw-bold text-dark">${prod.nombre}</td>
                 <td class="text-success fw-bold">S/ ${parseFloat(prod.precio).toFixed(2)}</td>
-                <td class="text-center">
-                    <button class="btn btn-outline-warning btn-sm me-2" onclick="editarProducto('${prod.id}')" title="Editar">
+                <td class="text-end pe-3">
+                    <button class="btn btn-outline-warning btn-sm me-1" onclick="editarProducto('${prod.id}')" title="Editar">
                         <i class="bi bi-pencil-square"></i>
                     </button>
                     <button class="btn btn-outline-danger btn-sm" onclick="eliminarProducto('${prod.id}')" title="Eliminar">
@@ -73,10 +70,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Lógica ampliada para tus iconos originales
     function obtenerEmoji(cat) {
-        if (cat === "menu" || cat === "comida") return "🍲";
-        if (cat === "bebida") return "🧃";
-        return "🍞";
+        const emojis = {
+            comida: "🍛", bebida: "🥤", pan: "🥖", 
+            galleta: "🍪", keke: "🧁", postre: "🍮", 
+            dulce: "🍬", snack: "🍟", utiles: "✏️", otro: "📦", menu: "🍛"
+        };
+        return emojis[cat] || "📦";
     }
 
     function filtrarYRenderizar() {
@@ -107,7 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             if (idEdicionActual) {
-                // Modo Edición: Actualizar en Firebase
                 await updateDoc(doc(db, "productos", idEdicionActual), {
                     nombre: nombre,
                     precio: precio,
@@ -115,7 +115,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 salirModoEdicion();
             } else {
-                // Modo Creación: Añadir nuevo a Firebase
                 await addDoc(collection(db, "productos"), {
                     nombre: nombre,
                     precio: precio,
@@ -138,18 +137,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (prod) {
             inputNombre.value = prod.nombre;
             inputPrecio.value = prod.precio;
-            selectCategoria.value = prod.categoria || "snack";
+            selectCategoria.value = prod.categoria || "otro";
 
             idEdicionActual = idFirebase;
 
             tituloFormulario.textContent = "Editar Producto";
             btnGuardar.textContent = "Actualizar";
-            btnGuardar.classList.replace("btn-info", "btn-warning"); // Cambia de color para que sea evidente
-            btnGuardar.style.backgroundColor = "#ffc107";
+            btnGuardar.classList.replace("btn-info", "btn-warning"); 
             btnCancelarEdicion.classList.remove("d-none");
 
             inputNombre.focus();
-            window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube la pantalla al formulario
+            window.scrollTo({ top: 0, behavior: 'smooth' }); 
         }
     };
 
@@ -160,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
         idEdicionActual = null;
         tituloFormulario.textContent = "Agregar Nuevo Producto o Comida";
         btnGuardar.textContent = "Guardar";
-        btnGuardar.style.backgroundColor = "#00bcd4";
+        btnGuardar.classList.replace("btn-warning", "btn-info");
         btnCancelarEdicion.classList.add("d-none");
     }
 
@@ -169,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (confirm("¿Estás seguro de eliminar este producto del inventario de la nube?")) {
             try {
                 await deleteDoc(doc(db, "productos", idFirebase));
-                if (idEdicionActual === idFirebase) salirModoEdicion(); // Si borra lo que estaba editando
+                if (idEdicionActual === idFirebase) salirModoEdicion();
             } catch (error) {
                 alert("Error al eliminar: " + error.message);
             }
