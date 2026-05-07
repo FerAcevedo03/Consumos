@@ -1,5 +1,23 @@
+// 1. IMPORTACIONES DE FIREBASE (Desde la nube de Google)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// 2. TU CONFIGURACIÓN DE FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
+  authDomain: "quiosco-nobel-school.firebaseapp.com",
+  projectId: "quiosco-nobel-school",
+  storageBucket: "quiosco-nobel-school.firebasestorage.app",
+  messagingSenderId: "448413136914",
+  appId: "1:448413136914:web:426e8fc48a8e24ea96c0cb"
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Obtener datos de la URL
+    // Obtener datos de la URL
     const params = new URLSearchParams(window.location.search);
     const nombreUsuario = params.get("nombre") || "Usuario Desconocido";
     const rolUsuario = params.get("rol") || "index";
@@ -9,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const etiquetaRolEl = document.getElementById("etiquetaRol");
     const avatarFondoEl = document.getElementById("avatarFondo");
 
-    // Íconos de Bootstrap
     let iconoHtml = "";
     let colorFondo = "";
     let colorTexto = "text-white";
@@ -17,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (rolUsuario === "profesores") {
         iconoHtml = '<i class="bi bi-person-workspace"></i>';
         colorFondo = "#0d6efd";
-        colorTexto = "text-white";
         if (etiquetaRolEl) etiquetaRolEl.textContent = "Profesor";
     } else if (rolUsuario === "alumnos") {
         iconoHtml = '<i class="bi bi-mortarboard-fill"></i>';
@@ -27,7 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (rolUsuario === "administrativos") {
         iconoHtml = '<i class="bi bi-person-badge-fill"></i>';
         colorFondo = "#198754";
-        colorTexto = "text-white";
         if (etiquetaRolEl) etiquetaRolEl.textContent = "Administrativo";
     } else {
         iconoHtml = '<i class="bi bi-person-fill"></i>';
@@ -36,7 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (nombrePersonaEl) nombrePersonaEl.textContent = nombreUsuario;
-
     if (avatarFondoEl) {
         avatarFondoEl.style.backgroundColor = colorFondo;
         avatarFondoEl.innerHTML = `<span class="fs-5 ${colorTexto}" style="line-height: 1;">${iconoHtml}</span>`;
@@ -49,10 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 2. Elementos del DOM
+    // Elementos del DOM
     const inputProducto = document.getElementById("inputProducto");
     const inputCantidad = document.getElementById("inputCantidad");
-    const sugerenciasProductos = document.getElementById("sugerenciasProductos");
+    const listaSugerencias = document.getElementById("listaSugerencias");
     const fechaConsumo = document.getElementById("fechaConsumo");
     const formConsumo = document.getElementById("formConsumo");
     const tablaConsumos = document.getElementById("tablaConsumos");
@@ -60,7 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const mesFiltro = document.getElementById("mesFiltro");
     const btnExportarPDF = document.getElementById("btnExportarPDF");
     const btnWhatsApp = document.getElementById("btnWhatsApp");
-    const listaSugerencias = document.getElementById("listaSugerencias");
 
     if (!formConsumo) return;
 
@@ -68,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fechaConsumo.valueAsDate = fechaHoy;
     mesFiltro.value = fechaHoy.getMonth().toString();
 
-    // 3. LÓGICA DE BÚSQUEDA INTELIGENTE CON "+" AUTOMÁTICO Y TECLADO
+    // PRODUCTOS (Por ahora se leen de forma local)
     const productosDB = JSON.parse(localStorage.getItem("base_productos")) || [];
     let indiceSeleccionado = -1;
 
@@ -82,13 +95,11 @@ document.addEventListener("DOMContentLoaded", () => {
             indiceSeleccionado = -1;
 
             if (ultimaPalabra.length > 0) {
-                const filtrados = productosDB.filter(p => 
-                    p.nombre.toLowerCase().includes(ultimaPalabra)
-                );
+                const filtrados = productosDB.filter(p => p.nombre.toLowerCase().includes(ultimaPalabra));
 
                 if (filtrados.length > 0) {
                     listaSugerencias.classList.add("show");
-                    filtrados.forEach((prod, index) => {
+                    filtrados.forEach((prod) => {
                         const li = document.createElement("li");
                         const a = document.createElement("a");
                         a.className = "dropdown-item d-flex justify-content-between";
@@ -112,10 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // MANEJO DEL TECLADO CORREGIDO
         inputProducto.addEventListener("keydown", (e) => {
             const items = listaSugerencias.querySelectorAll("a.dropdown-item");
-            
             if (!listaSugerencias.classList.contains("show") || items.length === 0) return;
 
             if (e.key === "ArrowDown") {
@@ -168,7 +177,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- FUNCIÓN MATEMÁTICA PARA AGRUPAR EN PARÉNTESIS ---
     function agruparConsumosTexto(textoHistorial) {
         let partes = textoHistorial.split(/(?:<br>|\+)/).map(p => p.trim()).filter(p => p !== "");
         let mapaProductos = new Map();
@@ -198,14 +206,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 resultado.push(nombre);
             }
         });
-        
         return resultado.join(" + ");
     }
-    // -----------------------------------------------------
 
-    // 4. Gestión de los consumos
-    const storageKey = `consumos_${nombreUsuario}`;
-    let historialConsumos = JSON.parse(localStorage.getItem(storageKey)) || [];
+    // --- MAGIA DE FIREBASE: LECTURA EN TIEMPO REAL ---
+    let historialConsumos = [];
+    const consultaConsumos = query(collection(db, "consumos"), where("nombreUsuario", "==", nombreUsuario));
+
+    onSnapshot(consultaConsumos, (snapshot) => {
+        historialConsumos = [];
+        snapshot.forEach((doc) => {
+            // Guardamos el ID único de Firebase para poder borrar o actualizar
+            historialConsumos.push({ id: doc.id, ...doc.data() });
+        });
+        historialConsumos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        renderizarConsumos();
+    });
 
     function renderizarConsumos() {
         tablaConsumos.innerHTML = "";
@@ -220,14 +236,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (consumosFiltrados.length === 0) {
-            tablaConsumos.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">No hay consumos registrados en este mes.</td></tr>`;
+            tablaConsumos.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">No hay consumos en este mes.</td></tr>`;
             totalAcumulado.textContent = "S/ 0.00";
             return;
         }
 
         consumosFiltrados.forEach((registro) => {
             sumaTotal += registro.precio;
-            const originalIndex = historialConsumos.indexOf(registro);
             const [y, m, d] = registro.fecha.split('-');
             const dateObj = new Date(y, m - 1, d);
 
@@ -241,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td class="text-dark fw-bold">${registro.productoNombre}</td>
                 <td class="text-center text-dark fw-bold">S/ ${registro.precio.toFixed(2)}</td>
                 <td class="text-center">
-                    <button class="btn btn-outline-danger btn-eliminar-img rounded-1" onclick="eliminarRegistro(${originalIndex})" title="Eliminar todo el día">
+                    <button class="btn btn-outline-danger btn-eliminar-img rounded-1" onclick="eliminarRegistro('${registro.id}')" title="Eliminar">
                         <i class="bi bi-x"></i>
                     </button>
                 </td>
@@ -254,32 +269,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
     mesFiltro.addEventListener("change", renderizarConsumos);
 
-    window.eliminarRegistro = (index) => {
-        if (confirm("¿Borrar todos los consumos de este día? Se descontará del total del mes.")) {
-            historialConsumos.splice(index, 1);
-            localStorage.setItem(storageKey, JSON.stringify(historialConsumos));
-            renderizarConsumos();
+    // ELIMINAR DE FIREBASE
+    window.eliminarRegistro = async (idFirebase) => {
+        if (confirm("¿Borrar todos los consumos de este día?")) {
+            try {
+                await deleteDoc(doc(db, "consumos", idFirebase));
+            } catch (error) {
+                alert("Error al eliminar: " + error.message);
+            }
         }
     };
 
-    // 5. Agregar consumo
-    formConsumo.addEventListener("submit", (e) => {
+    // --- GUARDAR EN FIREBASE ---
+    formConsumo.addEventListener("submit", async (e) => {
         e.preventDefault();
 
+        const btnSubmit = formConsumo.querySelector("button[type='submit']");
+        
         const fecha = fechaConsumo.value;
         if (!fecha) return;
         const [y, m, d] = fecha.split('-');
         const dateObj = new Date(y, m - 1, d);
 
         if (dateObj.getDay() === 0) {
-            alert("No se permiten registros los domingos. Solo trabajamos de Lunes a Sábado.");
+            alert("No se permiten registros los domingos.");
             return;
         }
 
         let inputCrudo = inputProducto.value.trim();
-        if (inputCrudo.endsWith("+")) {
-            inputCrudo = inputCrudo.slice(0, -1).trim();
-        }
+        if (inputCrudo.endsWith("+")) inputCrudo = inputCrudo.slice(0, -1).trim();
 
         const cantidad = parseInt(inputCantidad.value);
         if (inputCrudo === "" || cantidad <= 0) return;
@@ -292,23 +310,34 @@ document.addEventListener("DOMContentLoaded", () => {
             const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
 
             if (!productoEncontrado) {
-                alert(`El producto "${nombre}" no existe en tu inventario. Por favor revisa si está bien escrito.`);
+                alert(`El producto "${nombre}" no existe en tu inventario.`);
                 return;
             }
 
             let precioDelProducto = productoEncontrado.precio;
             let nombreParaHistorial = productoEncontrado.nombre;
 
-            if (productoEncontrado.nombre.toLowerCase().includes("comida")) {
-                let precioIngresado = prompt(`¿Qué precio tiene la Comida hoy?\n\nIngresa el monto (Ej: 5, 7, 8, 10):`, productoEncontrado.precio);
+            let esMenuPrincipal = false;
+            let catLimpia = productoEncontrado.categoria ? productoEncontrado.categoria.toLowerCase() : "";
+            let nomLimpio = productoEncontrado.nombre.toLowerCase();
+
+            if (catLimpia === "menu" || catLimpia === "menú" || catLimpia === "comida") {
+                esMenuPrincipal = true;
+            } else if (nomLimpio.includes("comida") || nomLimpio.includes("menu") || nomLimpio.includes("menú") || nomLimpio.includes("almuerzo")) {
+                esMenuPrincipal = true;
+            }
+
+            if (esMenuPrincipal) {
+                let precioIngresado = prompt(`Precio del plato "${productoEncontrado.nombre}":\n\n(Ej: 5, 7, 8, 10)`, productoEncontrado.precio);
+                if (precioIngresado !== null) precioIngresado = precioIngresado.replace(',', '.');
                 
                 if (precioIngresado === null || precioIngresado.trim() === "" || isNaN(parseFloat(precioIngresado)) || parseFloat(precioIngresado) < 0) {
-                    alert("Registro cancelado. Debes ingresar un precio válido.");
+                    alert("Cancelado.");
                     return; 
                 }
                 
                 precioDelProducto = parseFloat(precioIngresado);
-                nombreParaHistorial = `Comida (S/ ${precioDelProducto.toFixed(2)})`;
+                nombreParaHistorial = `${productoEncontrado.nombre} (S/ ${precioDelProducto.toFixed(2)})`;
             }
 
             precioTotalBase += precioDelProducto;
@@ -319,38 +348,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let itemsDeEstePedido = [];
         for (let nombre of nombresValidados) {
-            for (let i = 0; i < cantidad; i++) {
-                itemsDeEstePedido.push(nombre);
-            }
+            for (let i = 0; i < cantidad; i++) itemsDeEstePedido.push(nombre);
         }
         let textoNuevoPedido = itemsDeEstePedido.join(" + ");
 
-        const indexExistente = historialConsumos.findIndex(registro => registro.fecha === fecha);
+        // UI Feedback: Cambiar botón mientras guarda en la nube
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Guardando...';
 
-        if (indexExistente !== -1) {
-            let textoCombinado = historialConsumos[indexExistente].productoNombre + " + " + textoNuevoPedido;
-            historialConsumos[indexExistente].productoNombre = agruparConsumosTexto(textoCombinado);
-            historialConsumos[indexExistente].precio += precioTotal;
-        } else {
-            historialConsumos.push({
-                fecha: fecha,
-                productoNombre: agruparConsumosTexto(textoNuevoPedido),
-                precio: precioTotal
-            });
+        try {
+            const indexExistente = historialConsumos.findIndex(registro => registro.fecha === fecha);
+
+            if (indexExistente !== -1) {
+                // ACTUALIZAR DOC EXISTENTE
+                let registroExistente = historialConsumos[indexExistente];
+                let textoCombinado = registroExistente.productoNombre + " + " + textoNuevoPedido;
+                
+                await updateDoc(doc(db, "consumos", registroExistente.id), {
+                    productoNombre: agruparConsumosTexto(textoCombinado),
+                    precio: registroExistente.precio + precioTotal
+                });
+            } else {
+                // CREAR DOC NUEVO
+                await addDoc(collection(db, "consumos"), {
+                    nombreUsuario: nombreUsuario,
+                    fecha: fecha,
+                    productoNombre: agruparConsumosTexto(textoNuevoPedido),
+                    precio: precioTotal
+                });
+            }
+
+            if (mesFiltro.value !== "todos" && mesFiltro.value != dateObj.getMonth()) {
+                mesFiltro.value = dateObj.getMonth().toString();
+            }
+            inputProducto.value = "";
+            inputCantidad.value = "1";
+            inputProducto.focus();
+
+        } catch (error) {
+            alert("Error al conectar con la Nube: " + error.message);
+        } finally {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día';
         }
-
-        historialConsumos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-        localStorage.setItem(storageKey, JSON.stringify(historialConsumos));
-
-        if (mesFiltro.value !== "todos" && mesFiltro.value != dateObj.getMonth()) {
-            mesFiltro.value = dateObj.getMonth().toString();
-        }
-
-        inputProducto.value = "";
-        inputCantidad.value = "1";
-        inputProducto.focus();
-
-        renderizarConsumos();
     });
 
     // 6. EXPORTAR A WHATSAPP
@@ -371,15 +411,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
-
             const horaActual = new Date().getHours();
             let saludoTiempo = "Hola";
             if (horaActual >= 6 && horaActual < 12) saludoTiempo = "Buenos dias";
             else if (horaActual >= 12 && horaActual < 19) saludoTiempo = "Buenas tardes";
             else saludoTiempo = "Buenas noches";
 
-            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
-
+            const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
             let mensaje = `*REGISTRO DE CONSUMO EN EL QUIOSCO*\n\n`;
 
             if (rolUsuario === "alumnos") {
@@ -393,22 +431,15 @@ document.addEventListener("DOMContentLoaded", () => {
             consumosDelMes.forEach(registro => {
                 const [y, m, d] = registro.fecha.split('-');
                 const dateObj = new Date(y, m - 1, d);
-                const nombreDia = diasSemana[dateObj.getDay()];
+                const nombreDiaCorto = diasCortos[dateObj.getDay()];
 
-                let fechaCorta = `${nombreDia} ${d}/${m}`;
-                
-                let detalleParaWA = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/)
-                    .map(item => item.trim().replace(/^\+\s*/, ''))
-                    .filter(item => item !== '')
-                    .join(" + ");
-
+                let fechaCorta = `${nombreDiaCorto} ${d}/${m}`;
+                let detalleParaWA = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
                 mensaje += `- *${fechaCorta}*: ${detalleParaWA} (S/ ${registro.precio.toFixed(2)})\n`;
             });
 
             mensaje += `\n*TOTAL A PAGAR: S/ ${sumaTotal.toFixed(2)}*\n\n`;
-
             mensaje += `*Datos para realizar el pago (Yape):*\n`;
-            mensaje += `- Numero: 949 563 910\n`;
             mensaje += `- Titular: Rosa Ro***\n\n`;
             mensaje += `Le agradecemos el envio de la captura del pago por este medio. ¡Muchas gracias y que tenga un buen dia!`;
 
@@ -417,7 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 7. EXPORTAR A PDF - NUEVO DISEÑO CALCO DE LA IMAGEN
+    // 7. EXPORTAR A PDF
     if (btnExportarPDF) {
         btnExportarPDF.addEventListener("click", () => {
             const mesSeleccionado = mesFiltro.value;
@@ -440,101 +471,106 @@ document.addEventListener("DOMContentLoaded", () => {
             const reciboPDF = document.createElement("div");
             reciboPDF.style.padding = "40px";
             reciboPDF.style.fontFamily = "Arial, sans-serif";
-            reciboPDF.style.color = "#333";
+            reciboPDF.style.color = "#212529";
 
             let htmlContenido = `
-                <div style="text-align: center; border-bottom: 2px solid #0d6efd; padding-bottom: 15px; margin-bottom: 25px;">
-                    <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: bold;">Nobel School</h1>
-                    <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 18px;">Estado de Cuenta - Consumo mensual en el quiosco</h3>
+                <div style="text-align: center; padding-bottom: 15px; margin-bottom: 25px; border-bottom: 2px solid #eef0f2;">
+                    <h1 style="color: #0d6efd; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">Cuenta del Quiosco</h1>
+                    <h3 style="color: #8fa0ab; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Registro de consumo mensual</h3>
                 </div>
                 
-                <div style="border: 1px solid #eef0f2; border-radius: 10px; background-color: #fcfcfc; margin-bottom: 25px; padding: 20px; box-sizing: border-box;">
+                <div style="background-color: #f8f9fa; border-radius: 12px; padding: 15px 20px; margin-bottom: 25px;">
                     <table style="width: 100%; border-collapse: collapse; border: none;">
                         <tr>
-                            <td style="width: 50%; padding-right: 20px; border-right: 1px solid #eef0f2; vertical-align: top;">
-                                <p style="margin: 0 0 5px 0; font-size: 12px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Nombre</p>
-                                <p style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; color: #2b3035;">${nombreUsuario}</p>
-                                <p style="margin: 0 0 5px 0; font-size: 12px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Ocupación</p>
-                                <p style="margin: 0; font-size: 16px; font-weight: bold; color: #2b3035;">${ocupacionTexto}</p>
+                            <td style="width: 50%; border-right: 1px solid #dee2e6; vertical-align: top;">
+                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Cliente</p>
+                                <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: #212529;">${nombreUsuario}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Ocupación</p>
+                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${ocupacionTexto}</p>
                             </td>
-                            <td style="width: 50%; padding-left: 25px; vertical-align: top;">
-                                <p style="margin: 0 0 5px 0; font-size: 12px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Mes</p>
-                                <p style="margin: 0 0 15px 0; font-size: 16px; font-weight: bold; color: #2b3035;">${nombreMes}</p>
-                                <p style="margin: 0 0 5px 0; font-size: 12px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Fecha de Emisión</p>
-                                <p style="margin: 0; font-size: 16px; font-weight: bold; color: #2b3035;">${new Date().toLocaleDateString('es-PE')}</p>
+                            <td style="width: 50%; padding-left: 20px; vertical-align: top;">
+                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Mes</p>
+                                <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: #212529;">${nombreMes}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Fecha de Emisión</p>
+                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${new Date().toLocaleDateString('es-PE')}</p>
                             </td>
                         </tr>
                     </table>
                 </div>
 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 15px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
                     <thead>
-                        <tr style="background-color: #f8f9fa;">
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Fecha</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Detalle de Consumo</th>
-                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Importe (S/)</th>
+                        <tr>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 15%;">Día</th>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 20%;">Fecha</th>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 45%;">Detalle de Consumo</th>
+                            <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #212529; color: #495057; width: 20%;">Importe</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
 
-            consumosDelMes.forEach(registro => {
+            let bgFila = "#ffffff";
+            consumosDelMes.forEach((registro, index) => {
                 const [y, m, d] = registro.fecha.split('-');
                 const dateObj = new Date(y, m - 1, d);
+                const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
+                const nombreDiaCorto = diasCortos[dateObj.getDay()];
+                const fechaNumerica = `${d}/${m}/${y}`;
                 
-                const opcionesFecha = { weekday: 'long', day: 'numeric', month: 'long' };
-                let fechaBonita = dateObj.toLocaleDateString('es-PE', opcionesFecha);
-                fechaBonita = fechaBonita.charAt(0).toUpperCase() + fechaBonita.slice(1);
+                let detalleParaPDF = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
 
+                bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
                 htmlContenido += `
-                    <tr>
-                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6; vertical-align: top;">${fechaBonita}</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6; vertical-align: top;">${registro.productoNombre}</td>
-                        <td style="padding: 12px; border-bottom: 1px solid #dee2e6; text-align: right; vertical-align: top;">S/ ${registro.precio.toFixed(2)}</td>
+                    <tr style="background-color: ${bgFila};">
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #6c757d; font-weight: bold;">${nombreDiaCorto}</td>
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #495057;">${fechaNumerica}</td>
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #212529;">${detalleParaPDF}</td>
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; text-align: right; font-weight: bold; color: #212529;">S/ ${registro.precio.toFixed(2)}</td>
                     </tr>
                 `;
             });
 
             htmlContenido += `
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="2" style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px;">TOTAL A PAGAR:</td>
-                            <td style="padding: 15px 12px; text-align: right; font-weight: bold; font-size: 18px; color: #198754;">S/ ${sumaTotal.toFixed(2)}</td>
-                        </tr>
-                    </tfoot>
                 </table>
 
-                <table style="width: 100%; max-width: 400px; margin: 25px auto 10px auto; background-color: #742384; border-radius: 16px; color: white; border-collapse: collapse; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                     <tr>
-                        <td style="padding: 20px 10px 20px 25px; vertical-align: middle; width: 55%;">
-                            <div style="font-size: 24px; font-weight: 800; margin-bottom: 8px; letter-spacing: 1px;">YAPE</div>
-                            <p style="margin: 0 0 4px 0; font-size: 13px; opacity: 0.9;">Escanea o yapea al número:</p>
-                            <p style="margin: 0 0 4px 0; font-size: 19px; font-weight: bold; letter-spacing: 1px;">949 563 910</p>
-                            <p style="margin: 0; font-size: 13px;">TITULAR: ROSA RO***</p>
+                        <td style="width: 60%;"></td>
+                        <td style="width: 40%; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="text-align: left; font-size: 14px; color: #6c757d; font-weight: bold;">TOTAL A PAGAR</td>
+                                    <td style="text-align: right; font-size: 20px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</td>
+                                </tr>
+                            </table>
                         </td>
-                        <td style="padding: 20px 25px 20px 10px; vertical-align: middle; text-align: right; width: 45%;">
-                            <div style="background-color: white; padding: 6px; border-radius: 12px; display: inline-block; width: 120px; height: 120px; box-sizing: border-box;">
-                                <img src="yape.png" alt="QR" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\\'color:#742384; font-size:12px; margin-top:40px; font-weight:bold; line-height:1.2; text-align:center;\\'>Falta QR</div>';">
+                    </tr>
+                </table>
+
+                <table style="width: 100%; max-width: 350px; margin: 20px auto; background: #742384; border-radius: 12px; color: white; border-collapse: collapse; box-shadow: 0 4px 8px rgba(116, 35, 132, 0.2);">
+                    <tr>
+                        <td style="padding: 15px 20px; vertical-align: middle; width: 60%;">
+                            <div style="font-size: 24px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
+                            <p style="margin: 0 0 5px 0; font-size: 13px; opacity: 0.9;">Escanea para pagar:</p>
+                            <p style="margin: 0; font-size: 14px; font-weight: bold;">TITULAR: ROSA RO***</p>
+                        </td>
+                        <td style="padding: 15px; vertical-align: middle; text-align: right; width: 40%;">
+                            <div style="background-color: white; padding: 5px; border-radius: 8px; display: inline-block; width: 90px; height: 90px; box-sizing: border-box;">
+                                <img src="yape.png" alt="QR Yape" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\\'color:#742384; font-size:11px; margin-top:25px; font-weight:bold; text-align:center;\\'>Falta QR<br>yape.png</div>';">
                             </div>
                         </td>
                     </tr>
                 </table>
                 
-                <div style="text-align: center; color: #6c757d; font-size: 11px; margin-top: 15px; margin-bottom: 15px;">
-                    <p>Se agradece el pronto pago de su cuenta, tenga un buen dia</p>
+                <div style="text-align: center; color: #adb5bd; font-size: 11px; margin-top: 25px;">
+                    <p>Se agradece el pronto pago de su cuenta. ¡Que tenga un excelente día!</p>
                 </div>
             `;
 
             reciboPDF.innerHTML = htmlContenido;
-
-            const opcionesPDF = {
-                margin:       [0.5, 0.5, 0.5, 0.5],
-                filename:     `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
+            const opcionesPDF = { margin: [0.5, 0.5, 0.5, 0.5], filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
 
             btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
             btnExportarPDF.disabled = true;
@@ -549,6 +585,4 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
     }
-
-    renderizarConsumos();
 });
