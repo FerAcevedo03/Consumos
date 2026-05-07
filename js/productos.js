@@ -1,148 +1,178 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getFirestore, collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// Tu configuración de Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
+    authDomain: "quiosco-nobel-school.firebaseapp.com",
+    projectId: "quiosco-nobel-school",
+    storageBucket: "quiosco-nobel-school.firebasestorage.app",
+    messagingSenderId: "448413136914",
+    appId: "1:448413136914:web:426e8fc48a8e24ea96c0cb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 document.addEventListener("DOMContentLoaded", () => {
     const formProducto = document.getElementById("formProducto");
-    const tablaProductos = document.getElementById("tablaProductos");
+    const inputNombre = document.getElementById("nombreProducto");
+    const inputPrecio = document.getElementById("precioProducto");
+    const selectCategoria = document.getElementById("categoriaProducto");
+    const tablaInventario = document.getElementById("tablaInventario");
     const buscadorProductos = document.getElementById("buscadorProductos");
 
-    if (!formProducto || !tablaProductos) {
-        console.error("Error: No se encontraron los elementos del formulario en el HTML.");
-        return;
-    }
+    const btnGuardar = document.getElementById("btnGuardar");
+    const btnCancelarEdicion = document.getElementById("btnCancelarEdicion");
+    const tituloFormulario = document.getElementById("tituloFormulario");
 
-    let productosDB = [];
-    try {
-        const guardado = JSON.parse(localStorage.getItem("base_productos"));
-        if (Array.isArray(guardado)) {
-            productosDB = guardado;
-        } else {
-            productosDB = [];
-        }
-    } catch (e) {
-        productosDB = [];
-    }
+    let productos = [];
+    let idEdicionActual = null; // Variable para saber si estamos editando o creando nuevo
 
-    function renderizarProductos(productosAMostrar = productosDB) {
-        tablaProductos.innerHTML = "";
+    // --- LECTURA EN TIEMPO REAL DESDE FIREBASE ---
+    onSnapshot(collection(db, "productos"), (snapshot) => {
+        productos = [];
+        snapshot.forEach((doc) => {
+            productos.push({ id: doc.id, ...doc.data() });
+        });
 
-        if (productosAMostrar.length === 0) {
-            tablaProductos.innerHTML = `
-                <tr>
-                    <td colspan="4" class="text-center text-muted py-4">
-                        <i class="bi bi-inbox fs-4 d-block mb-2"></i> No hay productos registrados aún.
-                    </td>
-                </tr>`;
+        // **VITAL:** Guardamos una copia en el localStorage de la PC/Celular actual 
+        // para que la página de consumos sepa qué cobrar sin tener que buscar en internet.
+        localStorage.setItem("base_productos", JSON.stringify(productos));
+
+        // Aplicamos el buscador si hay texto escrito
+        filtrarYRenderizar();
+    });
+
+    // --- FUNCIÓN PARA MOSTRAR LA TABLA ---
+    function renderizarTabla(lista) {
+        tablaInventario.innerHTML = "";
+
+        if (lista.length === 0) {
+            tablaInventario.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">No se encontraron productos.</td></tr>`;
             return;
         }
 
-        productosAMostrar.forEach((prod) => {
-            const originalIndex = productosDB.indexOf(prod);
-
-            // --- MAGIA VISUAL: Usamos los mismos Emojis exactos del menú ---
-            let emoji = "📦";
-            const cat = prod.categoria || "otro";
-
-            switch (cat) {
-                case "comida": emoji = "🍛"; break;
-                case "bebida": emoji = "🥤"; break;
-                case "pan": emoji = "🥖"; break;
-                case "galleta": emoji = "🍪"; break;
-                case "keke": emoji = "🧁"; break;
-                case "postre": emoji = "🍮"; break;
-                case "dulce": emoji = "🍬"; break;
-                case "snack": emoji = "🍟"; break;
-                case "utiles": emoji = "✏️"; break;
-                default: emoji = "📦"; break;
-            }
-
+        // Ordenar alfabéticamente
+        lista.sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach((prod) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td class="text-center">
-                    <div class="bg-white border rounded d-inline-flex shadow-sm fs-4" style="width: 40px; height: 40px; align-items: center; justify-content: center; line-height: 1;">
-                        ${emoji}
-                    </div>
-                </td>
+                <td class="text-center"><span class="fs-4">${obtenerEmoji(prod.categoria)}</span></td>
                 <td class="fw-bold text-dark">${prod.nombre}</td>
                 <td class="text-success fw-bold">S/ ${parseFloat(prod.precio).toFixed(2)}</td>
-                <td class="text-end pe-3">
-                    <button class="btn btn-sm btn-outline-warning me-2" onclick="editarPrecio(${originalIndex})" title="Editar Precio">
+                <td class="text-center">
+                    <button class="btn btn-outline-warning btn-sm me-2" onclick="editarProducto('${prod.id}')" title="Editar">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarProducto(${originalIndex})" title="Eliminar Producto">
-                        <i class="bi bi-trash3"></i>
+                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarProducto('${prod.id}')" title="Eliminar">
+                        <i class="bi bi-trash"></i>
                     </button>
                 </td>
             `;
-            tablaProductos.appendChild(tr);
+            tablaInventario.appendChild(tr);
         });
+    }
+
+    function obtenerEmoji(cat) {
+        if (cat === "menu" || cat === "comida") return "🍲";
+        if (cat === "bebida") return "🧃";
+        return "🍞";
+    }
+
+    function filtrarYRenderizar() {
+        const textoBusqueda = buscadorProductos ? buscadorProductos.value.toLowerCase().trim() : "";
+        const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(textoBusqueda));
+        renderizarTabla(filtrados);
     }
 
     if (buscadorProductos) {
-        buscadorProductos.addEventListener("input", (e) => {
-            const textoBusqueda = e.target.value.toLowerCase().trim();
-            const productosFiltrados = productosDB.filter(prod =>
-                prod.nombre.toLowerCase().includes(textoBusqueda)
-            );
-            renderizarProductos(productosFiltrados);
-        });
+        buscadorProductos.addEventListener("input", filtrarYRenderizar);
     }
 
-    formProducto.addEventListener("submit", (e) => {
+    // --- GUARDAR / ACTUALIZAR PRODUCTO ---
+    formProducto.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const nombre = document.getElementById("prodNombre").value.trim();
-        const precio = parseFloat(document.getElementById("prodPrecio").value);
-        const categoria = document.getElementById("prodCategoria").value;
+        const nombre = inputNombre.value.trim();
+        const precio = parseFloat(inputPrecio.value);
+        const categoria = selectCategoria.value;
 
-        if (nombre !== "" && !isNaN(precio) && categoria !== "") {
-            productosDB.push({
-                nombre: nombre,
-                precio: precio,
-                categoria: categoria
-            });
+        if (!nombre || isNaN(precio) || !categoria) {
+            alert("Completa todos los campos correctamente.");
+            return;
+        }
 
-            localStorage.setItem("base_productos", JSON.stringify(productosDB));
-            formProducto.reset();
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = "⏳...";
 
-            if (buscadorProductos) buscadorProductos.value = "";
-            renderizarProductos();
-        } else {
-            alert("Por favor, asegúrate de llenar el nombre, el precio y seleccionar una categoría.");
+        try {
+            if (idEdicionActual) {
+                // Modo Edición: Actualizar en Firebase
+                await updateDoc(doc(db, "productos", idEdicionActual), {
+                    nombre: nombre,
+                    precio: precio,
+                    categoria: categoria
+                });
+                salirModoEdicion();
+            } else {
+                // Modo Creación: Añadir nuevo a Firebase
+                await addDoc(collection(db, "productos"), {
+                    nombre: nombre,
+                    precio: precio,
+                    categoria: categoria
+                });
+                formProducto.reset();
+            }
+        } catch (error) {
+            alert("Error al conectar con la Nube: " + error.message);
+        } finally {
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = idEdicionActual ? "Actualizar" : "Guardar";
+            inputNombre.focus();
         }
     });
 
-    window.editarPrecio = (index) => {
-        const productoActual = productosDB[index];
-        const nuevoPrecioStr = prompt(`Ingresa el nuevo precio para "${productoActual.nombre}":`, productoActual.precio);
+    // --- MODO EDICIÓN ---
+    window.editarProducto = (idFirebase) => {
+        const prod = productos.find(p => p.id === idFirebase);
+        if (prod) {
+            inputNombre.value = prod.nombre;
+            inputPrecio.value = prod.precio;
+            selectCategoria.value = prod.categoria || "snack";
 
-        if (nuevoPrecioStr !== null) {
-            const nuevoPrecio = parseFloat(nuevoPrecioStr);
+            idEdicionActual = idFirebase;
 
-            if (!isNaN(nuevoPrecio) && nuevoPrecio >= 0) {
-                productosDB[index].precio = nuevoPrecio;
-                localStorage.setItem("base_productos", JSON.stringify(productosDB));
+            tituloFormulario.textContent = "Editar Producto";
+            btnGuardar.textContent = "Actualizar";
+            btnGuardar.classList.replace("btn-info", "btn-warning"); // Cambia de color para que sea evidente
+            btnGuardar.style.backgroundColor = "#ffc107";
+            btnCancelarEdicion.classList.remove("d-none");
 
-                if (buscadorProductos && buscadorProductos.value !== "") {
-                    buscadorProductos.dispatchEvent(new Event('input'));
-                } else {
-                    renderizarProductos();
-                }
-            } else {
-                alert("Por favor, ingresa un número válido.");
-            }
+            inputNombre.focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube la pantalla al formulario
         }
     };
 
-    window.eliminarProducto = (index) => {
-        if (confirm(`¿Estás seguro de eliminar "${productosDB[index].nombre}"?`)) {
-            productosDB.splice(index, 1);
-            localStorage.setItem("base_productos", JSON.stringify(productosDB));
+    btnCancelarEdicion.addEventListener("click", salirModoEdicion);
 
-            if (buscadorProductos && buscadorProductos.value !== "") {
-                buscadorProductos.dispatchEvent(new Event('input'));
-            } else {
-                renderizarProductos();
+    function salirModoEdicion() {
+        formProducto.reset();
+        idEdicionActual = null;
+        tituloFormulario.textContent = "Agregar Nuevo Producto o Comida";
+        btnGuardar.textContent = "Guardar";
+        btnGuardar.style.backgroundColor = "#00bcd4";
+        btnCancelarEdicion.classList.add("d-none");
+    }
+
+    // --- ELIMINAR PRODUCTO ---
+    window.eliminarProducto = async (idFirebase) => {
+        if (confirm("¿Estás seguro de eliminar este producto del inventario de la nube?")) {
+            try {
+                await deleteDoc(doc(db, "productos", idFirebase));
+                if (idEdicionActual === idFirebase) salirModoEdicion(); // Si borra lo que estaba editando
+            } catch (error) {
+                alert("Error al eliminar: " + error.message);
             }
         }
     };
-
-    renderizarProductos();
 });

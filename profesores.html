@@ -24,16 +24,13 @@
   <div class="container py-4">
     <h2 class="text-center text-primary mb-4 fw-bold"><i class="bi bi-person-video3"></i> Lista de Profesores</h2>
 
-    <!-- Contenedor de Agregar y Buscar -->
     <div class="row mb-4 align-items-center">
-      <!-- Agregar -->
       <div class="col-md-6 mb-3 mb-md-0">
         <div class="input-group shadow-sm">
           <input type="text" id="nuevoNombre" class="form-control border-primary" placeholder="Nombre completo...">
           <button id="btnAgregar" class="btn btn-primary fw-bold">➕ Añadir</button>
         </div>
       </div>
-      <!-- Buscar -->
       <div class="col-md-6">
         <div class="input-group shadow-sm">
           <span class="input-group-text bg-white text-muted border-end-0">
@@ -44,10 +41,9 @@
       </div>
     </div>
 
-    <!-- Contenedor donde se generan las tarjetas -->
     <div id="listaPersonas" class="row g-3"></div>
   </div>
 
-  <script src="js/personas.js"></script>
+  <script type="module" src="js/personas.js"></script>
 </body>
 </html>
