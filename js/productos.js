@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Tu configuración de Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
     authDomain: "quiosco-nobel-school.firebaseapp.com",
@@ -15,7 +14,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Referencias exactas a tus IDs del HTML
     const formProducto = document.getElementById("formProducto");
     const inputNombre = document.getElementById("prodNombre");
     const inputPrecio = document.getElementById("prodPrecio");
@@ -30,27 +28,22 @@ document.addEventListener("DOMContentLoaded", () => {
     let productos = [];
     let idEdicionActual = null;
 
-    // --- LECTURA EN TIEMPO REAL DESDE FIREBASE ---
     onSnapshot(collection(db, "productos"), (snapshot) => {
         productos = [];
         snapshot.forEach((doc) => {
             productos.push({ id: doc.id, ...doc.data() });
         });
-
         localStorage.setItem("base_productos", JSON.stringify(productos));
         filtrarYRenderizar();
     });
 
-    // --- FUNCIÓN PARA MOSTRAR LA TABLA ---
     function renderizarTabla(lista) {
         tablaInventario.innerHTML = "";
-
         if (lista.length === 0) {
             tablaInventario.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">No se encontraron productos.</td></tr>`;
             return;
         }
 
-        // Ordenar alfabéticamente
         lista.sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach((prod) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
@@ -58,10 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td class="fw-bold text-dark">${prod.nombre}</td>
                 <td class="text-success fw-bold">S/ ${parseFloat(prod.precio).toFixed(2)}</td>
                 <td class="text-end pe-3">
-                    <button class="btn btn-outline-warning btn-sm me-1" onclick="editarProducto('${prod.id}')" title="Editar">
+                    <button class="btn btn-outline-warning btn-sm me-1" onclick="editarProducto('${prod.id}')">
                         <i class="bi bi-pencil-square"></i>
                     </button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarProducto('${prod.id}')" title="Eliminar">
+                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarProducto('${prod.id}')">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -70,84 +63,60 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Lógica ampliada para tus iconos originales
     function obtenerEmoji(cat) {
         const emojis = {
-            comida: "🍛", bebida: "🥤", pan: "🥖", 
-            galleta: "🍪", keke: "🧁", postre: "🍮", 
-            dulce: "🍬", snack: "🍟", utiles: "✏️", otro: "📦", menu: "🍛"
+            comida: "🍛", bebida: "🥤", pan: "🥖", galleta: "🍪", 
+            keke: "🧁", postre: "🍮", dulce: "🍬", snack: "🍟", utiles: "✏️", otro: "📦"
         };
         return emojis[cat] || "📦";
     }
 
     function filtrarYRenderizar() {
-        const textoBusqueda = buscadorProductos ? buscadorProductos.value.toLowerCase().trim() : "";
-        const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(textoBusqueda));
+        const texto = buscadorProductos ? buscadorProductos.value.toLowerCase().trim() : "";
+        const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(texto));
         renderizarTabla(filtrados);
     }
 
-    if (buscadorProductos) {
-        buscadorProductos.addEventListener("input", filtrarYRenderizar);
-    }
+    if (buscadorProductos) buscadorProductos.addEventListener("input", filtrarYRenderizar);
 
-    // --- GUARDAR / ACTUALIZAR PRODUCTO ---
     formProducto.addEventListener("submit", async (e) => {
         e.preventDefault();
-
         const nombre = inputNombre.value.trim();
         const precio = parseFloat(inputPrecio.value);
         const categoria = selectCategoria.value;
 
-        if (!nombre || isNaN(precio) || !categoria) {
-            alert("Completa todos los campos correctamente.");
-            return;
-        }
+        if (!nombre || isNaN(precio) || !categoria) return;
 
         btnGuardar.disabled = true;
         btnGuardar.innerHTML = "⏳...";
 
         try {
             if (idEdicionActual) {
-                await updateDoc(doc(db, "productos", idEdicionActual), {
-                    nombre: nombre,
-                    precio: precio,
-                    categoria: categoria
-                });
+                await updateDoc(doc(db, "productos", idEdicionActual), { nombre, precio, categoria });
                 salirModoEdicion();
             } else {
-                await addDoc(collection(db, "productos"), {
-                    nombre: nombre,
-                    precio: precio,
-                    categoria: categoria
-                });
+                await addDoc(collection(db, "productos"), { nombre, precio, categoria });
                 formProducto.reset();
             }
         } catch (error) {
-            alert("Error al conectar con la Nube: " + error.message);
+            alert("Error: " + error.message);
         } finally {
             btnGuardar.disabled = false;
             btnGuardar.innerHTML = idEdicionActual ? "Actualizar" : "Guardar";
-            inputNombre.focus();
         }
     });
 
-    // --- MODO EDICIÓN ---
-    window.editarProducto = (idFirebase) => {
-        const prod = productos.find(p => p.id === idFirebase);
+    window.editarProducto = (id) => {
+        const prod = productos.find(p => p.id === id);
         if (prod) {
             inputNombre.value = prod.nombre;
             inputPrecio.value = prod.precio;
-            selectCategoria.value = prod.categoria || "otro";
-
-            idEdicionActual = idFirebase;
-
+            selectCategoria.value = prod.categoria;
+            idEdicionActual = id;
             tituloFormulario.textContent = "Editar Producto";
             btnGuardar.textContent = "Actualizar";
-            btnGuardar.classList.replace("btn-info", "btn-warning"); 
             btnCancelarEdicion.classList.remove("d-none");
-
-            inputNombre.focus();
-            window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
@@ -158,19 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
         idEdicionActual = null;
         tituloFormulario.textContent = "Agregar Nuevo Producto o Comida";
         btnGuardar.textContent = "Guardar";
-        btnGuardar.classList.replace("btn-warning", "btn-info");
         btnCancelarEdicion.classList.add("d-none");
     }
 
-    // --- ELIMINAR PRODUCTO ---
-    window.eliminarProducto = async (idFirebase) => {
-        if (confirm("¿Estás seguro de eliminar este producto del inventario de la nube?")) {
-            try {
-                await deleteDoc(doc(db, "productos", idFirebase));
-                if (idEdicionActual === idFirebase) salirModoEdicion();
-            } catch (error) {
-                alert("Error al eliminar: " + error.message);
-            }
+    window.eliminarProducto = async (id) => {
+        if (confirm("¿Eliminar de la nube?")) {
+            await deleteDoc(doc(db, "productos", id));
         }
     };
 });
