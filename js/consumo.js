@@ -1,54 +1,33 @@
-// 1. IMPORTACIONES DE FIREBASE (Desde la nube de Google)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, where, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// 2. TU CONFIGURACIÓN DE FIREBASE
 const firebaseConfig = {
-  apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
-  authDomain: "quiosco-nobel-school.firebaseapp.com",
-  projectId: "quiosco-nobel-school",
-  storageBucket: "quiosco-nobel-school.firebasestorage.app",
-  messagingSenderId: "448413136914",
-  appId: "1:448413136914:web:426e8fc48a8e24ea96c0cb"
+    apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
+    authDomain: "quiosco-nobel-school.firebaseapp.com",
+    projectId: "quiosco-nobel-school",
+    storageBucket: "quiosco-nobel-school.firebasestorage.app",
+    messagingSenderId: "448413136914",
+    appId: "1:448413136914:web:426e8fc48a8e24ea96c0cb"
 };
 
-// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Obtener datos de la URL
     const params = new URLSearchParams(window.location.search);
     const nombreUsuario = params.get("nombre") || "Usuario Desconocido";
     const rolUsuario = params.get("rol") || "index";
 
-    // Elementos visuales
+    // Elementos visuales superiores
     const nombrePersonaEl = document.getElementById("nombrePersona");
     const etiquetaRolEl = document.getElementById("etiquetaRol");
     const avatarFondoEl = document.getElementById("avatarFondo");
 
-    let iconoHtml = "";
-    let colorFondo = "";
-    let colorTexto = "text-white";
-
-    if (rolUsuario === "profesores") {
-        iconoHtml = '<i class="bi bi-person-workspace"></i>';
-        colorFondo = "#0d6efd";
-        if (etiquetaRolEl) etiquetaRolEl.textContent = "Profesor";
-    } else if (rolUsuario === "alumnos") {
-        iconoHtml = '<i class="bi bi-mortarboard-fill"></i>';
-        colorFondo = "#ffc107";
-        colorTexto = "text-dark";
-        if (etiquetaRolEl) etiquetaRolEl.textContent = "Alumno";
-    } else if (rolUsuario === "administrativos") {
-        iconoHtml = '<i class="bi bi-person-badge-fill"></i>';
-        colorFondo = "#198754";
-        if (etiquetaRolEl) etiquetaRolEl.textContent = "Administrativo";
-    } else {
-        iconoHtml = '<i class="bi bi-person-fill"></i>';
-        colorFondo = "#6c757d";
-        if (etiquetaRolEl) etiquetaRolEl.textContent = "Personal";
-    }
+    let iconoHtml = "", colorFondo = "", colorTexto = "text-white";
+    if (rolUsuario === "profesores") { iconoHtml = '<i class="bi bi-person-workspace"></i>'; colorFondo = "#0d6efd"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Profesor"; }
+    else if (rolUsuario === "alumnos") { iconoHtml = '<i class="bi bi-mortarboard-fill"></i>'; colorFondo = "#ffc107"; colorTexto = "text-dark"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Alumno"; }
+    else if (rolUsuario === "administrativos") { iconoHtml = '<i class="bi bi-person-badge-fill"></i>'; colorFondo = "#198754"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Administrativo"; }
+    else { iconoHtml = '<i class="bi bi-person-fill"></i>'; colorFondo = "#6c757d"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Personal"; }
 
     if (nombrePersonaEl) nombrePersonaEl.textContent = nombreUsuario;
     if (avatarFondoEl) {
@@ -57,13 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const btnVolver = document.getElementById("btnVolver");
-    if (btnVolver) {
-        btnVolver.addEventListener("click", () => {
-            window.location.href = `${rolUsuario}.html`;
-        });
-    }
+    if (btnVolver) btnVolver.onclick = () => window.location.href = `${rolUsuario}.html`;
 
-    // Elementos del DOM
+    // Formularios y DOM
     const inputProducto = document.getElementById("inputProducto");
     const inputCantidad = document.getElementById("inputCantidad");
     const listaSugerencias = document.getElementById("listaSugerencias");
@@ -72,461 +47,444 @@ document.addEventListener("DOMContentLoaded", () => {
     const tablaConsumos = document.getElementById("tablaConsumos");
     const totalAcumulado = document.getElementById("totalAcumulado");
     const mesFiltro = document.getElementById("mesFiltro");
-    const btnExportarPDF = document.getElementById("btnExportarPDF");
-    const btnWhatsApp = document.getElementById("btnWhatsApp");
 
-    if (!formConsumo) return;
+    // Elementos Estado Cuenta Dual
+    const tituloEstadoMes = document.getElementById("tituloEstadoMes");
+    const estadoCuentaMesVisual = document.getElementById("estadoCuentaMesVisual");
+    const estadoCuentaGlobalVisual = document.getElementById("estadoCuentaGlobalVisual");
+    const btnRegistrarPago = document.getElementById("btnRegistrarPago");
+    const contenedorHistorialPagos = document.getElementById("contenedorHistorialPagos");
+    const listaPagosVisual = document.getElementById("listaPagosVisual");
+
+    let historialConsumos = [];
+    let historialPagos = [];
+    const productosDB = JSON.parse(localStorage.getItem("base_productos")) || [];
 
     const fechaHoy = new Date();
-    fechaConsumo.valueAsDate = fechaHoy;
-    mesFiltro.value = fechaHoy.getMonth().toString();
+    if (fechaConsumo) fechaConsumo.valueAsDate = fechaHoy;
+    if (mesFiltro) mesFiltro.value = fechaHoy.getMonth().toString();
 
-    // PRODUCTOS (Por ahora se leen de forma local)
-    const productosDB = JSON.parse(localStorage.getItem("base_productos")) || [];
+    // ==========================================
+    // AUTOCOMPLETADO
+    // ==========================================
     let indiceSeleccionado = -1;
-
-    if (inputProducto && listaSugerencias) {
+    if (inputProducto) {
         inputProducto.addEventListener("input", () => {
-            const valorInput = inputProducto.value.toLowerCase();
-            const partes = valorInput.split("+");
-            const ultimaPalabra = partes[partes.length - 1].trim();
-
+            const val = inputProducto.value.toLowerCase();
+            const partes = val.split("+");
+            const ult = partes[partes.length - 1].trim();
             listaSugerencias.innerHTML = "";
             indiceSeleccionado = -1;
-
-            if (ultimaPalabra.length > 0) {
-                const filtrados = productosDB.filter(p => p.nombre.toLowerCase().includes(ultimaPalabra));
-
-                if (filtrados.length > 0) {
+            
+            if (ult.length > 0) {
+                const f = productosDB.filter(p => p.nombre.toLowerCase().includes(ult));
+                if (f.length > 0) {
                     listaSugerencias.classList.add("show");
-                    filtrados.forEach((prod) => {
+                    f.forEach(p => {
                         const li = document.createElement("li");
-                        const a = document.createElement("a");
-                        a.className = "dropdown-item d-flex justify-content-between";
-                        a.href = "#";
-                        a.setAttribute("data-nombre", prod.nombre);
-                        a.innerHTML = `<span>${prod.nombre}</span> <span class="text-muted small">S/ ${prod.precio.toFixed(2)}</span>`;
-                        
-                        a.addEventListener("mousedown", (e) => {
-                            e.preventDefault();
-                            seleccionarProducto(prod.nombre);
-                        });
-                        
-                        li.appendChild(a);
+                        li.innerHTML = `<a class="dropdown-item d-flex justify-content-between" href="#"><span>${p.nombre}</span><small>S/ ${p.precio.toFixed(2)}</small></a>`;
+                        li.onmousedown = (e) => { e.preventDefault(); seleccionar(p.nombre); };
                         listaSugerencias.appendChild(li);
                     });
-                } else {
-                    listaSugerencias.classList.remove("show");
-                }
-            } else {
-                listaSugerencias.classList.remove("show");
-            }
+                } else listaSugerencias.classList.remove("show");
+            } else listaSugerencias.classList.remove("show");
         });
 
         inputProducto.addEventListener("keydown", (e) => {
             const items = listaSugerencias.querySelectorAll("a.dropdown-item");
             if (!listaSugerencias.classList.contains("show") || items.length === 0) return;
-
             if (e.key === "ArrowDown") {
-                e.preventDefault();
-                indiceSeleccionado++;
-                if (indiceSeleccionado >= items.length) indiceSeleccionado = 0;
-                actualizarSeleccion(items);
+                e.preventDefault(); indiceSeleccionado++; if (indiceSeleccionado >= items.length) indiceSeleccionado = 0; actSel(items);
             } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                indiceSeleccionado--;
-                if (indiceSeleccionado < 0) indiceSeleccionado = items.length - 1;
-                actualizarSeleccion(items);
+                e.preventDefault(); indiceSeleccionado--; if (indiceSeleccionado < 0) indiceSeleccionado = items.length - 1; actSel(items);
             } else if (e.key === "Enter") {
-                e.preventDefault(); 
-                if (indiceSeleccionado > -1) {
-                    seleccionarProducto(items[indiceSeleccionado].getAttribute("data-nombre"));
-                } else if (items.length > 0) {
-                    seleccionarProducto(items[0].getAttribute("data-nombre"));
-                }
+                e.preventDefault();
+                if (indiceSeleccionado > -1) seleccionar(items[indiceSeleccionado].querySelector("span").textContent);
+                else if (items.length > 0) seleccionar(items[0].querySelector("span").textContent);
             }
         });
 
-        function actualizarSeleccion(items) {
-            items.forEach((item, index) => {
-                if (index === indiceSeleccionado) {
-                    item.classList.add("active");
-                    item.style.backgroundColor = "#0d6efd";
-                    item.style.color = "white";
-                    item.scrollIntoView({ block: "nearest" }); 
-                } else {
-                    item.classList.remove("active");
-                    item.style.backgroundColor = "";
-                    item.style.color = "";
-                }
+        function actSel(items) {
+            items.forEach((item, i) => {
+                if (i === indiceSeleccionado) { item.classList.add("active"); item.style.backgroundColor = "#0d6efd"; item.style.color = "white"; item.scrollIntoView({ block: "nearest" }); } 
+                else { item.classList.remove("active"); item.style.backgroundColor = ""; item.style.color = ""; }
             });
         }
-
-        function seleccionarProducto(nombre) {
-            const partes = inputProducto.value.split("+");
-            partes[partes.length - 1] = ` ${nombre} `;
-            inputProducto.value = partes.join("+").trim() + " + ";
+        function seleccionar(n) {
+            const p = inputProducto.value.split("+");
+            p[p.length - 1] = ` ${n} `;
+            inputProducto.value = p.join("+").trim() + " + ";
             listaSugerencias.classList.remove("show");
             inputProducto.focus();
         }
-
-        document.addEventListener("click", (e) => {
-            if (!inputProducto.contains(e.target) && !listaSugerencias.contains(e.target)) {
-                listaSugerencias.classList.remove("show");
-            }
-        });
     }
 
-    function agruparConsumosTexto(textoHistorial) {
-        let partes = textoHistorial.split(/(?:<br>|\+)/).map(p => p.trim()).filter(p => p !== "");
-        let mapaProductos = new Map();
-        
-        partes.forEach(p => {
-            let nombre = p;
-            let cantidad = 1;
-            let match = p.match(/^(.*?)\s*\(\s*(\d+)\s*\)$/);
-            
-            if (match && !p.includes("S/")) {
-                nombre = match[1].trim();
-                cantidad = parseInt(match[2], 10);
-            }
-            
-            if (mapaProductos.has(nombre)) {
-                mapaProductos.set(nombre, mapaProductos.get(nombre) + cantidad);
-            } else {
-                mapaProductos.set(nombre, cantidad);
-            }
-        });
-        
-        let resultado = [];
-        mapaProductos.forEach((cantidad, nombre) => {
-            if (cantidad > 1) {
-                resultado.push(`${nombre} (${cantidad})`);
-            } else {
-                resultado.push(nombre);
-            }
-        });
-        return resultado.join(" + ");
-    }
-
-    // --- MAGIA DE FIREBASE: LECTURA EN TIEMPO REAL ---
-    let historialConsumos = [];
-    const consultaConsumos = query(collection(db, "consumos"), where("nombreUsuario", "==", nombreUsuario));
-
-    onSnapshot(consultaConsumos, (snapshot) => {
+    // ==========================================
+    // LECTURA EN TIEMPO REAL (Consumos y Pagos)
+    // ==========================================
+    onSnapshot(query(collection(db, "consumos"), where("nombreUsuario", "==", nombreUsuario)), (snap) => {
         historialConsumos = [];
-        snapshot.forEach((doc) => {
-            // Guardamos el ID único de Firebase para poder borrar o actualizar
-            historialConsumos.push({ id: doc.id, ...doc.data() });
-        });
+        snap.forEach(doc => historialConsumos.push({ id: doc.id, ...doc.data() }));
         historialConsumos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
         renderizarConsumos();
+        recalcularSaldoGlobal();
     });
 
-    function renderizarConsumos() {
-        tablaConsumos.innerHTML = "";
-        let sumaTotal = 0;
+    onSnapshot(query(collection(db, "pagos"), where("nombreUsuario", "==", nombreUsuario)), (snap) => {
+        historialPagos = [];
+        snap.forEach(doc => historialPagos.push({ id: doc.id, ...doc.data() }));
+        historialPagos.sort((a, b) => b.timestamp - a.timestamp);
+        recalcularSaldoGlobal();
+        renderizarListaPagos();
+    });
+
+    // ==========================================
+    // EL CEREBRO DE LAS CUENTAS (MES VS GLOBAL)
+    // ==========================================
+    function recalcularSaldoGlobal() {
+        if (!estadoCuentaMesVisual) return;
+        
         const mesSeleccionado = mesFiltro.value;
 
-        const consumosFiltrados = historialConsumos.filter(registro => {
-            if (mesSeleccionado === "todos") return true;
-            const [y, m, d] = registro.fecha.split('-');
-            const dateObj = new Date(y, m - 1, d);
-            return dateObj.getMonth() == mesSeleccionado;
-        });
+        // 1. Títulos dinámicos
+        if (mesSeleccionado === "todos") {
+            tituloEstadoMes.innerHTML = "ESTADO DE CUENTA (TODOS LOS MESES)";
+            estadoCuentaGlobalVisual.style.display = "none"; 
+        } else {
+            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
+            tituloEstadoMes.innerHTML = `ESTADO DE CUENTA: ${nombreMes}`;
+            estadoCuentaGlobalVisual.style.display = "block";
+        }
 
-        if (consumosFiltrados.length === 0) {
-            tablaConsumos.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">No hay consumos en este mes.</td></tr>`;
+        // 2. Cálculo Global (El histórico de la vida)
+        const totalConsumidoHistorico = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
+        const totalPagadoHistorico = historialPagos.reduce((acc, p) => acc + p.monto, 0);
+        const saldoGlobal = totalPagadoHistorico - totalConsumidoHistorico;
+
+        // 3. Cálculo Específico del Mes
+        let totalConsumidoMes = 0;
+        let totalPagadoMes = 0;
+
+        if (mesSeleccionado === "todos") {
+            totalConsumidoMes = totalConsumidoHistorico;
+            totalPagadoMes = totalPagadoHistorico;
+        } else {
+            const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            const pagosDelMes = historialPagos.filter(p => new Date(p.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            totalConsumidoMes = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
+            totalPagadoMes = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
+        }
+
+        const saldoMes = totalPagadoMes - totalConsumidoMes;
+
+        // Render del Mes (Letras Grandes)
+        if (saldoMes < -0.01) {
+            estadoCuentaMesVisual.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle-fill"></i> DEUDA DEL MES: S/ ${Math.abs(saldoMes).toFixed(2)}</span>`;
+        } else if (saldoMes > 0.01) {
+            estadoCuentaMesVisual.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill"></i> A FAVOR DEL MES: S/ ${saldoMes.toFixed(2)}</span>`;
+        } else {
+            estadoCuentaMesVisual.innerHTML = `<span class="text-muted"><i class="bi bi-shield-check"></i> MES CANCELADO AL DÍA</span>`;
+        }
+
+        // Render Global (Letras pequeñas debajo, solo si no estás viendo "Todos")
+        if (mesSeleccionado !== "todos") {
+            if (saldoGlobal < -0.01) {
+                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-danger">Deuda total (Suma de los pagos pendientes de todos los meses): S/ ${Math.abs(saldoGlobal).toFixed(2)}</strong>`;
+            } else if (saldoGlobal > 0.01) {
+                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-success">Total general a favor (Sumando todos los meses): S/ ${saldoGlobal.toFixed(2)}</strong>`;
+            } else {
+                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-secondary">Total general histórico: No hay deudas pendientes</strong>`;
+            }
+        }
+    }
+
+    function renderizarListaPagos() {
+        if (!contenedorHistorialPagos || !listaPagosVisual) return;
+        listaPagosVisual.innerHTML = "";
+        if (historialPagos.length === 0) {
+            contenedorHistorialPagos.classList.add("d-none");
+            return;
+        }
+        contenedorHistorialPagos.classList.remove("d-none");
+        historialPagos.forEach((pago) => {
+            const [y, m, d] = pago.fecha.split('-');
+            const li = document.createElement("li");
+            li.className = "list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-1";
+            li.innerHTML = `
+                <span class="text-dark" style="font-size: 0.9rem;"><i class="bi bi-arrow-down-right-circle text-success me-1"></i> Abono registrado el ${d}/${m}/${y}</span>
+                <div>
+                    <span class="fw-bold text-success me-3">S/ ${pago.monto.toFixed(2)}</span>
+                    <button class="btn btn-sm btn-outline-danger border-0 py-0 px-1" onclick="eliminarPago('${pago.id}')" title="Anular este pago"><i class="bi bi-x fs-5"></i></button>
+                </div>
+            `;
+            listaPagosVisual.appendChild(li);
+        });
+    }
+
+    function renderizarConsumos() {
+        if (!tablaConsumos) return;
+        tablaConsumos.innerHTML = "";
+        let total = 0;
+        const mes = mesFiltro.value;
+        const filtrados = historialConsumos.filter(r => mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
+
+        if (filtrados.length === 0) {
+            tablaConsumos.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No hay consumos en este mes.</td></tr>';
             totalAcumulado.textContent = "S/ 0.00";
             return;
         }
 
-        consumosFiltrados.forEach((registro) => {
-            sumaTotal += registro.precio;
-            const [y, m, d] = registro.fecha.split('-');
-            const dateObj = new Date(y, m - 1, d);
-
-            const opcionesFecha = { weekday: 'long', day: 'numeric', month: 'long' };
-            let fechaBonita = dateObj.toLocaleDateString('es-PE', opcionesFecha);
-            fechaBonita = fechaBonita.charAt(0).toUpperCase() + fechaBonita.slice(1);
-
+        filtrados.forEach(r => {
+            total += r.precio;
+            const f = new Date(r.fecha + 'T00:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
             const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td class="ps-4 text-muted">${fechaBonita}</td>
-                <td class="text-dark fw-bold">${registro.productoNombre}</td>
-                <td class="text-center text-dark fw-bold">S/ ${registro.precio.toFixed(2)}</td>
-                <td class="text-center">
-                    <button class="btn btn-outline-danger btn-eliminar-img rounded-1" onclick="eliminarRegistro('${registro.id}')" title="Eliminar">
-                        <i class="bi bi-x"></i>
-                    </button>
-                </td>
-            `;
+            tr.innerHTML = `<td class="ps-4 text-muted small">${f.charAt(0).toUpperCase() + f.slice(1)}</td><td class="fw-bold text-dark">${r.productoNombre}</td><td class="text-center fw-bold text-dark">S/ ${r.precio.toFixed(2)}</td><td class="text-center"><button class="btn btn-sm btn-outline-danger rounded-1" onclick="eliminarRegistro('${r.id}')"><i class="bi bi-x"></i></button></td>`;
             tablaConsumos.appendChild(tr);
         });
-
-        totalAcumulado.textContent = `S/ ${sumaTotal.toFixed(2)}`;
+        totalAcumulado.textContent = `S/ ${total.toFixed(2)}`;
     }
 
-    mesFiltro.addEventListener("change", renderizarConsumos);
+    // Sincronizar el select de meses con ambas listas
+    if (mesFiltro) {
+        mesFiltro.addEventListener("change", () => {
+            renderizarConsumos();
+            recalcularSaldoGlobal();
+        });
+    }
 
-    // ELIMINAR DE FIREBASE
-    window.eliminarRegistro = async (idFirebase) => {
-        if (confirm("¿Borrar todos los consumos de este día?")) {
-            try {
-                await deleteDoc(doc(db, "consumos", idFirebase));
-            } catch (error) {
-                alert("Error al eliminar: " + error.message);
-            }
-        }
-    };
+    window.eliminarRegistro = async (id) => { if (confirm("¿Borrar este consumo?")) await deleteDoc(doc(db, "consumos", id)); };
+    window.eliminarPago = async (id) => { if (confirm("¿Estás seguro de anular este abono? El saldo de deuda/favor se recalculará automáticamente.")) await deleteDoc(doc(db, "pagos", id)); };
 
-    // --- GUARDAR EN FIREBASE ---
-    formConsumo.addEventListener("submit", async (e) => {
-        e.preventDefault();
+    // ==========================================
+    // GUARDAR CONSUMO (Con validación y prompt)
+    // ==========================================
+    if (formConsumo) {
+        formConsumo.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = formConsumo.querySelector("button[type='submit']");
+            const fecha = fechaConsumo.value;
+            let prodCrudo = inputProducto.value.trim();
+            if (prodCrudo.endsWith("+")) prodCrudo = prodCrudo.slice(0, -1).trim();
+            const cant = parseInt(inputCantidad.value);
 
-        const btnSubmit = formConsumo.querySelector("button[type='submit']");
-        
-        const fecha = fechaConsumo.value;
-        if (!fecha) return;
-        const [y, m, d] = fecha.split('-');
-        const dateObj = new Date(y, m - 1, d);
+            if (!prodCrudo || cant < 1) return;
 
-        if (dateObj.getDay() === 0) {
-            alert("No se permiten registros los domingos.");
-            return;
-        }
+            const nombresSeparados = prodCrudo.split("+").map(n => n.trim()).filter(n => n !== "");
+            let precioTotalBase = 0;
+            let nombresValidados = [];
 
-        let inputCrudo = inputProducto.value.trim();
-        if (inputCrudo.endsWith("+")) inputCrudo = inputCrudo.slice(0, -1).trim();
+            // VALIDACIÓN: Verificar si existe y Pedir Precio si es menú
+            for (let nombre of nombresSeparados) {
+                const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
 
-        const cantidad = parseInt(inputCantidad.value);
-        if (inputCrudo === "" || cantidad <= 0) return;
-
-        const nombresSeparados = inputCrudo.split("+").map(n => n.trim()).filter(n => n !== "");
-        let precioTotalBase = 0;
-        let nombresValidados = [];
-
-        for (let nombre of nombresSeparados) {
-            const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-
-            if (!productoEncontrado) {
-                alert(`El producto "${nombre}" no existe en tu inventario.`);
-                return;
-            }
-
-            let precioDelProducto = productoEncontrado.precio;
-            let nombreParaHistorial = productoEncontrado.nombre;
-
-            let esMenuPrincipal = false;
-            let catLimpia = productoEncontrado.categoria ? productoEncontrado.categoria.toLowerCase() : "";
-            let nomLimpio = productoEncontrado.nombre.toLowerCase();
-
-            if (catLimpia === "menu" || catLimpia === "menú" || catLimpia === "comida") {
-                esMenuPrincipal = true;
-            } else if (nomLimpio.includes("comida") || nomLimpio.includes("menu") || nomLimpio.includes("menú") || nomLimpio.includes("almuerzo")) {
-                esMenuPrincipal = true;
-            }
-
-            if (esMenuPrincipal) {
-                let precioIngresado = prompt(`Precio del plato "${productoEncontrado.nombre}":\n\n(Ej: 5, 7, 8, 10)`, productoEncontrado.precio);
-                if (precioIngresado !== null) precioIngresado = precioIngresado.replace(',', '.');
-                
-                if (precioIngresado === null || precioIngresado.trim() === "" || isNaN(parseFloat(precioIngresado)) || parseFloat(precioIngresado) < 0) {
-                    alert("Cancelado.");
+                if (!productoEncontrado) {
+                    alert(`El producto "${nombre}" NO EXISTE en tu inventario.\nPor favor, selecciónalo de la lista desplegable.`);
                     return; 
                 }
+
+                let precioDelProducto = productoEncontrado.precio;
+                let nombreParaHistorial = productoEncontrado.nombre;
+
+                let cat = (productoEncontrado.categoria || "").toLowerCase();
+                let nom = productoEncontrado.nombre.toLowerCase();
                 
-                precioDelProducto = parseFloat(precioIngresado);
-                nombreParaHistorial = `${productoEncontrado.nombre} (S/ ${precioDelProducto.toFixed(2)})`;
+                if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
+                    let precioIngresado = prompt(`Ingrese el precio para el plato "${productoEncontrado.nombre}":\n(Ej: 5, 7.50)`, productoEncontrado.precio);
+                    if (precioIngresado === null || precioIngresado.trim() === "" || isNaN(parseFloat(precioIngresado.replace(',', '.')))) {
+                        alert("Registro cancelado. Debe ingresar un precio válido.");
+                        return;
+                    }
+                    precioDelProducto = parseFloat(precioIngresado.replace(',', '.'));
+                    nombreParaHistorial = `${productoEncontrado.nombre} (S/ ${precioDelProducto.toFixed(2)})`;
+                }
+
+                precioTotalBase += precioDelProducto;
+                nombresValidados.push(nombreParaHistorial);
             }
 
-            precioTotalBase += precioDelProducto;
-            nombresValidados.push(nombreParaHistorial);
-        }
+            const precioTotalFinal = precioTotalBase * cant;
+            let itemsDeEstePedido = [];
+            for (let nombre of nombresValidados) {
+                for (let i = 0; i < cant; i++) itemsDeEstePedido.push(nombre);
+            }
+            let textoNuevoPedido = itemsDeEstePedido.join(" + ");
 
-        const precioTotal = precioTotalBase * cantidad;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Guardando...';
 
-        let itemsDeEstePedido = [];
-        for (let nombre of nombresValidados) {
-            for (let i = 0; i < cantidad; i++) itemsDeEstePedido.push(nombre);
-        }
-        let textoNuevoPedido = itemsDeEstePedido.join(" + ");
+            try {
+                function agruparTextos(texto) {
+                    let pts = texto.split(/(?:<br>|\+)/).map(p => p.trim()).filter(p => p !== "");
+                    let mapa = new Map();
+                    pts.forEach(p => {
+                        let n = p, c = 1, match = p.match(/^(.*?)\s*\(\s*(\d+)\s*\)$/);
+                        if (match && !p.includes("S/")) { n = match[1].trim(); c = parseInt(match[2], 10); }
+                        mapa.set(n, (mapa.get(n) || 0) + c);
+                    });
+                    let res = [];
+                    mapa.forEach((c, n) => { res.push(c > 1 ? `${n} (${c})` : n); });
+                    return res.join(" + ");
+                }
 
-        // UI Feedback: Cambiar botón mientras guarda en la nube
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Guardando...';
+                const indexExistente = historialConsumos.findIndex(r => r.fecha === fecha);
+                if (indexExistente !== -1) {
+                    let reg = historialConsumos[indexExistente];
+                    await updateDoc(doc(db, "consumos", reg.id), {
+                        productoNombre: agruparTextos(reg.productoNombre + " + " + textoNuevoPedido),
+                        precio: reg.precio + precioTotalFinal
+                    });
+                } else {
+                    await addDoc(collection(db, "consumos"), {
+                        nombreUsuario: nombreUsuario,
+                        fecha: fecha,
+                        productoNombre: agruparTextos(textoNuevoPedido),
+                        precio: precioTotalFinal
+                    });
+                }
+                inputProducto.value = ""; inputCantidad.value = "1"; inputProducto.focus();
+            } catch (e) { alert("Error: " + e.message); }
+            finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día'; }
+        };
+    }
 
-        try {
-            const indexExistente = historialConsumos.findIndex(registro => registro.fecha === fecha);
+    // ==========================================
+    // REGISTRAR PAGO
+    // ==========================================
+    if (btnRegistrarPago) {
+        btnRegistrarPago.addEventListener("click", async () => {
+            let monto = prompt(`¿Cuánto dinero está entregando ${nombreUsuario} hoy?\n\n(Ejemplo: 20, 50.50)`);
+            if (!monto) return; 
+            monto = parseFloat(monto.replace(',', '.'));
 
-            if (indexExistente !== -1) {
-                // ACTUALIZAR DOC EXISTENTE
-                let registroExistente = historialConsumos[indexExistente];
-                let textoCombinado = registroExistente.productoNombre + " + " + textoNuevoPedido;
-                
-                await updateDoc(doc(db, "consumos", registroExistente.id), {
-                    productoNombre: agruparConsumosTexto(textoCombinado),
-                    precio: registroExistente.precio + precioTotal
+            if (isNaN(monto) || monto <= 0) { alert("Monto inválido."); return; }
+
+            btnRegistrarPago.disabled = true;
+            btnRegistrarPago.innerHTML = "⏳ Guardando...";
+            try {
+                const f = new Date();
+                const fechaStr = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
+                await addDoc(collection(db, "pagos"), {
+                    nombreUsuario: nombreUsuario, monto: monto, fecha: fechaStr, timestamp: Date.now()
                 });
-            } else {
-                // CREAR DOC NUEVO
-                await addDoc(collection(db, "consumos"), {
-                    nombreUsuario: nombreUsuario,
-                    fecha: fecha,
-                    productoNombre: agruparConsumosTexto(textoNuevoPedido),
-                    precio: precioTotal
-                });
-            }
+            } catch (e) { alert("Error: " + e.message); }
+            finally { btnRegistrarPago.disabled = false; btnRegistrarPago.innerHTML = '<i class="bi bi-cash-coin me-1"></i> Registrar Pago'; }
+        });
+    }
 
-            if (mesFiltro.value !== "todos" && mesFiltro.value != dateObj.getMonth()) {
-                mesFiltro.value = dateObj.getMonth().toString();
-            }
-            inputProducto.value = "";
-            inputCantidad.value = "1";
-            inputProducto.focus();
-
-        } catch (error) {
-            alert("Error al conectar con la Nube: " + error.message);
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día';
-        }
-    });
-
-    // 6. EXPORTAR A WHATSAPP
+    // ==========================================
+    // EXPORTACIONES (WHATSAPP Y PDF COMPLETOS)
+    // ==========================================
+    const btnWhatsApp = document.getElementById("btnWhatsApp");
     if (btnWhatsApp) {
         btnWhatsApp.addEventListener("click", () => {
             const mesSeleccionado = mesFiltro.value;
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
+            const consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
-            const consumosDelMes = historialConsumos.filter(registro => {
-                if (mesSeleccionado === "todos") return true;
-                const [y, m, d] = registro.fecha.split('-');
-                return new Date(y, m - 1, d).getMonth() == mesSeleccionado;
-            });
-
-            if (consumosDelMes.length === 0) {
-                alert("No hay consumos registrados para enviar.");
-                return;
-            }
+            if (consumosDelMes.length === 0) { alert("No hay consumos registrados en este mes para enviar."); return; }
 
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
             const horaActual = new Date().getHours();
-            let saludoTiempo = "Hola";
-            if (horaActual >= 6 && horaActual < 12) saludoTiempo = "Buenos dias";
-            else if (horaActual >= 12 && horaActual < 19) saludoTiempo = "Buenas tardes";
-            else saludoTiempo = "Buenas noches";
-
-            const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
+            let saludo = horaActual < 12 ? "Buenos días" : horaActual < 19 ? "Buenas tardes" : "Buenas noches";
+            
             let mensaje = `*REGISTRO DE CONSUMO EN EL QUIOSCO*\n\n`;
 
             if (rolUsuario === "alumnos") {
-                mensaje += `${saludoTiempo}, esperamos que se encuentren muy bien.\n`;
-                mensaje += `Le hacemos entrega del detalle de los consumos recientes de su niño(a) *${nombreUsuario}* correspondientes al mes de ${nombreMes}:\n\n`;
+                mensaje += `¡${saludo}! Esperamos que se encuentren muy bien.\nLe hacemos entrega del detalle de los consumos recientes de su niño(a) *${nombreUsuario}* correspondientes al mes de ${nombreMes}:\n\n`;
             } else {
-                mensaje += `¡${saludoTiempo} *${nombreUsuario}*!\n`;
-                mensaje += `Le compartimos el resumen de sus consumos realizados en el quiosco durante el mes de ${nombreMes}:\n\n`;
+                mensaje += `¡${saludo} *${nombreUsuario}*!\nLe compartimos el resumen de sus consumos realizados en el quiosco durante el mes de ${nombreMes}:\n\n`;
             }
 
             consumosDelMes.forEach(registro => {
                 const [y, m, d] = registro.fecha.split('-');
-                const dateObj = new Date(y, m - 1, d);
-                const nombreDiaCorto = diasCortos[dateObj.getDay()];
-
-                let fechaCorta = `${nombreDiaCorto} ${d}/${m}`;
-                let detalleParaWA = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
-                mensaje += `- *${fechaCorta}*: ${detalleParaWA} (S/ ${registro.precio.toFixed(2)})\n`;
+                const fBonita = new Date(registro.fecha + 'T00:00:00');
+                const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
+                let detalleLimpio = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
+                mensaje += `- ${diasCortos[fBonita.getDay()]} ${d}/${m}: ${detalleLimpio} (S/ ${registro.precio.toFixed(2)})\n`;
             });
 
-            mensaje += `\n*TOTAL A PAGAR: S/ ${sumaTotal.toFixed(2)}*\n\n`;
-            mensaje += `*Datos para realizar el pago (Yape):*\n`;
-            mensaje += `- Titular: Rosa Ro***\n\n`;
-            mensaje += `Le agradecemos el envio de la captura del pago por este medio. ¡Muchas gracias y que tenga un buen dia!`;
-
-            const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
-            window.open(urlWhatsApp, '_blank');
+            mensaje += `\n*TOTAL A PAGAR DEL MES: S/ ${sumaTotal.toFixed(2)}*\n\n*Datos para realizar el pago (Yape):*\n- Titular: Rosa Ro***\n\nLe agradecemos el envío de la captura del pago por este medio. ¡Muchas gracias y que tenga un buen día!`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(mensaje)}`, '_blank');
         });
     }
 
-    // 7. EXPORTAR A PDF
+    const btnExportarPDF = document.getElementById("btnExportarPDF");
     if (btnExportarPDF) {
         btnExportarPDF.addEventListener("click", () => {
             const mesSeleccionado = mesFiltro.value;
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
-            
-            const consumosDelMes = historialConsumos.filter(registro => {
-                if (mesSeleccionado === "todos") return true;
-                const [y, m, d] = registro.fecha.split('-');
-                return new Date(y, m - 1, d).getMonth() == mesSeleccionado;
-            });
+            const consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
-            if (consumosDelMes.length === 0) {
-                alert("No hay consumos en este mes para exportar.");
-                return;
-            }
+            if (consumosDelMes.length === 0) { alert("No hay consumos en este mes para exportar."); return; }
 
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
             const ocupacionTexto = etiquetaRolEl ? etiquetaRolEl.textContent : 'Personal';
 
+            const contenedorOculto = document.createElement("div");
+            contenedorOculto.style.position = "absolute";
+            contenedorOculto.style.left = "-9999px";
+            contenedorOculto.style.top = "0";
+            contenedorOculto.style.width = "700px"; 
+            document.body.appendChild(contenedorOculto);
+
             const reciboPDF = document.createElement("div");
-            reciboPDF.style.padding = "40px";
+            reciboPDF.style.width = "700px"; 
+            reciboPDF.style.boxSizing = "border-box"; 
+            reciboPDF.style.padding = "30px 40px";
+            reciboPDF.style.backgroundColor = "white";
             reciboPDF.style.fontFamily = "Arial, sans-serif";
             reciboPDF.style.color = "#212529";
+            
+            contenedorOculto.appendChild(reciboPDF);
 
             let htmlContenido = `
                 <div style="text-align: center; padding-bottom: 15px; margin-bottom: 25px; border-bottom: 2px solid #eef0f2;">
-                    <h1 style="color: #0d6efd; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">Cuenta del Quiosco</h1>
+                    <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.5px;">Cuenta del Quiosco</h1>
                     <h3 style="color: #8fa0ab; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Registro de consumo mensual</h3>
                 </div>
                 
-                <div style="background-color: #f8f9fa; border-radius: 12px; padding: 15px 20px; margin-bottom: 25px;">
-                    <table style="width: 100%; border-collapse: collapse; border: none;">
-                        <tr>
-                            <td style="width: 50%; border-right: 1px solid #dee2e6; vertical-align: top;">
-                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Cliente</p>
-                                <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: #212529;">${nombreUsuario}</p>
-                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Ocupación</p>
-                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${ocupacionTexto}</p>
-                            </td>
-                            <td style="width: 50%; padding-left: 20px; vertical-align: top;">
-                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Mes</p>
-                                <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: #212529;">${nombreMes}</p>
-                                <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">Fecha de Emisión</p>
-                                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${new Date().toLocaleDateString('es-PE')}</p>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border-radius: 12px;">
+                    <tr>
+                        <td style="width: 50%; padding: 20px; border-right: 1px solid #dee2e6; vertical-align: top;">
+                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Cliente</p>
+                            <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #212529;">${nombreUsuario}</p>
+                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Ocupación</p>
+                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${ocupacionTexto}</p>
+                        </td>
+                        <td style="width: 50%; padding: 20px; vertical-align: top; padding-left: 25px;">
+                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Mes</p>
+                            <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #212529;">${nombreMes}</p>
+                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Fecha de Emisión</p>
+                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${new Date().toLocaleDateString('es-PE')}</p>
+                        </td>
+                    </tr>
+                </table>
 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
                     <thead>
                         <tr>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 15%;">Día</th>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 20%;">Fecha</th>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 45%;">Detalle de Consumo</th>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 12%;">Día</th>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 18%;">Fecha</th>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 50%;">Detalle de Consumo</th>
                             <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #212529; color: #495057; width: 20%;">Importe</th>
                         </tr>
                     </thead>
                     <tbody>
             `;
 
-            let bgFila = "#ffffff";
             consumosDelMes.forEach((registro, index) => {
                 const [y, m, d] = registro.fecha.split('-');
-                const dateObj = new Date(y, m - 1, d);
+                const fBonita = new Date(registro.fecha + 'T00:00:00');
                 const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
-                const nombreDiaCorto = diasCortos[dateObj.getDay()];
-                const fechaNumerica = `${d}/${m}/${y}`;
+                let detalleLimpio = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
+                let bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
                 
-                let detalleParaPDF = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
-
-                bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
                 htmlContenido += `
-                    <tr style="background-color: ${bgFila};">
-                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #6c757d; font-weight: bold;">${nombreDiaCorto}</td>
-                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #495057;">${fechaNumerica}</td>
-                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #212529;">${detalleParaPDF}</td>
-                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; text-align: right; font-weight: bold; color: #212529;">S/ ${registro.precio.toFixed(2)}</td>
+                    <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
+                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #6c757d; font-weight: bold;">${diasCortos[fBonita.getDay()]}</td>
+                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #495057;">${d}/${m}/${y}</td>
+                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #212529; word-break: break-word;">${detalleLimpio}</td>
+                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; text-align: right; font-weight: bold; color: #212529;">S/ ${registro.precio.toFixed(2)}</td>
                     </tr>
                 `;
             });
@@ -534,43 +492,50 @@ document.addEventListener("DOMContentLoaded", () => {
             htmlContenido += `
                     </tbody>
                 </table>
-
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-                    <tr>
-                        <td style="width: 60%;"></td>
-                        <td style="width: 40%; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
-                            <table style="width: 100%; border: none;">
-                                <tr>
-                                    <td style="text-align: left; font-size: 14px; color: #6c757d; font-weight: bold;">TOTAL A PAGAR</td>
-                                    <td style="text-align: right; font-size: 20px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-
-                <table style="width: 100%; max-width: 350px; margin: 20px auto; background: #742384; border-radius: 12px; color: white; border-collapse: collapse; box-shadow: 0 4px 8px rgba(116, 35, 132, 0.2);">
-                    <tr>
-                        <td style="padding: 15px 20px; vertical-align: middle; width: 60%;">
-                            <div style="font-size: 24px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
-                            <p style="margin: 0 0 5px 0; font-size: 13px; opacity: 0.9;">Escanea para pagar:</p>
-                            <p style="margin: 0; font-size: 14px; font-weight: bold;">TITULAR: ROSA RO***</p>
-                        </td>
-                        <td style="padding: 15px; vertical-align: middle; text-align: right; width: 40%;">
-                            <div style="background-color: white; padding: 5px; border-radius: 8px; display: inline-block; width: 90px; height: 90px; box-sizing: border-box;">
-                                <img src="yape.png" alt="QR Yape" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\\'color:#742384; font-size:11px; margin-top:25px; font-weight:bold; text-align:center;\\'>Falta QR<br>yape.png</div>';">
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-                
-                <div style="text-align: center; color: #adb5bd; font-size: 11px; margin-top: 25px;">
-                    <p>Se agradece el pronto pago de su cuenta. ¡Que tenga un excelente día!</p>
+                <div style="page-break-inside: avoid;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+                        <tr>
+                            <td style="width: 50%;"></td>
+                            <td style="width: 50%; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
+                                <table style="width: 100%; border: none;">
+                                    <tr>
+                                        <td style="text-align: left; font-size: 15px; color: #6c757d; font-weight: bold;">TOTAL A PAGAR DEL MES</td>
+                                        <td style="text-align: right; font-size: 22px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                    <table style="width: 100%; max-width: 450px; margin: 0 auto; background: #742384; border-radius: 12px; color: white; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 15px 20px; vertical-align: middle; width: 65%;">
+                                <div style="font-size: 26px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
+                                <p style="margin: 0 0 5px 0; font-size: 14px; opacity: 0.9;">Escanea para pagar:</p>
+                                <p style="margin: 0; font-size: 16px; font-weight: bold;">TITULAR: ROSA RO***</p>
+                            </td>
+                            <td style="padding: 15px; vertical-align: middle; text-align: right; width: 35%;">
+                                <div style="background-color: white; padding: 5px; border-radius: 8px; display: inline-block; width: 100px; height: 100px; box-sizing: border-box;">
+                                    <img src="yape.png" alt="QR Yape" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none';">
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="text-align: center; color: #adb5bd; font-size: 13px; margin-top: 25px;">
+                        <p>Se agradece el pronto pago de su cuenta. ¡Que tenga un excelente día!</p>
+                    </div>
                 </div>
             `;
 
             reciboPDF.innerHTML = htmlContenido;
-            const opcionesPDF = { margin: [0.5, 0.5, 0.5, 0.5], filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            
+            const opcionesPDF = { 
+                margin: 0.4, 
+                filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2, useCORS: true }, 
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
 
             btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
             btnExportarPDF.disabled = true;
@@ -578,10 +543,12 @@ document.addEventListener("DOMContentLoaded", () => {
             html2pdf().set(opcionesPDF).from(reciboPDF).save().then(() => {
                 btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
+                document.body.removeChild(contenedorOculto); 
             }).catch(error => {
-                alert("Hubo un pequeño problema al generar el PDF. Verifica tu conexión a internet.");
+                alert("Hubo un problema al generar el PDF.");
                 btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
+                if (document.body.contains(contenedorOculto)) document.body.removeChild(contenedorOculto);
             });
         });
     }

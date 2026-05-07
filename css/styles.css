@@ -1,6 +1,5 @@
 body {
     background: #f8f9fa;
-    /* Fondo general por defecto */
 }
 
 
@@ -63,16 +62,63 @@ body.bg-profes {
 }
 
 .menu-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: white;
 }
+
 .menu-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
 }
 
 btn-eliminar-img {
-      padding: 0px 6px;
-      font-size: 1.2rem;
-      line-height: 1.2;
-    }
+    padding: 0px 6px;
+    font-size: 1.2rem;
+    line-height: 1.2;
+}
+
+/* Efecto moderno para las tarjetas */
+.card-persona {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+}
+
+.card-persona:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    border-color: #ffc107 !important;
+    /* Borde amarillo al hacer hover */
+}
+
+.icono-avatar {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff3cd;
+    /* Fondo amarillo clarito */
+    color: #ffc107;
+    border-radius: 50%;
+    font-size: 1.5rem;
+}
+
+/* Fondo un poco más cálido para resaltar las tarjetas blancas */
+body.bg-alumnos {
+    background-color: #fffaf0;
+}
+
+/* --- AJUSTES DE MODO OSCURO GLOBAL --- */
+[data-bs-theme="dark"] body { background-color: #121212 !important; color: #f8f9fa !important; }
+[data-bs-theme="dark"] .bg-body-tertiary { background-color: #121212 !important; }
+[data-bs-theme="dark"] .card, [data-bs-theme="dark"] .bg-body { 
+    background-color: #1e1e1e !important; 
+    border-color: #333 !important; 
+}
+[data-bs-theme="dark"] .text-dark, [data-bs-theme="dark"] .card-title, [data-bs-theme="dark"] h1, [data-bs-theme="dark"] h2, [data-bs-theme="dark"] h4, [data-bs-theme="dark"] h5 { 
+    color: #ffffff !important; 
+}
+[data-bs-theme="dark"] .table { --bs-table-bg: #1e1e1e; --bs-table-color: #e0e0e0; border-color: #444; }
+[data-bs-theme="dark"] .list-group-item { background-color: transparent !important; color: #e0e0e0 !important; }
+[data-bs-theme="dark"] input, [data-bs-theme="dark"] select { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }

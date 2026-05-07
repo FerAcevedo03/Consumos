@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // Tu configuración de Firebase
 const firebaseConfig = {
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputNuevo = document.getElementById("nuevoNombre");
     const buscadorNombres = document.getElementById("buscadorNombres"); 
 
-    // 1. BLINDAJE: Verificamos que los botones existan en el HTML
+    // 1. BLINDAJE
     if (!listaPersonas || !btnAgregar || !inputNuevo) {
         console.error("Error: No se encontraron los campos en el HTML.");
         return; 
@@ -28,12 +28,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Detectar en qué página estamos (Profes, Alumnos o Admin)
     let tipo = document.body.getAttribute("data-tipo");
-    
-    // Si el HTML no tiene el data-tipo, lo deducimos por el nombre del archivo (Respaldo)
     if (!tipo) {
         if (window.location.href.includes("alumnos")) tipo = "alumnos";
         else if (window.location.href.includes("administrativos")) tipo = "administrativos";
         else tipo = "profesores"; 
+    }
+
+    // Adaptar colores del diseño moderno según el tipo (Alumno=Amarillo, Profe=Azul, Admin=Verde)
+    let colorClase = "text-warning";
+    let btnClase = "btn-primary"; // Botón de consumos
+    let iconoClase = "bi-mortarboard-fill";
+    
+    if (tipo === "profesores") {
+        colorClase = "text-primary";
+        btnClase = "btn-primary";
+        iconoClase = "bi-person-workspace";
+    } else if (tipo === "administrativos") {
+        colorClase = "text-success";
+        btnClase = "btn-success";
+        iconoClase = "bi-person-badge-fill";
     }
 
     let personas = [];
@@ -42,14 +55,11 @@ document.addEventListener("DOMContentLoaded", () => {
     onSnapshot(collection(db, tipo), (snapshot) => {
         personas = [];
         snapshot.forEach((doc) => {
-            // Guardamos el ID de Firebase y el nombre
             personas.push({ id: doc.id, nombre: doc.data().nombre });
         });
         
-        // Ordenamos alfabéticamente
         personas.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-        // Si hay texto en el buscador, mantenemos el filtro visual
         if (buscadorNombres && buscadorNombres.value.trim() !== "") {
             const textoBusqueda = buscadorNombres.value.toLowerCase().trim();
             const personasFiltradas = personas.filter(p => p.nombre.toLowerCase().includes(textoBusqueda));
@@ -59,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Función para mostrar las tarjetas con tu diseño original
+    // Función para mostrar las TARJETAS MODERNAS
     function mostrarPersonas(personasAMostrar = personas) {
         listaPersonas.innerHTML = "";
 
@@ -70,15 +80,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
         personasAMostrar.forEach((persona) => {
             let col = document.createElement("div");
-            col.className = "col-md-4";
+            col.className = "col-12 col-md-6 col-lg-4 mb-3";
             col.innerHTML = `
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title fw-bold text-dark">${persona.nombre}</h5>
-                        <p class="card-text flex-grow-1 text-muted small">Registrado en sistema.</p>
-                        <div class="d-flex justify-content-between">
-                            <button class="btn btn-outline-primary btn-sm" onclick="verConsumo('${persona.nombre}', '${tipo}')"><i class="bi bi-bar-chart-fill"></i> Consumos</button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="eliminarPersona('${persona.id}')"><i class="bi bi-trash"></i> Eliminar</button>
+                <div class="card card-persona shadow-sm border-0 h-100 rounded-4">
+                    <div class="card-body p-4 position-relative">
+                        <button class="btn btn-sm btn-light position-absolute top-0 end-0 mt-2 me-2 rounded-circle shadow-sm text-primary" 
+                                onclick="editarNombrePersona('${persona.id}', '${persona.nombre}')" title="Modificar Nombre">
+                            <i class="bi bi-pencil-fill"></i>
+                        </button>
+
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="icono-avatar me-3 shadow-sm" style="background-color: #f8f9fa;">
+                                <i class="bi ${iconoClase} ${colorClase}"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-dark text-capitalize lh-1" style="font-size: 1.15rem;">${persona.nombre}</h5>
+                                <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-check-circle-fill text-success me-1"></i>Registrado en sistema</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between gap-2 mt-3 pt-3 border-top" style="border-color: #f1f5f9 !important;">
+                            <button class="btn ${btnClase} btn-sm rounded-3 px-3 flex-grow-1 fw-bold shadow-sm" onclick="verConsumo('${persona.nombre}', '${tipo}')">
+                                <i class="bi bi-bar-chart-fill me-1"></i> Consumos
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm rounded-3 px-3 fw-bold" onclick="eliminarPersona('${persona.id}', '${persona.nombre}')" title="Eliminar">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -122,9 +149,48 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // --- NUEVO: EDITAR NOMBRE (PROTEGIENDO HISTORIAL) ---
+    window.editarNombrePersona = async (idDocumento, nombreAntiguo) => {
+        const nuevoNombre = prompt(
+            `Editando a: ${nombreAntiguo}\n\nEscribe el nuevo nombre exacto. \n(El sistema actualizará todos sus recibos y pagos antiguos a este nuevo nombre de forma segura):`, 
+            nombreAntiguo
+        );
+
+        if (!nuevoNombre || nuevoNombre.trim() === "" || nuevoNombre.trim() === nombreAntiguo) {
+            return; // Si no cambia nada o le da a cancelar, no hacemos nada
+        }
+
+        const nombreFinal = nuevoNombre.trim();
+
+        if (confirm(`¿Confirmas que deseas cambiar a "${nombreAntiguo}" por "${nombreFinal}"?`)) {
+            try {
+                // 1. Actualizamos el nombre en su tarjeta
+                await updateDoc(doc(db, tipo, idDocumento), { nombre: nombreFinal });
+
+                // 2. Buscamos y actualizamos todos sus consumos en la nube
+                const qConsumos = query(collection(db, "consumos"), where("nombreUsuario", "==", nombreAntiguo));
+                const snapConsumos = await getDocs(qConsumos);
+                snapConsumos.forEach(async (docSnap) => {
+                    await updateDoc(doc(db, "consumos", docSnap.id), { nombreUsuario: nombreFinal });
+                });
+
+                // 3. Buscamos y actualizamos todos sus pagos en la nube
+                const qPagos = query(collection(db, "pagos"), where("nombreUsuario", "==", nombreAntiguo));
+                const snapPagos = await getDocs(qPagos);
+                snapPagos.forEach(async (docSnap) => {
+                    await updateDoc(doc(db, "pagos", docSnap.id), { nombreUsuario: nombreFinal });
+                });
+
+                // Firebase actualizará la pantalla sola gracias a onSnapshot
+            } catch (error) {
+                alert("Ocurrió un error al actualizar los datos: " + error.message);
+            }
+        }
+    };
+
     // Eliminar persona de Firebase
-    window.eliminarPersona = async (idFirebase) => {
-        if(confirm("¿Seguro que deseas eliminar este registro? (Se mantendrá su historial de consumos guardado)")) {
+    window.eliminarPersona = async (idFirebase, nombre) => {
+        if(confirm(`¿Seguro que deseas eliminar a ${nombre} de esta lista?\n(Se mantendrá su historial de consumos guardado en la base de datos)`)) {
             try {
                 await deleteDoc(doc(db, tipo, idFirebase));
             } catch (error) {

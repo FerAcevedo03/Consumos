@@ -44,7 +44,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        lista.sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach((prod) => {
+        // MODIFICACIÓN: Ordenamos primero por categoría y luego alfabéticamente por nombre
+        lista.sort((a, b) => {
+            const catA = (a.categoria || "otro").toLowerCase();
+            const catB = (b.categoria || "otro").toLowerCase();
+            if (catA < catB) return -1;
+            if (catA > catB) return 1;
+            return a.nombre.localeCompare(b.nombre);
+        }).forEach((prod) => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td class="text-center"><span class="fs-4">${obtenerEmoji(prod.categoria)}</span></td>
