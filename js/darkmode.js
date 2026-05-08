@@ -1,4 +1,4 @@
-// 1. Aplicar el tema inmediatamente (evita el parpadeo blanco)
+// aplicar tema oscuro
 const temaGuardado = localStorage.getItem("tema_nobel");
 if (temaGuardado === "dark") {
     document.documentElement.setAttribute("data-bs-theme", "dark");
@@ -6,12 +6,12 @@ if (temaGuardado === "dark") {
     document.documentElement.setAttribute("data-bs-theme", "light");
 }
 
-// 2. Configurar el botón cuando cargue el DOM
+// configuracion de boton 
 document.addEventListener("DOMContentLoaded", () => {
     const btnDarkMode = document.getElementById("btnDarkMode");
     if (!btnDarkMode) return;
 
-    // Actualizar icono inicial
+    // actualizacion del icono inicial
     actualizarIcono(document.documentElement.getAttribute("data-bs-theme"));
 
     btnDarkMode.addEventListener("click", () => {
