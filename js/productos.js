@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // MODIFICACIÓN: Ordenamos primero por categoría y luego alfabéticamente por nombre
+        // ordenar por categoria y nombre
         lista.sort((a, b) => {
             const catA = (a.categoria || "otro").toLowerCase();
             const catB = (b.categoria || "otro").toLowerCase();
