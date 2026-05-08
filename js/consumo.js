@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnVolver = document.getElementById("btnVolver");
     if (btnVolver) btnVolver.onclick = () => window.location.href = `${rolUsuario}.html`;
 
-    // Formularios y DOM
+    // Formularios 
     const inputProducto = document.getElementById("inputProducto");
     const inputCantidad = document.getElementById("inputCantidad");
     const listaSugerencias = document.getElementById("listaSugerencias");
@@ -63,10 +63,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const fechaHoy = new Date();
     if (fechaConsumo) fechaConsumo.valueAsDate = fechaHoy;
     if (mesFiltro) mesFiltro.value = fechaHoy.getMonth().toString();
-
-    // ==========================================
-    // AUTOCOMPLETADO
-    // ==========================================
+    // autocompletado
+   
     let indiceSeleccionado = -1;
     if (inputProducto) {
         inputProducto.addEventListener("input", () => {
@@ -119,9 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // ==========================================
-    // LECTURA EN TIEMPO REAL (Consumos y Pagos)
-    // ==========================================
+    // lectura de consumos
     onSnapshot(query(collection(db, "consumos"), where("nombreUsuario", "==", nombreUsuario)), (snap) => {
         historialConsumos = [];
         snap.forEach(doc => historialConsumos.push({ id: doc.id, ...doc.data() }));
@@ -138,9 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderizarListaPagos();
     });
 
-    // ==========================================
-    // EL CEREBRO DE LAS CUENTAS (MES VS GLOBAL)
-    // ==========================================
+    // cuentas
     function recalcularSaldoGlobal() {
         if (!estadoCuentaMesVisual) return;
         
@@ -156,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
             estadoCuentaGlobalVisual.style.display = "block";
         }
 
-        // 2. Cálculo Global (El histórico de la vida)
+        // 2. Cálculo Global 
         const totalConsumidoHistorico = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
         const totalPagadoHistorico = historialPagos.reduce((acc, p) => acc + p.monto, 0);
         const saldoGlobal = totalPagadoHistorico - totalConsumidoHistorico;
@@ -177,13 +171,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const saldoMes = totalPagadoMes - totalConsumidoMes;
 
-        // Render del Mes (Letras Grandes)
+        // 
         if (saldoMes < -0.01) {
             estadoCuentaMesVisual.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle-fill"></i> DEUDA DEL MES: S/ ${Math.abs(saldoMes).toFixed(2)}</span>`;
         } else if (saldoMes > 0.01) {
             estadoCuentaMesVisual.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill"></i> A FAVOR DEL MES: S/ ${saldoMes.toFixed(2)}</span>`;
         } else {
-            estadoCuentaMesVisual.innerHTML = `<span class="text-muted"><i class="bi bi-shield-check"></i> MES CANCELADO AL DÍA</span>`;
+            estadoCuentaMesVisual.innerHTML = `<span class="text-muted"><i class="bi bi-shield-check"></i> PAGOS AL DÍA</span>`;
         }
 
         // Render Global (Letras pequeñas debajo, solo si no estás viendo "Todos")
@@ -193,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (saldoGlobal > 0.01) {
                 estadoCuentaGlobalVisual.innerHTML = `<strong class="text-success">Total general a favor (Sumando todos los meses): S/ ${saldoGlobal.toFixed(2)}</strong>`;
             } else {
-                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-secondary">Total general histórico: No hay deudas pendientes</strong>`;
+                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-secondary">Total general mensual: No hay deudas pendientes</strong>`;
             }
         }
     }
@@ -255,9 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.eliminarRegistro = async (id) => { if (confirm("¿Borrar este consumo?")) await deleteDoc(doc(db, "consumos", id)); };
     window.eliminarPago = async (id) => { if (confirm("¿Estás seguro de anular este abono? El saldo de deuda/favor se recalculará automáticamente.")) await deleteDoc(doc(db, "pagos", id)); };
 
-    // ==========================================
-    // GUARDAR CONSUMO (Con validación y prompt)
-    // ==========================================
+    // guardar el consumo
     if (formConsumo) {
         formConsumo.onsubmit = async (e) => {
             e.preventDefault();
@@ -273,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let precioTotalBase = 0;
             let nombresValidados = [];
 
-            // VALIDACIÓN: Verificar si existe y Pedir Precio si es menú
+            // validar si el precio existe o no 
             for (let nombre of nombresSeparados) {
                 const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
 
@@ -347,9 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // ==========================================
-    // REGISTRAR PAGO
-    // ==========================================
+    // registrar el pago 
     if (btnRegistrarPago) {
         btnRegistrarPago.addEventListener("click", async () => {
             let monto = prompt(`¿Cuánto dinero está entregando ${nombreUsuario} hoy?\n\n(Ejemplo: 20, 50.50)`);
@@ -371,9 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ==========================================
-    // EXPORTACIONES (WHATSAPP Y PDF COMPLETOS)
-    // ==========================================
+    // exportaciones
     const btnWhatsApp = document.getElementById("btnWhatsApp");
     if (btnWhatsApp) {
         btnWhatsApp.addEventListener("click", () => {
