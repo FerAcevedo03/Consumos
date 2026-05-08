@@ -63,8 +63,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const fechaHoy = new Date();
     if (fechaConsumo) fechaConsumo.valueAsDate = fechaHoy;
     if (mesFiltro) mesFiltro.value = fechaHoy.getMonth().toString();
+
     // autocompletado
-   
     let indiceSeleccionado = -1;
     if (inputProducto) {
         inputProducto.addEventListener("input", () => {
@@ -140,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const mesSeleccionado = mesFiltro.value;
 
-        // 1. Títulos dinámicos
         if (mesSeleccionado === "todos") {
             tituloEstadoMes.innerHTML = "ESTADO DE CUENTA (TODOS LOS MESES)";
             estadoCuentaGlobalVisual.style.display = "none"; 
@@ -150,12 +149,10 @@ document.addEventListener("DOMContentLoaded", () => {
             estadoCuentaGlobalVisual.style.display = "block";
         }
 
-        // 2. Cálculo Global 
         const totalConsumidoHistorico = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
         const totalPagadoHistorico = historialPagos.reduce((acc, p) => acc + p.monto, 0);
         const saldoGlobal = totalPagadoHistorico - totalConsumidoHistorico;
 
-        // 3. Cálculo Específico del Mes
         let totalConsumidoMes = 0;
         let totalPagadoMes = 0;
 
@@ -171,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const saldoMes = totalPagadoMes - totalConsumidoMes;
 
-        // 
         if (saldoMes < -0.01) {
             estadoCuentaMesVisual.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle-fill"></i> DEUDA DEL MES: S/ ${Math.abs(saldoMes).toFixed(2)}</span>`;
         } else if (saldoMes > 0.01) {
@@ -180,7 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
             estadoCuentaMesVisual.innerHTML = `<span class="text-muted"><i class="bi bi-shield-check"></i> PAGOS AL DÍA</span>`;
         }
 
-        // Render Global (Letras pequeñas debajo, solo si no estás viendo "Todos")
         if (mesSeleccionado !== "todos") {
             if (saldoGlobal < -0.01) {
                 estadoCuentaGlobalVisual.innerHTML = `<strong class="text-danger">Deuda total (Suma de los pagos pendientes de todos los meses): S/ ${Math.abs(saldoGlobal).toFixed(2)}</strong>`;
@@ -238,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
         totalAcumulado.textContent = `S/ ${total.toFixed(2)}`;
     }
 
-    // Sincronizar el select de meses con ambas listas
     if (mesFiltro) {
         mesFiltro.addEventListener("change", () => {
             renderizarConsumos();
@@ -265,7 +259,6 @@ document.addEventListener("DOMContentLoaded", () => {
             let precioTotalBase = 0;
             let nombresValidados = [];
 
-            // validar si el precio existe o no 
             for (let nombre of nombresSeparados) {
                 const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
 
@@ -396,6 +389,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // =========================================================
+    // EXPORTACIÓN A PDF (Multihoya, Responsivo y Optimizado)
+    // =========================================================
     const btnExportarPDF = document.getElementById("btnExportarPDF");
     if (btnExportarPDF) {
         btnExportarPDF.addEventListener("click", () => {
@@ -408,38 +404,39 @@ document.addEventListener("DOMContentLoaded", () => {
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
             const ocupacionTexto = etiquetaRolEl ? etiquetaRolEl.textContent : 'Personal';
 
+            // Contenedor fantasma: Bloqueado estrictamente al ancho de una hoja A4 (794px)
             const contenedorOculto = document.createElement("div");
             contenedorOculto.style.position = "absolute";
             contenedorOculto.style.left = "-9999px";
             contenedorOculto.style.top = "0";
-            contenedorOculto.style.width = "700px"; 
+            contenedorOculto.style.width = "794px"; 
             document.body.appendChild(contenedorOculto);
 
             const reciboPDF = document.createElement("div");
-            reciboPDF.style.width = "700px"; 
+            reciboPDF.style.width = "794px"; 
             reciboPDF.style.boxSizing = "border-box"; 
-            reciboPDF.style.padding = "30px 40px";
             reciboPDF.style.backgroundColor = "white";
             reciboPDF.style.fontFamily = "Arial, sans-serif";
             reciboPDF.style.color = "#212529";
             
             contenedorOculto.appendChild(reciboPDF);
 
+            // Título principal con márgenes controlados
             let htmlContenido = `
-                <div style="text-align: center; padding-bottom: 15px; margin-bottom: 25px; border-bottom: 2px solid #eef0f2;">
-                    <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.5px;">Cuenta del Quiosco</h1>
-                    <h3 style="color: #8fa0ab; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Registro de consumo mensual</h3>
+                <div style="text-align: center; padding-bottom: 15px; margin-bottom: 20px; border-bottom: 2px solid #eef0f2;">
+                    <h1 style="color: #0d6efd; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">Cuenta del Quiosco</h1>
+                    <h3 style="color: #8fa0ab; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Registro de consumo mensual</h3>
                 </div>
                 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border-radius: 12px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f8f9fa; border-radius: 12px;">
                     <tr>
-                        <td style="width: 50%; padding: 20px; border-right: 1px solid #dee2e6; vertical-align: top;">
+                        <td style="width: 50%; padding: 15px 20px; border-right: 1px solid #dee2e6; vertical-align: top;">
                             <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Cliente</p>
                             <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #212529;">${nombreUsuario}</p>
                             <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Ocupación</p>
                             <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${ocupacionTexto}</p>
                         </td>
-                        <td style="width: 50%; padding: 20px; vertical-align: top; padding-left: 25px;">
+                        <td style="width: 50%; padding: 15px 20px; vertical-align: top; padding-left: 25px;">
                             <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Mes</p>
                             <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #212529;">${nombreMes}</p>
                             <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Fecha de Emisión</p>
@@ -448,12 +445,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     </tr>
                 </table>
 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
                     <thead>
                         <tr>
                             <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 12%;">Día</th>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 18%;">Fecha</th>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 50%;">Detalle de Consumo</th>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 15%;">Fecha</th>
+                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 53%;">Detalle de Consumo</th>
                             <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #212529; color: #495057; width: 20%;">Importe</th>
                         </tr>
                     </thead>
@@ -467,48 +464,52 @@ document.addEventListener("DOMContentLoaded", () => {
                 let detalleLimpio = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
                 let bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
                 
+                // page-break-inside: avoid -> Evita que una fila se parta si cae al final de la hoja
                 htmlContenido += `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #6c757d; font-weight: bold;">${diasCortos[fBonita.getDay()]}</td>
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #495057;">${d}/${m}/${y}</td>
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #212529; word-break: break-word;">${detalleLimpio}</td>
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; text-align: right; font-weight: bold; color: #212529;">S/ ${registro.precio.toFixed(2)}</td>
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #6c757d; font-weight: bold;">${diasCortos[fBonita.getDay()]}</td>
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #495057;">${d}/${m}/${y}</td>
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; color: #212529; word-break: break-word;">${detalleLimpio}</td>
+                        <td style="padding: 10px 8px; border-bottom: 1px solid #eef0f2; text-align: right; font-weight: bold; color: #212529;">S/ ${registro.precio.toFixed(2)}</td>
                     </tr>
                 `;
             });
 
+            // Agrupamos el total y el código QR de Yape en un bloque "avoid" para no se separarlo en diferentes hojas
             htmlContenido += `
                     </tbody>
                 </table>
-                <div style="page-break-inside: avoid;">
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+                <div style="page-break-inside: avoid; margin-top: 15px;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                         <tr>
-                            <td style="width: 50%;"></td>
-                            <td style="width: 50%; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
+                            <td style="width: 40%;"></td>
+                            <td style="width: 60%; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
                                 <table style="width: 100%; border: none;">
                                     <tr>
-                                        <td style="text-align: left; font-size: 15px; color: #6c757d; font-weight: bold;">TOTAL A PAGAR DEL MES</td>
-                                        <td style="text-align: right; font-size: 22px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</td>
+                                        <td style="text-align: left; font-size: 14px; color: #6c757d; font-weight: bold;">TOTAL A PAGAR DEL MES</td>
+                                        <td style="text-align: right; font-size: 20px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</td>
                                     </tr>
                                 </table>
                             </td>
                         </tr>
                     </table>
-                    <table style="width: 100%; max-width: 450px; margin: 0 auto; background: #742384; border-radius: 12px; color: white; border-collapse: collapse;">
+                    
+                    <table style="width: 100%; max-width: 420px; margin: 0 auto; background: #742384; border-radius: 12px; color: white; border-collapse: collapse;">
                         <tr>
                             <td style="padding: 15px 20px; vertical-align: middle; width: 65%;">
-                                <div style="font-size: 26px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
-                                <p style="margin: 0 0 5px 0; font-size: 14px; opacity: 0.9;">Escanea para pagar:</p>
-                                <p style="margin: 0; font-size: 16px; font-weight: bold;">TITULAR: ROSA RO***</p>
+                                <div style="font-size: 24px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
+                                <p style="margin: 0 0 5px 0; font-size: 13px; opacity: 0.9;">Escanea para pagar:</p>
+                                <p style="margin: 0; font-size: 15px; font-weight: bold;">TITULAR: ROSA RO***</p>
                             </td>
                             <td style="padding: 15px; vertical-align: middle; text-align: right; width: 35%;">
-                                <div style="background-color: white; padding: 5px; border-radius: 8px; display: inline-block; width: 100px; height: 100px; box-sizing: border-box;">
+                                <div style="background-color: white; padding: 5px; border-radius: 8px; display: inline-block; width: 90px; height: 90px; box-sizing: border-box;">
                                     <img src="yape.png" alt="QR Yape" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none';">
                                 </div>
                             </td>
                         </tr>
                     </table>
-                    <div style="text-align: center; color: #adb5bd; font-size: 13px; margin-top: 25px;">
+                    
+                    <div style="text-align: center; color: #adb5bd; font-size: 12px; margin-top: 20px;">
                         <p>Se agradece el pronto pago de su cuenta. ¡Que tenga un excelente día!</p>
                     </div>
                 </div>
@@ -516,13 +517,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             reciboPDF.innerHTML = htmlContenido;
             
+        
             const opcionesPDF = { 
-                margin: 0.4, 
+                margin: [15, 15, 15, 15], 
                 filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`, 
                 image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, useCORS: true }, 
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    windowWidth: 794,
+                    width: 794
+                }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'] }
             };
 
             btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
@@ -533,6 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnExportarPDF.disabled = false;
                 document.body.removeChild(contenedorOculto); 
             }).catch(error => {
+                console.error(error);
                 alert("Hubo un problema al generar el PDF.");
                 btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
