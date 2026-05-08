@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Tu configuración de Firebase
+// config de fire base
 const firebaseConfig = {
     apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
     authDomain: "quiosco-nobel-school.firebaseapp.com",
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
         else tipo = "profesores"; 
     }
 
-    // Adaptar colores del diseño moderno según el tipo (Alumno=Amarillo, Profe=Azul, Admin=Verde)
+    // adaptacion de colores segun el rol designado
     let colorClase = "text-warning";
     let btnClase = "btn-primary"; // Botón de consumos
     let iconoClase = "bi-mortarboard-fill";
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let personas = [];
 
-    // --- LECTURA EN TIEMPO REAL DESDE FIREBASE ---
+    // lectura en la base de datos en tiempo real 
     onSnapshot(collection(db, tipo), (snapshot) => {
         personas = [];
         snapshot.forEach((doc) => {
@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Función para mostrar las TARJETAS MODERNAS
+    // funcion para las tarjetas
     function mostrarPersonas(personasAMostrar = personas) {
         listaPersonas.innerHTML = "";
 
@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Evento del buscador en tiempo real
+    // buscador en tiempo real
     if (buscadorNombres) {
         buscadorNombres.addEventListener("input", (e) => {
             const textoBusqueda = e.target.value.toLowerCase().trim();
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Agregar nueva persona a Firebase
+    // agregar a nuevos usuarios 
     btnAgregar.addEventListener("click", agregarPersona);
     inputNuevo.addEventListener("keypress", (e) => { if (e.key === "Enter") agregarPersona(); });
 
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- NUEVO: EDITAR NOMBRE (PROTEGIENDO HISTORIAL) ---
+    // editacion de nombre
     window.editarNombrePersona = async (idDocumento, nombreAntiguo) => {
         const nuevoNombre = prompt(
             `Editando a: ${nombreAntiguo}\n\nEscribe el nuevo nombre exacto. \n(El sistema actualizará todos sus recibos y pagos antiguos a este nuevo nombre de forma segura):`, 
@@ -157,38 +157,38 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         if (!nuevoNombre || nuevoNombre.trim() === "" || nuevoNombre.trim() === nombreAntiguo) {
-            return; // Si no cambia nada o le da a cancelar, no hacemos nada
+            return;
         }
 
         const nombreFinal = nuevoNombre.trim();
 
         if (confirm(`¿Confirmas que deseas cambiar a "${nombreAntiguo}" por "${nombreFinal}"?`)) {
             try {
-                // 1. Actualizamos el nombre en su tarjeta
+                // 1. se actualiza el nombre
                 await updateDoc(doc(db, tipo, idDocumento), { nombre: nombreFinal });
 
-                // 2. Buscamos y actualizamos todos sus consumos en la nube
+                // 2. se busca y actualiza sus consumos
                 const qConsumos = query(collection(db, "consumos"), where("nombreUsuario", "==", nombreAntiguo));
                 const snapConsumos = await getDocs(qConsumos);
                 snapConsumos.forEach(async (docSnap) => {
                     await updateDoc(doc(db, "consumos", docSnap.id), { nombreUsuario: nombreFinal });
                 });
 
-                // 3. Buscamos y actualizamos todos sus pagos en la nube
+                // 3. busca y actualiza pagos
                 const qPagos = query(collection(db, "pagos"), where("nombreUsuario", "==", nombreAntiguo));
                 const snapPagos = await getDocs(qPagos);
                 snapPagos.forEach(async (docSnap) => {
                     await updateDoc(doc(db, "pagos", docSnap.id), { nombreUsuario: nombreFinal });
                 });
 
-                // Firebase actualizará la pantalla sola gracias a onSnapshot
+                
             } catch (error) {
                 alert("Ocurrió un error al actualizar los datos: " + error.message);
             }
         }
     };
 
-    // Eliminar persona de Firebase
+    // eliminar persona de Firebase
     window.eliminarPersona = async (idFirebase, nombre) => {
         if(confirm(`¿Seguro que deseas eliminar a ${nombre} de esta lista?\n(Se mantendrá su historial de consumos guardado en la base de datos)`)) {
             try {
@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // Redirigir a consumos
+    // redirigir a consumos
     window.verConsumo = (nombre, rol) => {
         window.location.href = `consumo.html?nombre=${encodeURIComponent(nombre)}&rol=${encodeURIComponent(rol)}`;
     };
