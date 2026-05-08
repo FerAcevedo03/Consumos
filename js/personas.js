@@ -20,13 +20,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputNuevo = document.getElementById("nuevoNombre");
     const buscadorNombres = document.getElementById("buscadorNombres"); 
 
-    // 1. BLINDAJE
+    // proteccion
     if (!listaPersonas || !btnAgregar || !inputNuevo) {
         console.error("Error: No se encontraron los campos en el HTML.");
         return; 
     }
 
-    // 2. Detectar en qué página estamos (Profes, Alumnos o Admin)
+    // detectar la pag en que estamos
     let tipo = document.body.getAttribute("data-tipo");
     if (!tipo) {
         if (window.location.href.includes("alumnos")) tipo = "alumnos";
