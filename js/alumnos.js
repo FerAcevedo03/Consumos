@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputNombre = document.getElementById("inputNombre");
     const listaPersonas = document.getElementById("listaPersonas");
 
-    // LECTURA EN TIEMPO REAL
+    // lectura para tiempo real 
     onSnapshot(collection(db, "alumnos"), (snapshot) => {
         const alumnos = [];
         snapshot.forEach((doc) => {
