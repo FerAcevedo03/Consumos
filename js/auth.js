@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// Tu llave pública (Es seguro tenerla aquí porque ya echamos el candado en Firebase)
+// Llave publica por el candado de fire base
 const firebaseConfig = {
     apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
     authDomain: "quiosco-nobel-school.firebaseapp.com",
@@ -14,15 +14,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// EL GUARDIÁN: Revisa constantemente si el usuario tiene permiso
+// revisar si el usuario tiene permiso 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
-        // Si no hay usuario registrado, lo patea a la pantalla de login sin preguntar
+        // si no hay usuario lo regresa a la pag principal
         window.location.replace("login.html");
     }
 });
 
-// Función para poder cerrar sesión cuando terminas de trabajar
+// cerrar sesion 
 window.cerrarSesion = () => {
     if(confirm("¿Estás seguro de que deseas salir del sistema?")) {
         signOut(auth).then(() => {
