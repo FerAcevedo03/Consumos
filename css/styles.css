@@ -75,8 +75,6 @@ btn-eliminar-img {
     font-size: 1.2rem;
     line-height: 1.2;
 }
-
-/* Efecto moderno para las tarjetas */
 .card-persona {
     transition: all 0.3s ease;
     border: 1px solid rgba(0, 0, 0, 0.05);
@@ -123,7 +121,7 @@ body.bg-alumnos {
 [data-bs-theme="dark"] input, [data-bs-theme="dark"] select { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }
 
 
-/* ANIMACIONES Y ESTILOS DEL LOGIN           */
+/* ANIMACIONES Y ESTILOS DEL LOGIN  */
 @keyframes fadeSlideUp {
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
@@ -135,8 +133,8 @@ body.bg-alumnos {
 .anim-4 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
 
 .login-sidebar {
-    background-color: #172033; /* El mismo azul oscuro de tu escudo */
-    background-size: 55%; /* Para que el escudo no se corte */
+    background-color: #172033; 
+    background-size: 55%; 
     background-position: center;
     background-repeat: no-repeat;
     border-top-left-radius: 1rem;
