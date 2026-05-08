@@ -2,7 +2,6 @@ body {
     background: #f8f9fa;
 }
 
-
 body.bg-admin {
     background: linear-gradient(to right, #fff8e7, #fefae0);
 }
@@ -122,3 +121,46 @@ body.bg-alumnos {
 [data-bs-theme="dark"] .table { --bs-table-bg: #1e1e1e; --bs-table-color: #e0e0e0; border-color: #444; }
 [data-bs-theme="dark"] .list-group-item { background-color: transparent !important; color: #e0e0e0 !important; }
 [data-bs-theme="dark"] input, [data-bs-theme="dark"] select { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }
+
+
+/* ANIMACIONES Y ESTILOS DEL LOGIN           */
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-1 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.anim-2 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+.anim-3 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
+.anim-4 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+
+.login-sidebar {
+    background-color: #172033; /* El mismo azul oscuro de tu escudo */
+    background-size: 55%; /* Para que el escudo no se corte */
+    background-position: center;
+    background-repeat: no-repeat;
+    border-top-left-radius: 1rem;
+    border-bottom-left-radius: 1rem;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: #dee2e6;
+}
+
+.input-group:focus-within {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    border-radius: 0.375rem;
+}
+
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control {
+    border-color: #86b7fe;
+}
+
+.btn-login { transition: all 0.3s ease; }
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important;
+}
+        
