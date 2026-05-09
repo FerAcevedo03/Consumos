@@ -389,8 +389,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-  // =========================================================
-    // EXPORTACIÓN A PDF: ARREGLO DEFINITIVO DE CORTES (x:0, y:0)
+// =========================================================
+    // EXPORTACIÓN A PDF: HORIZONTAL, DÍAS INCLUIDOS Y ALINEADO
     // =========================================================
     const btnExportarPDF = document.getElementById("btnExportarPDF");
 
@@ -415,8 +415,15 @@ document.addEventListener("DOMContentLoaded", () => {
             btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
             btnExportarPDF.disabled = true;
 
+            // 1. GENERAMOS LAS FILAS CON 4 COLUMNAS (Incluyendo el Día y el Importe alineado)
             const filasHtml = consumosDelMes.map((r, index) => {
                 const [y, m, d] = r.fecha.split('-');
+                
+                // Cálculo del día
+                const fBonita = new Date(r.fecha + 'T00:00:00');
+                const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
+                const nombreDia = diasCortos[fBonita.getDay()];
+
                 const bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
                 let detalleLimpio = r.productoNombre
                     .split(/<br>\s*\+?|<br>|\n/)
@@ -424,28 +431,34 @@ document.addEventListener("DOMContentLoaded", () => {
                     .filter(item => item !== '')
                     .join(" + ");
 
+                // Alineamos explícitamente a la izquierda (text-align: left) el detalle y usamos flex para el importe
                 return `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
-                        <td style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; color: #495057;">${d}/${m}/${y}</td>
-                        <td style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; color: #212529;">${detalleLimpio}</td>
-                        <td style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; text-align: right; font-weight: bold; color: #212529;">S/ ${r.precio.toFixed(2)}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #000000; font-weight: bold; text-align: left;">${nombreDia}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #495057; text-align: left;">${d}/${m}/${y}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529; text-align: left;">${detalleLimpio}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529;">
+                            <div style="display: flex; justify-content: space-between; width: 75px; margin-left: auto; font-weight: bold;">
+                                <span>S/</span>
+                                <span>${r.precio.toFixed(2)}</span>
+                            </div>
+                        </td>
                     </tr>
                 `;
             }).join('');
 
-            // 1. CREAMOS EL CONTENEDOR VIRTUAL (No se inserta en tu página)
+            // 2. CREAMOS EL HTML EN MEMORIA CON LAS 4 COLUMNAS EN EL ENCABEZADO
             const reciboPDF = document.createElement("div");
             
-            // 2. DISEÑO CON YAPE.PNG ORIGINAL
             reciboPDF.innerHTML = `
                 <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: white;">
                     
                     <div style="text-align: center; border-bottom: 3px solid #0d6efd; padding-bottom: 10px; margin-bottom: 15px;">
-                        <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900;">QUIOSCO</h1>
-                        <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase;">Registro de consumo de ${nombreMes}</h3>
+                        <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900;">Quiosco</h1>
+                        <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase;">Registro de consumo semanal y/o mensual de ${nombreMes}</h3>
                     </div>
                     
-                  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
                         <tr style="text-align: center;">
                             <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
                                 <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">CLIENTE:</strong> 
@@ -469,8 +482,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
                         <thead>
                             <tr style="background-color: #0d6efd; color: white;">
+                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 10%;">Día</th>
                                 <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 15%;">Fecha</th>
-                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 65%;">Detalle de Consumo</th>
+                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 55%;">Detalle de Consumo</th>
                                 <th style="padding: 12px 15px; text-align: right; font-size: 14px; width: 20%;">Importe</th>
                             </tr>
                         </thead>
@@ -502,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <table style="width: 100%; background-color: #e9ecef; border-radius: 12px; border: 1px solid #dee2e6; border-collapse: collapse; height: 120px;">
                                         <tr>
                                             <td style="padding: 20px; text-align: center; vertical-align: middle;">
-                                                <p style="margin: 0 0 5px 0; font-size: 16px; color: #495057; font-weight: bold; text-transform: uppercase;">Monto Total a Pagar</p>
+                                                <p style="margin: 0 0 5px 0; font-size: 16px; color: #495057; font-weight: bold; text-transform: uppercase;">TOTAL A PAGAR DEL MES</p>
                                                 <h2 style="margin: 0; font-size: 40px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</h2>
                                             </td>
                                         </tr>
@@ -519,7 +533,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 3. LA SOLUCIÓN AL CORTE: ANULAR LAS COORDENADAS FANTASMAS DE LA LIBRERÍA
             const opcionesPDF = { 
-                margin: [5, 0, 10, 0], // Evitamos márgenes laterales para que no te comprima nada
+                margin: [5, 0, 10, 0], 
                 filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`, 
                 image: { type: 'jpeg', quality: 1.0 }, 
                 html2canvas: { 
@@ -527,10 +541,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     useCORS: true,
                     width: 1120,      
                     windowWidth: 1120,
-                    x: 0,           // ESTO EVITA QUE SE CORTE LA PARTE IZQUIERDA
-                    y: 0,           // Alineación milimétrica al borde superior
-                    scrollX: 0,     // Ignora si bajaste en la página del celular/PC
-                    scrollY: 0      // Anula el scroll vertical
+                    x: 0,           
+                    y: 0,           
+                    scrollX: 0,     
+                    scrollY: 0      
                 }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
             };
