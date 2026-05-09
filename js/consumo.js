@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const ult = partes[partes.length - 1].trim();
             listaSugerencias.innerHTML = "";
             indiceSeleccionado = -1;
-            
+
             if (ult.length > 0) {
                 const f = productosDB.filter(p => p.nombre.toLowerCase().includes(ult));
                 if (f.length > 0) {
@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function actSel(items) {
             items.forEach((item, i) => {
-                if (i === indiceSeleccionado) { item.classList.add("active"); item.style.backgroundColor = "#0d6efd"; item.style.color = "white"; item.scrollIntoView({ block: "nearest" }); } 
+                if (i === indiceSeleccionado) { item.classList.add("active"); item.style.backgroundColor = "#0d6efd"; item.style.color = "white"; item.scrollIntoView({ block: "nearest" }); }
                 else { item.classList.remove("active"); item.style.backgroundColor = ""; item.style.color = ""; }
             });
         }
@@ -137,12 +137,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Cálculos de cuentas (Mes vs Global)
     function recalcularSaldoGlobal() {
         if (!estadoCuentaMesVisual) return;
-        
+
         const mesSeleccionado = mesFiltro.value;
 
         if (mesSeleccionado === "todos") {
             tituloEstadoMes.innerHTML = "ESTADO DE CUENTA (TODOS LOS MESES)";
-            estadoCuentaGlobalVisual.style.display = "none"; 
+            estadoCuentaGlobalVisual.style.display = "none";
         } else {
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
             tituloEstadoMes.innerHTML = `ESTADO DE CUENTA: ${nombreMes}`;
@@ -264,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (!productoEncontrado) {
                     alert(`El producto "${nombre}" NO EXISTE en tu inventario.\nPor favor, selecciónalo de la lista desplegable.`);
-                    return; 
+                    return;
                 }
 
                 let precioDelProducto = productoEncontrado.precio;
@@ -272,7 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let cat = (productoEncontrado.categoria || "").toLowerCase();
                 let nom = productoEncontrado.nombre.toLowerCase();
-                
+
                 if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
                     let precioIngresado = prompt(`Ingrese el precio para el plato "${productoEncontrado.nombre}":\n(Ej: 5, 7.50)`, productoEncontrado.precio);
                     if (precioIngresado === null || precioIngresado.trim() === "" || isNaN(parseFloat(precioIngresado.replace(',', '.')))) {
@@ -336,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnRegistrarPago) {
         btnRegistrarPago.addEventListener("click", async () => {
             let monto = prompt(`¿Cuánto dinero está entregando ${nombreUsuario} hoy?\n\n(Ejemplo: 20, 50.50)`);
-            if (!monto) return; 
+            if (!monto) return;
             monto = parseFloat(monto.replace(',', '.'));
 
             if (isNaN(monto) || monto <= 0) { alert("Monto inválido."); return; }
@@ -367,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
             const horaActual = new Date().getHours();
             let saludo = horaActual < 12 ? "Buenos días" : horaActual < 19 ? "Buenas tardes" : "Buenas noches";
-            
+
             let mensaje = `*REGISTRO DE CONSUMO EN EL QUIOSCO*\n\n`;
 
             if (rolUsuario === "alumnos") {
@@ -389,151 +389,160 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+  // =========================================================
+    // EXPORTACIÓN A PDF: ARREGLO DEFINITIVO DE CORTES (x:0, y:0)
+    // =========================================================
     const btnExportarPDF = document.getElementById("btnExportarPDF");
+
     if (btnExportarPDF) {
         btnExportarPDF.addEventListener("click", () => {
             const mesSeleccionado = mesFiltro.value;
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
-            const consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
-            if (consumosDelMes.length === 0) { alert("No hay consumos en este mes para exportar."); return; }
+            const consumosDelMes = historialConsumos.filter(r =>
+                mesSeleccionado === "todos" ||
+                new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado
+            );
+
+            if (consumosDelMes.length === 0) {
+                alert("No hay consumos en este mes para exportar.");
+                return;
+            }
 
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
             const ocupacionTexto = etiquetaRolEl ? etiquetaRolEl.textContent : 'Personal';
 
-            // Contenedor para el PDF configurado en 800px y posicionado fuera de vista superior
-            const contenedorOculto = document.createElement("div");
-            contenedorOculto.style.position = "absolute";
-            contenedorOculto.style.top = "-9999px";
-            contenedorOculto.style.left = "0";
-            contenedorOculto.style.width = "800px"; 
-            document.body.appendChild(contenedorOculto);
+            btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+            btnExportarPDF.disabled = true;
 
-            const reciboPDF = document.createElement("div");
-            reciboPDF.style.width = "800px"; 
-            reciboPDF.style.boxSizing = "border-box"; 
-            reciboPDF.style.padding = "20px";
-            reciboPDF.style.backgroundColor = "white";
-            reciboPDF.style.fontFamily = "Arial, sans-serif";
-            reciboPDF.style.color = "#212529";
-            
-            contenedorOculto.appendChild(reciboPDF);
+            const filasHtml = consumosDelMes.map((r, index) => {
+                const [y, m, d] = r.fecha.split('-');
+                const bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
+                let detalleLimpio = r.productoNombre
+                    .split(/<br>\s*\+?|<br>|\n/)
+                    .map(item => item.trim().replace(/^\+\s*/, ''))
+                    .filter(item => item !== '')
+                    .join(" + ");
 
-            let htmlContenido = `
-                <div style="text-align: center; padding-bottom: 15px; margin-bottom: 25px; border-bottom: 2px solid #eef0f2;">
-                    <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.5px;">Cuenta del Quiosco</h1>
-                    <h3 style="color: #8fa0ab; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Registro de consumo mensual</h3>
-                </div>
-                
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border-radius: 12px;">
-                    <tr>
-                        <td style="width: 50%; padding: 20px; border-right: 1px solid #dee2e6; vertical-align: top;">
-                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Cliente</p>
-                            <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #212529;">${nombreUsuario}</p>
-                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Ocupación</p>
-                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${ocupacionTexto}</p>
-                        </td>
-                        <td style="width: 50%; padding: 20px; vertical-align: top; padding-left: 25px;">
-                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Mes</p>
-                            <p style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #212529;">${nombreMes}</p>
-                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #8fa0ab; text-transform: uppercase; font-weight: bold;">Fecha de Emisión</p>
-                            <p style="margin: 0; font-size: 14px; font-weight: 600; color: #495057;">${new Date().toLocaleDateString('es-PE')}</p>
-                        </td>
-                    </tr>
-                </table>
-
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
-                    <thead>
-                        <tr>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 12%;">Día</th>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 18%;">Fecha</th>
-                            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #212529; color: #495057; width: 50%;">Detalle de Consumo</th>
-                            <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #212529; color: #495057; width: 20%;">Importe</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            consumosDelMes.forEach((registro, index) => {
-                const [y, m, d] = registro.fecha.split('-');
-                const fBonita = new Date(registro.fecha + 'T00:00:00');
-                const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
-                let detalleLimpio = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
-                let bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
-                
-                // Evita cortes de fila al cambiar de página
-                htmlContenido += `
+                return `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #6c757d; font-weight: bold;">${diasCortos[fBonita.getDay()]}</td>
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #495057;">${d}/${m}/${y}</td>
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; color: #212529; word-break: break-word;">${detalleLimpio}</td>
-                        <td style="padding: 12px 8px; border-bottom: 1px solid #eef0f2; text-align: right; font-weight: bold; color: #212529;">S/ ${registro.precio.toFixed(2)}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; color: #495057;">${d}/${m}/${y}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; color: #212529;">${detalleLimpio}</td>
+                        <td style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; text-align: right; font-weight: bold; color: #212529;">S/ ${r.precio.toFixed(2)}</td>
                     </tr>
                 `;
-            });
+            }).join('');
 
-            // Contenedor general para evitar que los totales se separen del QR
-            htmlContenido += `
-                    </tbody>
-                </table>
-                <div style="page-break-inside: avoid;">
+            // 1. CREAMOS EL CONTENEDOR VIRTUAL (No se inserta en tu página)
+            const reciboPDF = document.createElement("div");
+            
+            // 2. DISEÑO CON YAPE.PNG ORIGINAL
+            reciboPDF.innerHTML = `
+                <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: white;">
+                    
+                    <div style="text-align: center; border-bottom: 3px solid #0d6efd; padding-bottom: 10px; margin-bottom: 15px;">
+                        <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900;">QUIOSCO</h1>
+                        <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase;">Registro de consumo de ${nombreMes}</h3>
+                    </div>
+                    
+                  <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                        <tr style="text-align: center;">
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
+                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">CLIENTE:</strong> 
+                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${nombreUsuario}</span>
+                            </td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
+                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">OCUPACIÓN:</strong> 
+                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${ocupacionTexto}</span>
+                            </td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
+                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">MES:</strong> 
+                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${nombreMes}</span>
+                            </td>
+                            <td style="padding: 15px 10px; width: 25%;">
+                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">EMISIÓN:</strong> 
+                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${new Date().toLocaleDateString('es-PE')}</span>
+                            </td>
+                        </tr>
+                    </table>
+
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
-                        <tr>
-                            <td style="width: 50%;"></td>
-                            <td style="width: 50%; background-color: #f8f9fa; border-radius: 8px; padding: 15px;">
-                                <table style="width: 100%; border: none;">
-                                    <tr>
-                                        <td style="text-align: left; font-size: 15px; color: #6c757d; font-weight: bold;">TOTAL A PAGAR DEL MES</td>
-                                        <td style="text-align: right; font-size: 22px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
+                        <thead>
+                            <tr style="background-color: #0d6efd; color: white;">
+                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 15%;">Fecha</th>
+                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 65%;">Detalle de Consumo</th>
+                                <th style="padding: 12px 15px; text-align: right; font-size: 14px; width: 20%;">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filasHtml}
+                        </tbody>
                     </table>
-                    <table style="width: 100%; max-width: 450px; margin: 0 auto; background: #742384; border-radius: 12px; color: white; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 15px 20px; vertical-align: middle; width: 65%;">
-                                <div style="font-size: 26px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
-                                <p style="margin: 0 0 5px 0; font-size: 14px; opacity: 0.9;">Escanea para pagar:</p>
-                                <p style="margin: 0; font-size: 16px; font-weight: bold;">TITULAR: ROSA RO***</p>
-                            </td>
-                            <td style="padding: 15px; vertical-align: middle; text-align: right; width: 35%;">
-                                <div style="background-color: white; padding: 5px; border-radius: 8px; display: inline-block; width: 100px; height: 100px; box-sizing: border-box;">
-                                    <img src="yape.png" alt="QR Yape" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none';">
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                    <div style="text-align: center; color: #adb5bd; font-size: 13px; margin-top: 25px;">
-                        <p>Se agradece el pronto pago de su cuenta. ¡Que tenga un buen día!</p>
+
+                    <div style="page-break-inside: avoid;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width: 48%; padding-right: 15px; vertical-align: top;">
+                                    <table style="width: 100%; background: #742384; border-radius: 12px; color: white; border-collapse: collapse; height: 120px;">
+                                        <tr>
+                                            <td style="padding: 20px; vertical-align: middle;">
+                                                <div style="font-size: 24px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
+                                                <p style="margin: 0 0 5px 0; font-size: 14px;">Escanea para pagar a:</p>
+                                                <p style="margin: 0; font-size: 16px; font-weight: bold;">ROSA RO***</p>
+                                            </td>
+                                            <td style="padding: 20px; vertical-align: middle; text-align: right; width: 120px;">
+                                                <div style="background-color: white; padding: 8px; border-radius: 8px; display: inline-block; width: 100px; height: 100px; box-sizing: border-box;">
+                                                    <img src="yape.png" alt="QR Yape" style="width: 100%; height: 100%; object-fit: contain;">
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td style="width: 52%; padding-left: 15px; vertical-align: top;">
+                                    <table style="width: 100%; background-color: #e9ecef; border-radius: 12px; border: 1px solid #dee2e6; border-collapse: collapse; height: 120px;">
+                                        <tr>
+                                            <td style="padding: 20px; text-align: center; vertical-align: middle;">
+                                                <p style="margin: 0 0 5px 0; font-size: 16px; color: #495057; font-weight: bold; text-transform: uppercase;">Monto Total a Pagar</p>
+                                                <h2 style="margin: 0; font-size: 40px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</h2>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="text-align: center; color: #adb5bd; font-size: 14px; margin-top: 25px;">
+                            <p>¡Gracias por su preferencia! Se agradece el pronto pago.</p>
+                        </div>
                     </div>
                 </div>
             `;
 
-            reciboPDF.innerHTML = htmlContenido;
-            
-            // Opciones de configuración de html2pdf
+            // 3. LA SOLUCIÓN AL CORTE: ANULAR LAS COORDENADAS FANTASMAS DE LA LIBRERÍA
             const opcionesPDF = { 
-                margin: 10, 
+                margin: [5, 0, 10, 0], // Evitamos márgenes laterales para que no te comprima nada
                 filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`, 
-                image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, useCORS: true, windowWidth: 800 }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'] }
+                image: { type: 'jpeg', quality: 1.0 }, 
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    width: 1120,      
+                    windowWidth: 1120,
+                    x: 0,           // ESTO EVITA QUE SE CORTE LA PARTE IZQUIERDA
+                    y: 0,           // Alineación milimétrica al borde superior
+                    scrollX: 0,     // Ignora si bajaste en la página del celular/PC
+                    scrollY: 0      // Anula el scroll vertical
+                }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
             };
-
-            btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
-            btnExportarPDF.disabled = true;
 
             html2pdf().set(opcionesPDF).from(reciboPDF).save().then(() => {
                 btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
-                document.body.removeChild(contenedorOculto); 
             }).catch(error => {
-                alert("Hubo un problema al generar el PDF.");
+                console.error("ERROR PDF:", error);
+                alert("Error al generar PDF.");
                 btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
-                if (document.body.contains(contenedorOculto)) document.body.removeChild(contenedorOculto);
             });
         });
     }
