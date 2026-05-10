@@ -166,7 +166,12 @@ document.addEventListener("DOMContentLoaded", () => {
             tituloEstadoMes.innerHTML = `CUENTA INDEPENDIENTE: ${nombreMes}`;
 
             const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-            const pagosDelMes = historialPagos.filter(p => new Date(p.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            
+            // FILTRO INTELIGENTE: Filtra por "mesAplicado" si existe, sino por fecha normal
+            const pagosDelMes = historialPagos.filter(p => {
+                let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : new Date(p.fecha + 'T00:00:00').getMonth().toString();
+                return mesDelPago === mesSeleccionado;
+            });
 
             consumidoMostrar = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
             pagadoMostrar = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
@@ -205,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================
-    // 1. FUNCIÓN PARA EDITAR CONSUMOS (EN EL FORMULARIO ARRIBA)
+    // FUNCIONES DE EDICIÓN
     // =========================================================
     window.modoEdicionActiva = null; 
 
@@ -228,9 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
         inputProducto.focus();
     };
 
-    // =========================================================
-    // 2. FUNCIÓN PARA EDITAR ABONOS (PAGOS)
-    // =========================================================
     window.editarPago = async (id, montoActual, fechaDB) => {
         const p = fechaDB.split('-');
         const fechaUser = `${p[2]}-${p[1]}-${p[0]}`;
@@ -266,8 +268,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const pagosFiltrados = historialPagos.filter(p => {
             if (mesSeleccionado === "todos") return true;
-            const fechaPago = new Date(p.fecha + 'T00:00:00');
-            return fechaPago.getMonth() == mesSeleccionado;
+            let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : new Date(p.fecha + 'T00:00:00').getMonth().toString();
+            return mesDelPago === mesSeleccionado;
         });
 
         if (pagosFiltrados.length === 0) {
@@ -292,7 +294,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-   function renderizarConsumos() {
+    // MATEMÁTICA DE CALENDARIO REAL (Lunes a Domingo)
+    function obtenerSemanaDelMes(fechaObj) {
+        const primerDia = new Date(fechaObj.getFullYear(), fechaObj.getMonth(), 1);
+        let ajuste = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1; // Ajuste para que Lunes sea 0 y Domingo 6
+        return Math.ceil((fechaObj.getDate() + ajuste) / 7);
+    }
+
+    function renderizarConsumos() {
         if (!tablaConsumos) return;
         tablaConsumos.innerHTML = "";
         let total = 0;
@@ -311,10 +320,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const fechaObj = new Date(r.fecha + 'T00:00:00');
             
             const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-
-            const diaMes = fechaObj.getDate();
-            let numSemana = Math.ceil(diaMes / 7);
-            if (numSemana > 4) numSemana = 4; 
+            
+            // Calculamos la semana real del calendario (empieza los lunes)
+            let numSemana = obtenerSemanaDelMes(fechaObj);
 
             const identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
 
@@ -463,7 +471,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 if (window.modoEdicionActiva) {
-                    // Si estamos editando
                     await updateDoc(doc(db, "consumos", window.modoEdicionActiva.id), {
                         productoNombre: textoNuevoPedido,
                         precio: precioTotalFinal,
@@ -474,7 +481,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     btn.classList.remove("btn-success");
                     btn.classList.add("btn-primary");
                 } else {
-                    // Si es un registro nuevo
                     const indexExistente = historialConsumos.findIndex(r => r.fecha === fecha);
                     if (indexExistente !== -1) {
                         let reg = historialConsumos[indexExistente];
@@ -504,7 +510,9 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Registrar pago
+    // =========================================================
+    // REGISTRAR PAGO CON ANCLAJE DE MES
+    // =========================================================
     if (btnRegistrarPago) {
         btnRegistrarPago.addEventListener("click", async () => {
             let monto = prompt(`1. ¿Cuánto dinero está entregando ${nombreUsuario} hoy?\n\n(Ejemplo: 20, 50.50)`);
@@ -516,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const f = new Date();
             const fechaHoyUser = `${String(f.getDate()).padStart(2, '0')}-${String(f.getMonth() + 1).padStart(2, '0')}-${f.getFullYear()}`;
 
-            let fechaIngresada = prompt(`2. Ingresa la fecha del abono.\n\nFormato: DÍA-MES-AÑO (Ejemplo: 15-04-2026):`, fechaHoyUser);
+            let fechaIngresada = prompt(`2. Ingresa la fecha real del abono.\n\nFormato: DÍA-MES-AÑO (Ejemplo: 15-04-2026):`, fechaHoyUser);
             if (!fechaIngresada) return;
             fechaIngresada = fechaIngresada.trim();
 
@@ -528,6 +536,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const partes = fechaIngresada.split('-');
             const fechaDB = `${partes[2]}-${partes[1]}-${partes[0]}`;
 
+            // Anclar el pago al mes que se está visualizando en el filtro
+            let mesDestino = mesFiltro.value;
+            if (mesDestino === "todos") {
+                mesDestino = new Date().getMonth().toString();
+            }
+
             btnRegistrarPago.disabled = true;
             btnRegistrarPago.innerHTML = "⏳ Guardando...";
             try {
@@ -535,6 +549,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     nombreUsuario: nombreUsuario,
                     monto: monto,
                     fecha: fechaDB,
+                    mesAplicado: mesDestino, 
                     timestamp: Date.now()
                 });
             } catch (e) { alert("Error: " + e.message); }
@@ -542,7 +557,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Exportaciones (WhatsApp y PDF)
+    // =========================================================
+    // EXPORTACIONES (WHATSAPP Y PDF)
+    // =========================================================
     const btnWhatsApp = document.getElementById("btnWhatsApp");
     if (btnWhatsApp) {
         btnWhatsApp.addEventListener("click", () => {
@@ -577,156 +594,122 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // EXPORTACIÓN A PDF
     const btnExportarPDF = document.getElementById("btnExportarPDF");
 
     if (btnExportarPDF) {
         btnExportarPDF.addEventListener("click", () => {
             const mesSeleccionado = mesFiltro.value;
-            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
+            const nombreMesHeader = mesFiltro.options[mesFiltro.selectedIndex].text;
 
             const consumosDelMes = historialConsumos.filter(r =>
                 mesSeleccionado === "todos" ||
                 new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado
             );
 
-            if (consumosDelMes.length === 0) {
-                alert("No hay consumos en este mes para exportar.");
-                return;
-            }
+            if (consumosDelMes.length === 0) { alert("No hay datos para exportar."); return; }
 
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
             const ocupacionTexto = etiquetaRolEl ? etiquetaRolEl.textContent : 'Personal';
 
-            btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
+            btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i>...';
             btnExportarPDF.disabled = true;
 
-            const filasHtml = consumosDelMes.map((r, index) => {
+            let grupoActualPDF = "";
+            let filasHtml = "";
+
+            consumosDelMes.forEach((r, index) => {
+                const fechaObj = new Date(r.fecha + 'T00:00:00');
                 const [y, m, d] = r.fecha.split('-');
+                
+                const nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+                
+                // Aplicamos la misma lógica real de semanas al PDF
+                let numSem = obtenerSemanaDelMes(fechaObj);
+                const idGrupo = `${nombreMesR}_${numSem}`;
 
-                const fBonita = new Date(r.fecha + 'T00:00:00');
+                if (idGrupo !== grupoActualPDF) {
+                    grupoActualPDF = idGrupo;
+                    const textoCab = mesSeleccionado === "todos" ? `${nombreMesR} - SEMANA 0${numSem}` : `SEMANA 0${numSem}`;
+                    filasHtml += `
+                        <tr style="background-color: #f0f7ff; page-break-after: avoid;">
+                            <td colspan="4" style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; color: #0d6efd; font-weight: bold; font-size: 13px;">
+                                <span style="margin-right: 10px;">📅</span> ${textoCab}
+                            </td>
+                        </tr>
+                    `;
+                }
+
                 const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
-                const nombreDia = diasCortos[fBonita.getDay()];
+                const nombreDia = diasCortos[fechaObj.getDay()];
+                const bgFila = index % 2 === 0 ? "#ffffff" : "#fcfcfc";
 
-                const bgFila = index % 2 === 0 ? "#ffffff" : "#f8f9fa";
-                let detalleLimpio = r.productoNombre
-                    .split(/<br>\s*\+?|<br>|\n/)
-                    .map(item => item.trim().replace(/^\+\s*/, ''))
-                    .filter(item => item !== '')
-                    .join(" + ");
-
-                return `
+                filasHtml += `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #000000; font-weight: bold; text-align: left;">${nombreDia}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #495057; text-align: left;">${d}/${m}/${y}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529; text-align: left;">${detalleLimpio}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529;">
-                            <div style="display: flex; justify-content: space-between; width: 75px; margin-left: auto; font-weight: bold;">
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #000000; font-weight: bold; text-align: left; width: 10%;">${nombreDia}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #495057; text-align: left; width: 15%;">${d}/${m}/${y}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529; text-align: left; width: 55%; font-size: 14px;">${r.productoNombre}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529; width: 20%;">
+                            <div style="display: flex; justify-content: space-between; width: 85px; margin-left: auto; font-weight: bold; font-size: 15px;">
                                 <span>S/</span>
                                 <span>${r.precio.toFixed(2)}</span>
                             </div>
                         </td>
                     </tr>
                 `;
-            }).join('');
+            });
 
             const reciboPDF = document.createElement("div");
-
             reciboPDF.innerHTML = `
                 <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: white;">
-                    
                     <div style="text-align: center; border-bottom: 3px solid #0d6efd; padding-bottom: 10px; margin-bottom: 15px;">
                         <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900;">Quiosco</h1>
-                        <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase;">Registro de consumo semanal y/o mensual de ${nombreMes}</h3>
+                        <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase;">Registro de consumo - ${nombreMesHeader}</h3>
                     </div>
-                    
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
                         <tr style="text-align: center;">
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
-                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">CLIENTE:</strong> 
-                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${nombreUsuario}</span>
-                            </td>
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
-                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">OCUPACIÓN:</strong> 
-                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${ocupacionTexto}</span>
-                            </td>
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
-                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">MES:</strong> 
-                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${nombreMes}</span>
-                            </td>
-                            <td style="padding: 15px 10px; width: 25%;">
-                                <strong style="font-size: 13px; color: #000000; text-transform: uppercase;">EMISIÓN:</strong> 
-                                <span style="font-size: 15px; color: #212529; font-weight: normal; margin-left: 8px;">${new Date().toLocaleDateString('es-PE')}</span>
-                            </td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>CLIENTE:</strong><br>${nombreUsuario}</td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>OCUPACIÓN:</strong><br>${ocupacionTexto}</td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>MES:</strong><br>${nombreMesHeader}</td>
+                            <td style="padding: 15px 10px; width: 25%;"><strong>EMISIÓN:</strong><br>${new Date().toLocaleDateString('es-PE')}</td>
                         </tr>
                     </table>
-
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
                         <thead>
                             <tr style="background-color: #0d6efd; color: white;">
-                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 10%;">Día</th>
-                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 15%;">Fecha</th>
-                                <th style="padding: 12px 15px; text-align: left; font-size: 14px; width: 55%;">Detalle de Consumo</th>
-                                <th style="padding: 12px 15px; text-align: right; font-size: 14px; width: 20%;">Importe</th>
+                                <th style="padding: 12px 15px; text-align: left; width: 10%;">Día</th>
+                                <th style="padding: 12px 15px; text-align: left; width: 15%;">Fecha</th>
+                                <th style="padding: 12px 15px; text-align: left; width: 55%;">Detalle de Consumo</th>
+                                <th style="padding: 12px 15px; text-align: right; width: 20%;">Importe</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            ${filasHtml}
-                        </tbody>
+                        <tbody>${filasHtml}</tbody>
                     </table>
-
                     <div style="page-break-inside: avoid;">
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
-                                <td style="width: 48%; padding-right: 15px; vertical-align: top;">
-                                    <table style="width: 100%; background: #742384; border-radius: 12px; color: white; border-collapse: collapse; height: 120px;">
-                                        <tr>
-                                            <td style="padding: 20px; vertical-align: middle;">
-                                                <div style="font-size: 24px; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">YAPE</div>
-                                                <p style="margin: 0 0 5px 0; font-size: 14px;">Escanea para pagar a:</p>
-                                                <p style="margin: 0; font-size: 16px; font-weight: bold;">ROSA RO***</p>
-                                            </td>
-                                            <td style="padding: 20px; vertical-align: middle; text-align: right; width: 120px;">
-                                                <div style="background-color: white; padding: 8px; border-radius: 8px; display: inline-block; width: 100px; height: 100px; box-sizing: border-box;">
-                                                    <img src="yape.png" alt="QR Yape" style="width: 100%; height: 100%; object-fit: contain;">
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                <td style="width: 48%; padding-right: 15px;">
+                                    <div style="background: #742384; border-radius: 12px; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div><div style="font-size: 20px; font-weight: 900;">YAPE</div><p style="margin: 0; font-size: 14px;">ROSA RO***</p></div>
+                                        <div style="background: white; padding: 5px; border-radius: 5px;"><img src="yape.png" style="width: 80px; height: 80px;"></div>
+                                    </div>
                                 </td>
-                                <td style="width: 52%; padding-left: 15px; vertical-align: top;">
-                                    <table style="width: 100%; background-color: #e9ecef; border-radius: 12px; border: 1px solid #dee2e6; border-collapse: collapse; height: 120px;">
-                                        <tr>
-                                            <td style="padding: 20px; text-align: center; vertical-align: middle;">
-                                                <p style="margin: 0 0 5px 0; font-size: 16px; color: #495057; font-weight: bold; text-transform: uppercase;">TOTAL A PAGAR DEL MES</p>
-                                                <h2 style="margin: 0; font-size: 40px; font-weight: 900; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</h2>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                <td style="width: 52%; padding-left: 15px;">
+                                    <div style="background-color: #e9ecef; border-radius: 12px; border: 1px solid #dee2e6; padding: 20px; text-align: center;">
+                                        <p style="margin: 0; color: #495057; font-weight: bold;">TOTAL DEL MES</p>
+                                        <h2 style="margin: 0; font-size: 35px; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</h2>
+                                    </div>
                                 </td>
                             </tr>
                         </table>
-                        <div style="text-align: center; color: #adb5bd; font-size: 14px; margin-top: 25px;">
-                            <p>¡Gracias por su preferencia! Se agradece el pronto pago.</p>
-                        </div>
                     </div>
                 </div>
             `;
 
             const opcionesPDF = {
                 margin: [5, 0, 10, 0],
-                filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`,
+                filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMesHeader}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    width: 1120,
-                    windowWidth: 1120,
-                    x: 0,
-                    y: 0,
-                    scrollX: 0,
-                    scrollY: 0
-                },
+                html2canvas: { scale: 2, useCORS: true, width: 1120, windowWidth: 1120, x: 0, y: 0, scrollX: 0, scrollY: 0 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
 
@@ -735,8 +718,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnExportarPDF.disabled = false;
             }).catch(error => {
                 console.error("ERROR PDF:", error);
-                alert("Error al generar PDF.");
-                btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
             });
         });
