@@ -62,6 +62,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const fechaHoy = new Date();
     if (fechaConsumo) fechaConsumo.valueAsDate = fechaHoy;
+    if (fechaConsumo && mesFiltro) {
+        fechaConsumo.addEventListener("change", () => {
+            if (!fechaConsumo.value) return; 
+            const fechaSeleccionada = new Date(fechaConsumo.value + 'T00:00:00');
+            const mesDeLaFecha = fechaSeleccionada.getMonth().toString();
+
+            if (mesFiltro.value !== mesDeLaFecha) {
+                mesFiltro.value = mesDeLaFecha;
+                mesFiltro.dispatchEvent(new Event('change'));
+            }
+        });
+    }
     if (mesFiltro) mesFiltro.value = fechaHoy.getMonth().toString();
 
     // Autocompletado
@@ -139,82 +151,152 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!estadoCuentaMesVisual) return;
 
         const mesSeleccionado = mesFiltro.value;
-
-        if (mesSeleccionado === "todos") {
-            tituloEstadoMes.innerHTML = "ESTADO DE CUENTA (TODOS LOS MESES)";
-            estadoCuentaGlobalVisual.style.display = "none";
-        } else {
-            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
-            tituloEstadoMes.innerHTML = `ESTADO DE CUENTA: ${nombreMes}`;
-            estadoCuentaGlobalVisual.style.display = "block";
-        }
-
         const totalConsumidoHistorico = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
         const totalPagadoHistorico = historialPagos.reduce((acc, p) => acc + p.monto, 0);
-        const saldoGlobal = totalPagadoHistorico - totalConsumidoHistorico;
 
-        let totalConsumidoMes = 0;
-        let totalPagadoMes = 0;
+        let consumidoMostrar = 0;
+        let pagadoMostrar = 0;
 
         if (mesSeleccionado === "todos") {
-            totalConsumidoMes = totalConsumidoHistorico;
-            totalPagadoMes = totalPagadoHistorico;
+            tituloEstadoMes.innerHTML = "ESTADO DE CUENTA: HISTÓRICO GENERAL";
+            consumidoMostrar = totalConsumidoHistorico;
+            pagadoMostrar = totalPagadoHistorico;
         } else {
+            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
+            tituloEstadoMes.innerHTML = `CUENTA INDEPENDIENTE: ${nombreMes}`;
+
             const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
             const pagosDelMes = historialPagos.filter(p => new Date(p.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-            totalConsumidoMes = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
-            totalPagadoMes = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
+
+            consumidoMostrar = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
+            pagadoMostrar = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
         }
 
-        const saldoMes = totalPagadoMes - totalConsumidoMes;
+        if (estadoCuentaGlobalVisual) estadoCuentaGlobalVisual.style.display = "none";
 
-        if (saldoMes < -0.01) {
-            estadoCuentaMesVisual.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-circle-fill"></i> DEUDA DEL MES: S/ ${Math.abs(saldoMes).toFixed(2)}</span>`;
-        } else if (saldoMes > 0.01) {
-            estadoCuentaMesVisual.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill"></i> A FAVOR DEL MES: S/ ${saldoMes.toFixed(2)}</span>`;
+        const saldo = pagadoMostrar - consumidoMostrar;
+
+        let badgeHTML = "";
+        if (saldo < -0.01) {
+            badgeHTML = `<span class="badge bg-danger fs-6 px-4 py-2 rounded-pill shadow-sm"><i class="bi bi-exclamation-triangle-fill me-1"></i> DEUDA: S/ ${Math.abs(saldo).toFixed(2)}</span>`;
+        } else if (saldo > 0.01) {
+            badgeHTML = `<span class="badge bg-success fs-6 px-4 py-2 rounded-pill shadow-sm"><i class="bi bi-check-circle-fill me-1"></i> A FAVOR: S/ ${saldo.toFixed(2)}</span>`;
         } else {
-            estadoCuentaMesVisual.innerHTML = `<span class="text-muted"><i class="bi bi-shield-check"></i> MES CANCELADO AL DÍA</span>`;
+            badgeHTML = `<span class="badge bg-secondary fs-6 px-4 py-2 rounded-pill shadow-sm"><i class="bi bi-shield-check me-1"></i> CANCELADO AL DÍA</span>`;
         }
 
-        if (mesSeleccionado !== "todos") {
-            if (saldoGlobal < -0.01) {
-                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-danger">Deuda total (Suma de los pagos pendientes de todos los meses): S/ ${Math.abs(saldoGlobal).toFixed(2)}</strong>`;
-            } else if (saldoGlobal > 0.01) {
-                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-success">Total general a favor (Sumando todos los meses): S/ ${saldoGlobal.toFixed(2)}</strong>`;
-            } else {
-                estadoCuentaGlobalVisual.innerHTML = `<strong class="text-secondary">Total general histórico: No hay deudas pendientes</strong>`;
-            }
-        }
+        estadoCuentaMesVisual.innerHTML = `
+            <div class="d-flex flex-wrap align-items-center gap-3 mt-2 font-sans">
+                <div class="d-flex bg-white px-3 py-2 rounded-3 shadow-sm border border-light">
+                    <div class="pe-3 border-end">
+                        <span class="d-block text-muted" style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">TOTAL CONSUMIDO</span>
+                        <span class="fs-5 fw-bold text-dark lh-1">S/ ${consumidoMostrar.toFixed(2)}</span>
+                    </div>
+                    <div class="ps-3">
+                        <span class="d-block text-muted" style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">TOTAL ABONADO</span>
+                        <span class="fs-5 fw-bold text-success lh-1">S/ ${pagadoMostrar.toFixed(2)}</span>
+                    </div>
+                </div>
+                <div>
+                    ${badgeHTML}
+                </div>
+            </div>
+        `;
     }
+
+    // =========================================================
+    // 1. FUNCIÓN PARA EDITAR CONSUMOS (EN EL FORMULARIO ARRIBA)
+    // =========================================================
+    window.modoEdicionActiva = null; 
+
+    window.editarRegistro = (id, productoActual, precioActual, fechaDB) => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (fechaConsumo) fechaConsumo.value = fechaDB;
+        if (inputProducto) inputProducto.value = productoActual + " + ";
+        if (inputCantidad) inputCantidad.value = 1;
+
+        window.modoEdicionActiva = { id: id };
+
+        const btnSubmit = formConsumo.querySelector("button[type='submit']");
+        if (btnSubmit) {
+            btnSubmit.innerHTML = '<i class="bi bi-save"></i> Guardar Edición';
+            btnSubmit.classList.remove("btn-primary");
+            btnSubmit.classList.add("btn-success"); 
+        }
+        
+        inputProducto.focus();
+    };
+
+    // =========================================================
+    // 2. FUNCIÓN PARA EDITAR ABONOS (PAGOS)
+    // =========================================================
+    window.editarPago = async (id, montoActual, fechaDB) => {
+        const p = fechaDB.split('-');
+        const fechaUser = `${p[2]}-${p[1]}-${p[0]}`;
+
+        let nuevoMontoStr = prompt("EDITAR MONTO DEL ABONO:", montoActual);
+        if (nuevoMontoStr === null) return;
+        let nuevoMonto = parseFloat(nuevoMontoStr.replace(',', '.'));
+
+        let nuevaFechaUser = prompt("EDITAR FECHA DEL ABONO (DD-MM-YYYY):", fechaUser);
+        if (!nuevaFechaUser) return;
+
+        if (!/^\d{2}-\d{2}-\d{4}$/.test(nuevaFechaUser)) {
+            alert("Formato de fecha incorrecto.");
+            return;
+        }
+
+        const partes = nuevaFechaUser.split('-');
+        const nuevaFechaDB = `${partes[2]}-${partes[1]}-${partes[0]}`;
+
+        try {
+            await updateDoc(doc(db, "pagos", id), {
+                monto: nuevoMonto,
+                fecha: nuevaFechaDB
+            });
+        } catch (e) { alert("Error al editar el pago: " + e.message); }
+    };
 
     function renderizarListaPagos() {
         if (!contenedorHistorialPagos || !listaPagosVisual) return;
         listaPagosVisual.innerHTML = "";
-        if (historialPagos.length === 0) {
+
+        const mesSeleccionado = mesFiltro.value;
+
+        const pagosFiltrados = historialPagos.filter(p => {
+            if (mesSeleccionado === "todos") return true;
+            const fechaPago = new Date(p.fecha + 'T00:00:00');
+            return fechaPago.getMonth() == mesSeleccionado;
+        });
+
+        if (pagosFiltrados.length === 0) {
             contenedorHistorialPagos.classList.add("d-none");
             return;
         }
+
         contenedorHistorialPagos.classList.remove("d-none");
-        historialPagos.forEach((pago) => {
+        pagosFiltrados.forEach((pago) => {
             const [y, m, d] = pago.fecha.split('-');
             const li = document.createElement("li");
             li.className = "list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-1";
             li.innerHTML = `
-                <span class="text-dark" style="font-size: 0.9rem;"><i class="bi bi-arrow-down-right-circle text-success me-1"></i> Abono registrado el ${d}/${m}/${y}</span>
+                <span class="text-dark" style="font-size: 0.9rem;"><i class="bi bi-arrow-down-right-circle text-success me-1"></i> Abono del ${d}-${m}-${y}</span>
                 <div>
                     <span class="fw-bold text-success me-3">S/ ${pago.monto.toFixed(2)}</span>
-                    <button class="btn btn-sm btn-outline-danger border-0 py-0 px-1" onclick="eliminarPago('${pago.id}')" title="Anular este pago"><i class="bi bi-x fs-5"></i></button>
+                    <button class="btn btn-sm btn-outline-primary border-0 py-0 px-1 me-1" onclick="window.editarPago('${pago.id}', ${pago.monto}, '${pago.fecha}')"><i class="bi bi-pencil-square fs-5"></i></button>
+                    <button class="btn btn-sm btn-outline-danger border-0 py-0 px-1" onclick="eliminarPago('${pago.id}')"><i class="bi bi-x fs-5"></i></button>
                 </div>
             `;
             listaPagosVisual.appendChild(li);
         });
     }
 
-    function renderizarConsumos() {
+   function renderizarConsumos() {
         if (!tablaConsumos) return;
         tablaConsumos.innerHTML = "";
         let total = 0;
-        const mes = mesFiltro.value;
+        const mes = mesFiltro.value; 
         const filtrados = historialConsumos.filter(r => mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
 
         if (filtrados.length === 0) {
@@ -223,11 +305,55 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        let grupoActual = ""; 
+
         filtrados.forEach(r => {
+            const fechaObj = new Date(r.fecha + 'T00:00:00');
+            
+            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+
+            const diaMes = fechaObj.getDate();
+            let numSemana = Math.ceil(diaMes / 7);
+            if (numSemana > 4) numSemana = 4; 
+
+            const identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
+
+            if (identificadorGrupo !== grupoActual) {
+                grupoActual = identificadorGrupo;
+                
+                const textoCabecera = mes === "todos" 
+                    ? `${nombreMesConsumo} - SEMANA 0${numSemana}` 
+                    : `SEMANA 0${numSemana}`;
+
+                const trSemana = document.createElement("tr");
+                trSemana.innerHTML = `
+                    <td colspan="4" class="fw-bold py-2 ps-4 text-primary" style="background-color: #f0f7ff; border-left: 5px solid #0d6efd; font-size: 0.9rem;">
+                        <i class="bi bi-calendar3 me-2"></i> ${textoCabecera}
+                    </td>
+                `;
+                tablaConsumos.appendChild(trSemana);
+            }
+
             total += r.precio;
-            const f = new Date(r.fecha + 'T00:00:00').toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+            
+            const f = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
             const tr = document.createElement("tr");
-            tr.innerHTML = `<td class="ps-4 text-muted small">${f.charAt(0).toUpperCase() + f.slice(1)}</td><td class="fw-bold text-dark">${r.productoNombre}</td><td class="text-center fw-bold text-dark">S/ ${r.precio.toFixed(2)}</td><td class="text-center"><button class="btn btn-sm btn-outline-danger rounded-1" onclick="eliminarRegistro('${r.id}')"><i class="bi bi-x"></i></button></td>`;
+            
+            const nombreSeguro = r.productoNombre.replace(/'/g, "\\'");
+
+            tr.innerHTML = `
+                <td class="ps-4 text-muted small">${f.charAt(0).toUpperCase() + f.slice(1)}</td>
+                <td class="fw-bold text-dark">${r.productoNombre}</td>
+                <td class="text-center fw-bold text-dark">S/ ${r.precio.toFixed(2)}</td>
+                <td class="text-center" style="white-space: nowrap;">
+                    <button class="btn btn-sm btn-outline-primary rounded-1 me-1" onclick="window.editarRegistro('${r.id}', '${nombreSeguro}', ${r.precio}, '${r.fecha}')" title="Editar consumo">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger rounded-1" onclick="eliminarRegistro('${r.id}')" title="Eliminar registro">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </td>
+            `;
             tablaConsumos.appendChild(tr);
         });
         totalAcumulado.textContent = `S/ ${total.toFixed(2)}`;
@@ -237,13 +363,16 @@ document.addEventListener("DOMContentLoaded", () => {
         mesFiltro.addEventListener("change", () => {
             renderizarConsumos();
             recalcularSaldoGlobal();
+            renderizarListaPagos(); 
         });
     }
 
     window.eliminarRegistro = async (id) => { if (confirm("¿Borrar este consumo?")) await deleteDoc(doc(db, "consumos", id)); };
     window.eliminarPago = async (id) => { if (confirm("¿Estás seguro de anular este abono? El saldo de deuda/favor se recalculará automáticamente.")) await deleteDoc(doc(db, "pagos", id)); };
 
-    // Guardar consumo
+    // =========================================================
+    // GUARDADO INTELIGENTE (Modo Nuevo y Modo Edición)
+    // =========================================================
     if (formConsumo) {
         formConsumo.onsubmit = async (e) => {
             e.preventDefault();
@@ -256,98 +385,157 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!prodCrudo || cant < 1) return;
 
             const nombresSeparados = prodCrudo.split("+").map(n => n.trim()).filter(n => n !== "");
-            let precioTotalBase = 0;
-            let nombresValidados = [];
+            let precioTotalFinal = 0;
+            let itemsDeEstePedido = [];
 
-            for (let nombre of nombresSeparados) {
-                const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+            for (let rawName of nombresSeparados) {
+                let nombreLimpio = rawName;
+                let cantidadLocal = 1;
+                let precioPersonalizado = null;
 
-                if (!productoEncontrado) {
-                    alert(`El producto "${nombre}" NO EXISTE en tu inventario.\nPor favor, selecciónalo de la lista desplegable.`);
+                const matchPrecio = rawName.match(/^(.*?)\s*\(\s*S\/\s*([\d.]+)\s*\)$/i);
+                if (matchPrecio) {
+                    nombreLimpio = matchPrecio[1].trim();
+                    precioPersonalizado = parseFloat(matchPrecio[2]);
+                } else {
+                    const matchCant = rawName.match(/^(.*?)\s*\(\s*(\d+)\s*\)$/);
+                    if (matchCant) {
+                        nombreLimpio = matchCant[1].trim();
+                        cantidadLocal = parseInt(matchCant[2], 10);
+                    }
+                }
+
+                const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombreLimpio.toLowerCase());
+
+                if (!productoEncontrado && precioPersonalizado === null) {
+                    alert(`El producto "${nombreLimpio}" NO EXISTE en tu inventario.\nPor favor, selecciónalo de la lista desplegable.`);
                     return;
                 }
 
-                let precioDelProducto = productoEncontrado.precio;
-                let nombreParaHistorial = productoEncontrado.nombre;
+                let precioDelProducto = 0;
+                let nombreParaHistorial = nombreLimpio;
 
-                let cat = (productoEncontrado.categoria || "").toLowerCase();
-                let nom = productoEncontrado.nombre.toLowerCase();
+                if (precioPersonalizado !== null) {
+                    precioDelProducto = precioPersonalizado;
+                    nombreParaHistorial = `${nombreLimpio} (S/ ${precioDelProducto.toFixed(2)})`;
+                } else {
+                    precioDelProducto = productoEncontrado.precio;
+                    nombreParaHistorial = productoEncontrado.nombre;
 
-                if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
-                    let precioIngresado = prompt(`Ingrese el precio para el plato "${productoEncontrado.nombre}":\n(Ej: 5, 7.50)`, productoEncontrado.precio);
-                    if (precioIngresado === null || precioIngresado.trim() === "" || isNaN(parseFloat(precioIngresado.replace(',', '.')))) {
-                        alert("Registro cancelado. Debe ingresar un precio válido.");
-                        return;
+                    let cat = (productoEncontrado.categoria || "").toLowerCase();
+                    let nom = productoEncontrado.nombre.toLowerCase();
+                    if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
+                        let precioIngresado = prompt(`Ingrese el precio para el plato "${productoEncontrado.nombre}":\n(Ej: 5, 7.50)`, productoEncontrado.precio);
+                        if (precioIngresado === null || precioIngresado.trim() === "" || isNaN(parseFloat(precioIngresado.replace(',', '.')))) {
+                            alert("Registro cancelado. Debe ingresar un precio válido.");
+                            return;
+                        }
+                        precioDelProducto = parseFloat(precioIngresado.replace(',', '.'));
+                        nombreParaHistorial = `${productoEncontrado.nombre} (S/ ${precioDelProducto.toFixed(2)})`;
                     }
-                    precioDelProducto = parseFloat(precioIngresado.replace(',', '.'));
-                    nombreParaHistorial = `${productoEncontrado.nombre} (S/ ${precioDelProducto.toFixed(2)})`;
                 }
 
-                precioTotalBase += precioDelProducto;
-                nombresValidados.push(nombreParaHistorial);
+                precioTotalFinal += (precioDelProducto * cantidadLocal);
+                for (let i = 0; i < cantidadLocal; i++) itemsDeEstePedido.push(nombreParaHistorial);
             }
 
-            const precioTotalFinal = precioTotalBase * cant;
-            let itemsDeEstePedido = [];
-            for (let nombre of nombresValidados) {
-                for (let i = 0; i < cant; i++) itemsDeEstePedido.push(nombre);
+            precioTotalFinal = precioTotalFinal * cant;
+            let textoAgrupadoSinFinal = [];
+            for (let i = 0; i < cant; i++) textoAgrupadoSinFinal.push(...itemsDeEstePedido);
+
+            function agruparTextos(texto) {
+                let pts = texto.split(/(?:<br>|\+)/).map(p => p.trim()).filter(p => p !== "");
+                let mapa = new Map();
+                pts.forEach(p => {
+                    let n = p, c = 1, match = p.match(/^(.*?)\s*\(\s*(\d+)\s*\)$/);
+                    if (match && !p.includes("S/")) { n = match[1].trim(); c = parseInt(match[2], 10); }
+                    mapa.set(n, (mapa.get(n) || 0) + c);
+                });
+                let res = [];
+                mapa.forEach((c, n) => { res.push(c > 1 ? `${n} (${c})` : n); });
+                return res.join(" + ");
             }
-            let textoNuevoPedido = itemsDeEstePedido.join(" + ");
+
+            let textoNuevoPedido = agruparTextos(textoAgrupadoSinFinal.join(" + "));
 
             btn.disabled = true;
             btn.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Guardando...';
 
             try {
-                function agruparTextos(texto) {
-                    let pts = texto.split(/(?:<br>|\+)/).map(p => p.trim()).filter(p => p !== "");
-                    let mapa = new Map();
-                    pts.forEach(p => {
-                        let n = p, c = 1, match = p.match(/^(.*?)\s*\(\s*(\d+)\s*\)$/);
-                        if (match && !p.includes("S/")) { n = match[1].trim(); c = parseInt(match[2], 10); }
-                        mapa.set(n, (mapa.get(n) || 0) + c);
+                if (window.modoEdicionActiva) {
+                    // Si estamos editando
+                    await updateDoc(doc(db, "consumos", window.modoEdicionActiva.id), {
+                        productoNombre: textoNuevoPedido,
+                        precio: precioTotalFinal,
+                        fecha: fecha
                     });
-                    let res = [];
-                    mapa.forEach((c, n) => { res.push(c > 1 ? `${n} (${c})` : n); });
-                    return res.join(" + ");
+                    
+                    window.modoEdicionActiva = null;
+                    btn.classList.remove("btn-success");
+                    btn.classList.add("btn-primary");
+                } else {
+                    // Si es un registro nuevo
+                    const indexExistente = historialConsumos.findIndex(r => r.fecha === fecha);
+                    if (indexExistente !== -1) {
+                        let reg = historialConsumos[indexExistente];
+                        await updateDoc(doc(db, "consumos", reg.id), {
+                            productoNombre: agruparTextos(reg.productoNombre + " + " + textoNuevoPedido),
+                            precio: reg.precio + precioTotalFinal
+                        });
+                    } else {
+                        await addDoc(collection(db, "consumos"), {
+                            nombreUsuario: nombreUsuario,
+                            fecha: fecha,
+                            productoNombre: textoNuevoPedido,
+                            precio: precioTotalFinal
+                        });
+                    }
                 }
 
-                const indexExistente = historialConsumos.findIndex(r => r.fecha === fecha);
-                if (indexExistente !== -1) {
-                    let reg = historialConsumos[indexExistente];
-                    await updateDoc(doc(db, "consumos", reg.id), {
-                        productoNombre: agruparTextos(reg.productoNombre + " + " + textoNuevoPedido),
-                        precio: reg.precio + precioTotalFinal
-                    });
-                } else {
-                    await addDoc(collection(db, "consumos"), {
-                        nombreUsuario: nombreUsuario,
-                        fecha: fecha,
-                        productoNombre: agruparTextos(textoNuevoPedido),
-                        precio: precioTotalFinal
-                    });
-                }
-                inputProducto.value = ""; inputCantidad.value = "1"; inputProducto.focus();
+                inputProducto.value = ""; 
+                inputCantidad.value = "1"; 
+                inputProducto.focus();
+
             } catch (e) { alert("Error: " + e.message); }
-            finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día'; }
+            finally { 
+                btn.disabled = false; 
+                btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día'; 
+            }
         };
     }
 
     // Registrar pago
     if (btnRegistrarPago) {
         btnRegistrarPago.addEventListener("click", async () => {
-            let monto = prompt(`¿Cuánto dinero está entregando ${nombreUsuario} hoy?\n\n(Ejemplo: 20, 50.50)`);
+            let monto = prompt(`1. ¿Cuánto dinero está entregando ${nombreUsuario} hoy?\n\n(Ejemplo: 20, 50.50)`);
             if (!monto) return;
             monto = parseFloat(monto.replace(',', '.'));
 
             if (isNaN(monto) || monto <= 0) { alert("Monto inválido."); return; }
 
+            const f = new Date();
+            const fechaHoyUser = `${String(f.getDate()).padStart(2, '0')}-${String(f.getMonth() + 1).padStart(2, '0')}-${f.getFullYear()}`;
+
+            let fechaIngresada = prompt(`2. Ingresa la fecha del abono.\n\nFormato: DÍA-MES-AÑO (Ejemplo: 15-04-2026):`, fechaHoyUser);
+            if (!fechaIngresada) return;
+            fechaIngresada = fechaIngresada.trim();
+
+            if (!/^\d{2}-\d{2}-\d{4}$/.test(fechaIngresada)) {
+                alert("Formato de fecha incorrecto. Debe tener los guiones y ser DÍA-MES-AÑO. Cancelado.");
+                return;
+            }
+
+            const partes = fechaIngresada.split('-');
+            const fechaDB = `${partes[2]}-${partes[1]}-${partes[0]}`;
+
             btnRegistrarPago.disabled = true;
             btnRegistrarPago.innerHTML = "⏳ Guardando...";
             try {
-                const f = new Date();
-                const fechaStr = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`;
                 await addDoc(collection(db, "pagos"), {
-                    nombreUsuario: nombreUsuario, monto: monto, fecha: fechaStr, timestamp: Date.now()
+                    nombreUsuario: nombreUsuario,
+                    monto: monto,
+                    fecha: fechaDB,
+                    timestamp: Date.now()
                 });
             } catch (e) { alert("Error: " + e.message); }
             finally { btnRegistrarPago.disabled = false; btnRegistrarPago.innerHTML = '<i class="bi bi-cash-coin me-1"></i> Registrar Pago'; }
@@ -389,9 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-// =========================================================
-    // EXPORTACIÓN A PDF: HORIZONTAL, DÍAS INCLUIDOS Y ALINEADO
-    // =========================================================
+    // EXPORTACIÓN A PDF
     const btnExportarPDF = document.getElementById("btnExportarPDF");
 
     if (btnExportarPDF) {
@@ -415,11 +601,9 @@ document.addEventListener("DOMContentLoaded", () => {
             btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i> Generando...';
             btnExportarPDF.disabled = true;
 
-            // 1. GENERAMOS LAS FILAS CON 4 COLUMNAS (Incluyendo el Día y el Importe alineado)
             const filasHtml = consumosDelMes.map((r, index) => {
                 const [y, m, d] = r.fecha.split('-');
-                
-                // Cálculo del día
+
                 const fBonita = new Date(r.fecha + 'T00:00:00');
                 const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
                 const nombreDia = diasCortos[fBonita.getDay()];
@@ -431,7 +615,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     .filter(item => item !== '')
                     .join(" + ");
 
-                // Alineamos explícitamente a la izquierda (text-align: left) el detalle y usamos flex para el importe
                 return `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
                         <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #000000; font-weight: bold; text-align: left;">${nombreDia}</td>
@@ -447,9 +630,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }).join('');
 
-            // 2. CREAMOS EL HTML EN MEMORIA CON LAS 4 COLUMNAS EN EL ENCABEZADO
             const reciboPDF = document.createElement("div");
-            
+
             reciboPDF.innerHTML = `
                 <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: white;">
                     
@@ -531,22 +713,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
 
-            // 3. LA SOLUCIÓN AL CORTE: ANULAR LAS COORDENADAS FANTASMAS DE LA LIBRERÍA
-            const opcionesPDF = { 
-                margin: [5, 0, 10, 0], 
-                filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`, 
-                image: { type: 'jpeg', quality: 1.0 }, 
-                html2canvas: { 
-                    scale: 2, 
+            const opcionesPDF = {
+                margin: [5, 0, 10, 0],
+                filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${nombreMes}.pdf`,
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: {
+                    scale: 2,
                     useCORS: true,
-                    width: 1120,      
+                    width: 1120,
                     windowWidth: 1120,
-                    x: 0,           
-                    y: 0,           
-                    scrollX: 0,     
-                    scrollY: 0      
-                }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } 
+                    x: 0,
+                    y: 0,
+                    scrollX: 0,
+                    scrollY: 0
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
 
             html2pdf().set(opcionesPDF).from(reciboPDF).save().then(() => {
