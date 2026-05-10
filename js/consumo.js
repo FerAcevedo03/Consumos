@@ -48,11 +48,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalAcumulado = document.getElementById("totalAcumulado");
     const mesFiltro = document.getElementById("mesFiltro");
 
-    // Elementos Estado Cuenta Dual
+    // Elementos Estado Cuenta y Abonos
     const tituloEstadoMes = document.getElementById("tituloEstadoMes");
     const estadoCuentaMesVisual = document.getElementById("estadoCuentaMesVisual");
     const estadoCuentaGlobalVisual = document.getElementById("estadoCuentaGlobalVisual");
-    const btnRegistrarPago = document.getElementById("btnRegistrarPago");
+
+    // Controles de Abono integrados en la tarjeta inferior
+    const montoAbono = document.getElementById("montoAbono");
+    const fechaAbono = document.getElementById("fechaAbono");
+    const btnAbonoYape = document.getElementById("btnAbonoYape");
+    const btnAbonoEfectivo = document.getElementById("btnAbonoEfectivo");
+
     const contenedorHistorialPagos = document.getElementById("contenedorHistorialPagos");
     const listaPagosVisual = document.getElementById("listaPagosVisual");
 
@@ -62,9 +68,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const fechaHoy = new Date();
     if (fechaConsumo) fechaConsumo.valueAsDate = fechaHoy;
+    if (fechaAbono) fechaAbono.valueAsDate = fechaHoy;
+
     if (fechaConsumo && mesFiltro) {
         fechaConsumo.addEventListener("change", () => {
-            if (!fechaConsumo.value) return; 
+            if (!fechaConsumo.value) return;
             const fechaSeleccionada = new Date(fechaConsumo.value + 'T00:00:00');
             const mesDeLaFecha = fechaSeleccionada.getMonth().toString();
 
@@ -163,11 +171,11 @@ document.addEventListener("DOMContentLoaded", () => {
             pagadoMostrar = totalPagadoHistorico;
         } else {
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
-            tituloEstadoMes.innerHTML = `CUENTA INDEPENDIENTE: ${nombreMes}`;
+            tituloEstadoMes.innerHTML = `ESTADO DE GESTIÓN: ${nombreMes}`;
 
             const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-            
-            // FILTRO INTELIGENTE: Filtra por "mesAplicado" si existe, sino por fecha normal
+
+            // FILTRO INTELIGENTE DE PAGOS
             const pagosDelMes = historialPagos.filter(p => {
                 let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : new Date(p.fecha + 'T00:00:00').getMonth().toString();
                 return mesDelPago === mesSeleccionado;
@@ -191,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         estadoCuentaMesVisual.innerHTML = `
-            <div class="d-flex flex-wrap align-items-center gap-3 mt-2 font-sans">
+            <div class="d-flex flex-wrap align-items-center gap-3 font-sans">
                 <div class="d-flex bg-white px-3 py-2 rounded-3 shadow-sm border border-light">
                     <div class="pe-3 border-end">
                         <span class="d-block text-muted" style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">TOTAL CONSUMIDO</span>
@@ -212,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // =========================================================
     // FUNCIONES DE EDICIÓN
     // =========================================================
-    window.modoEdicionActiva = null; 
+    window.modoEdicionActiva = null;
 
     window.editarRegistro = (id, productoActual, precioActual, fechaDB) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -227,9 +235,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btnSubmit) {
             btnSubmit.innerHTML = '<i class="bi bi-save"></i> Guardar Edición';
             btnSubmit.classList.remove("btn-primary");
-            btnSubmit.classList.add("btn-success"); 
+            btnSubmit.classList.add("btn-success");
         }
-        
+
         inputProducto.focus();
     };
 
@@ -260,6 +268,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (e) { alert("Error al editar el pago: " + e.message); }
     };
 
+    // =========================================================
+    // RENDERIZAR LISTA DE PAGOS
+    // =========================================================
     function renderizarListaPagos() {
         if (!contenedorHistorialPagos || !listaPagosVisual) return;
         listaPagosVisual.innerHTML = "";
@@ -280,14 +291,26 @@ document.addEventListener("DOMContentLoaded", () => {
         contenedorHistorialPagos.classList.remove("d-none");
         pagosFiltrados.forEach((pago) => {
             const [y, m, d] = pago.fecha.split('-');
+
+            const metodo = pago.metodo || "Efectivo";
+            const colorMetodo = metodo === "Yape" ? "#742384" : "#198754";
+            const iconoMetodo = metodo === "Yape" ? "bi-qr-code" : "bi-cash-stack";
+
             const li = document.createElement("li");
-            li.className = "list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 py-1";
+            li.className = "list-group-item d-flex justify-content-between align-items-center px-2 py-2 border-bottom";
             li.innerHTML = `
-                <span class="text-dark" style="font-size: 0.9rem;"><i class="bi bi-arrow-down-right-circle text-success me-1"></i> Abono del ${d}-${m}-${y}</span>
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 35px; height: 35px; background-color: ${colorMetodo}; color: white;">
+                        <i class="bi ${iconoMetodo}" style="font-size: 1rem;"></i>
+                    </div>
+                    <div>
+                        <span class="d-block text-dark fw-bold" style="font-size: 0.95rem;">S/ ${pago.monto.toFixed(2)} <span class="badge ms-1" style="background-color: ${colorMetodo}; font-size: 0.65rem; padding: 0.25em 0.5em;">${metodo}</span></span>
+                        <small class="text-muted" style="font-size: 0.8rem;">Abonado el ${d}/${m}/${y}</small>
+                    </div>
+                </div>
                 <div>
-                    <span class="fw-bold text-success me-3">S/ ${pago.monto.toFixed(2)}</span>
-                    <button class="btn btn-sm btn-outline-primary border-0 py-0 px-1 me-1" onclick="window.editarPago('${pago.id}', ${pago.monto}, '${pago.fecha}')"><i class="bi bi-pencil-square fs-5"></i></button>
-                    <button class="btn btn-sm btn-outline-danger border-0 py-0 px-1" onclick="eliminarPago('${pago.id}')"><i class="bi bi-x fs-5"></i></button>
+                    <button class="btn btn-sm text-primary p-0 me-3" onclick="window.editarPago('${pago.id}', ${pago.monto}, '${pago.fecha}')"><i class="bi bi-pencil-square fs-5"></i></button>
+                    <button class="btn btn-sm text-danger p-0" onclick="eliminarPago('${pago.id}')"><i class="bi bi-x-lg fs-5"></i></button>
                 </div>
             `;
             listaPagosVisual.appendChild(li);
@@ -297,7 +320,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // MATEMÁTICA DE CALENDARIO REAL (Lunes a Domingo)
     function obtenerSemanaDelMes(fechaObj) {
         const primerDia = new Date(fechaObj.getFullYear(), fechaObj.getMonth(), 1);
-        let ajuste = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1; // Ajuste para que Lunes sea 0 y Domingo 6
+        let ajuste = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
         return Math.ceil((fechaObj.getDate() + ajuste) / 7);
     }
 
@@ -305,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!tablaConsumos) return;
         tablaConsumos.innerHTML = "";
         let total = 0;
-        const mes = mesFiltro.value; 
+        const mes = mesFiltro.value;
         const filtrados = historialConsumos.filter(r => mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
 
         if (filtrados.length === 0) {
@@ -314,23 +337,20 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        let grupoActual = ""; 
+        let grupoActual = "";
 
         filtrados.forEach(r => {
             const fechaObj = new Date(r.fecha + 'T00:00:00');
-            
             const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-            
-            // Calculamos la semana real del calendario (empieza los lunes)
-            let numSemana = obtenerSemanaDelMes(fechaObj);
 
+            let numSemana = obtenerSemanaDelMes(fechaObj);
             const identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
 
             if (identificadorGrupo !== grupoActual) {
                 grupoActual = identificadorGrupo;
-                
-                const textoCabecera = mes === "todos" 
-                    ? `${nombreMesConsumo} - SEMANA 0${numSemana}` 
+
+                const textoCabecera = mes === "todos"
+                    ? `${nombreMesConsumo} - SEMANA 0${numSemana}`
                     : `SEMANA 0${numSemana}`;
 
                 const trSemana = document.createElement("tr");
@@ -343,10 +363,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             total += r.precio;
-            
+
             const f = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
             const tr = document.createElement("tr");
-            
             const nombreSeguro = r.productoNombre.replace(/'/g, "\\'");
 
             tr.innerHTML = `
@@ -371,7 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
         mesFiltro.addEventListener("change", () => {
             renderizarConsumos();
             recalcularSaldoGlobal();
-            renderizarListaPagos(); 
+            renderizarListaPagos();
         });
     }
 
@@ -379,7 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.eliminarPago = async (id) => { if (confirm("¿Estás seguro de anular este abono? El saldo de deuda/favor se recalculará automáticamente.")) await deleteDoc(doc(db, "pagos", id)); };
 
     // =========================================================
-    // GUARDADO INTELIGENTE (Modo Nuevo y Modo Edición)
+    // GUARDADO INTELIGENTE DE CONSUMO
     // =========================================================
     if (formConsumo) {
         formConsumo.onsubmit = async (e) => {
@@ -476,7 +495,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         precio: precioTotalFinal,
                         fecha: fecha
                     });
-                    
+
                     window.modoEdicionActiva = null;
                     btn.classList.remove("btn-success");
                     btn.classList.add("btn-primary");
@@ -498,67 +517,70 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                inputProducto.value = ""; 
-                inputCantidad.value = "1"; 
+                inputProducto.value = "";
+                inputCantidad.value = "1";
                 inputProducto.focus();
 
             } catch (e) { alert("Error: " + e.message); }
-            finally { 
-                btn.disabled = false; 
-                btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día'; 
+            finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día';
             }
         };
     }
 
     // =========================================================
-    // REGISTRAR PAGO CON ANCLAJE DE MES
+    // GUARDADO INTELIGENTE DE ABONOS CON BOTONES YAPE/EFECTIVO
     // =========================================================
-    if (btnRegistrarPago) {
-        btnRegistrarPago.addEventListener("click", async () => {
-            let monto = prompt(`1. ¿Cuánto dinero está entregando ${nombreUsuario} hoy?\n\n(Ejemplo: 20, 50.50)`);
-            if (!monto) return;
-            monto = parseFloat(monto.replace(',', '.'));
+    const guardarAbono = async (metodo) => {
+        if (!montoAbono) return;
+        let monto = parseFloat(montoAbono.value);
+        if (isNaN(monto) || monto <= 0) {
+            alert("Por favor, ingresa un monto válido (Ejemplo: 15.50).");
+            return;
+        }
 
-            if (isNaN(monto) || monto <= 0) { alert("Monto inválido."); return; }
+        const fechaVal = fechaAbono.value;
+        if (!fechaVal) {
+            alert("Por favor, selecciona una fecha.");
+            return;
+        }
 
-            const f = new Date();
-            const fechaHoyUser = `${String(f.getDate()).padStart(2, '0')}-${String(f.getMonth() + 1).padStart(2, '0')}-${f.getFullYear()}`;
+        // Anclar el pago al mes que se está visualizando en el filtro
+        let mesDestino = mesFiltro.value;
+        if (mesDestino === "todos") {
+            mesDestino = new Date().getMonth().toString();
+        }
 
-            let fechaIngresada = prompt(`2. Ingresa la fecha real del abono.\n\nFormato: DÍA-MES-AÑO (Ejemplo: 15-04-2026):`, fechaHoyUser);
-            if (!fechaIngresada) return;
-            fechaIngresada = fechaIngresada.trim();
+        try {
+            if (btnAbonoYape) btnAbonoYape.disabled = true;
+            if (btnAbonoEfectivo) btnAbonoEfectivo.disabled = true;
 
-            if (!/^\d{2}-\d{2}-\d{4}$/.test(fechaIngresada)) {
-                alert("Formato de fecha incorrecto. Debe tener los guiones y ser DÍA-MES-AÑO. Cancelado.");
-                return;
-            }
+            await addDoc(collection(db, "pagos"), {
+                nombreUsuario: nombreUsuario,
+                monto: monto,
+                fecha: fechaVal,
+                metodo: metodo,
+                mesAplicado: mesDestino,
+                timestamp: Date.now()
+            });
 
-            const partes = fechaIngresada.split('-');
-            const fechaDB = `${partes[2]}-${partes[1]}-${partes[0]}`;
+            montoAbono.value = "";
+            montoAbono.focus();
 
-            // Anclar el pago al mes que se está visualizando en el filtro
-            let mesDestino = mesFiltro.value;
-            if (mesDestino === "todos") {
-                mesDestino = new Date().getMonth().toString();
-            }
+        } catch (e) {
+            alert("Error al registrar abono: " + e.message);
+        } finally {
+            if (btnAbonoYape) btnAbonoYape.disabled = false;
+            if (btnAbonoEfectivo) btnAbonoEfectivo.disabled = false;
+        }
+    };
 
-            btnRegistrarPago.disabled = true;
-            btnRegistrarPago.innerHTML = "⏳ Guardando...";
-            try {
-                await addDoc(collection(db, "pagos"), {
-                    nombreUsuario: nombreUsuario,
-                    monto: monto,
-                    fecha: fechaDB,
-                    mesAplicado: mesDestino, 
-                    timestamp: Date.now()
-                });
-            } catch (e) { alert("Error: " + e.message); }
-            finally { btnRegistrarPago.disabled = false; btnRegistrarPago.innerHTML = '<i class="bi bi-cash-coin me-1"></i> Registrar Pago'; }
-        });
-    }
+    if (btnAbonoYape) btnAbonoYape.addEventListener("click", () => guardarAbono("Yape"));
+    if (btnAbonoEfectivo) btnAbonoEfectivo.addEventListener("click", () => guardarAbono("Efectivo"));
 
     // =========================================================
-    // EXPORTACIONES (WHATSAPP Y PDF)
+    // EXPORTACIONES (WHATSAPP Y PDF CON CÓDIGO QR CENTRADO)
     // =========================================================
     const btnWhatsApp = document.getElementById("btnWhatsApp");
     if (btnWhatsApp) {
@@ -620,10 +642,9 @@ document.addEventListener("DOMContentLoaded", () => {
             consumosDelMes.forEach((r, index) => {
                 const fechaObj = new Date(r.fecha + 'T00:00:00');
                 const [y, m, d] = r.fecha.split('-');
-                
+
                 const nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-                
-                // Aplicamos la misma lógica real de semanas al PDF
+
                 let numSem = obtenerSemanaDelMes(fechaObj);
                 const idGrupo = `${nombreMesR}_${numSem}`;
 
@@ -688,19 +709,39 @@ document.addEventListener("DOMContentLoaded", () => {
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="width: 48%; padding-right: 15px;">
-                                    <div style="background: #742384; border-radius: 12px; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-                                        <div><div style="font-size: 20px; font-weight: 900;">YAPE</div><p style="margin: 0; font-size: 14px;">ROSA RO***</p></div>
-                                        <div style="background: white; padding: 5px; border-radius: 5px;"><img src="yape.png" style="width: 80px; height: 80px;"></div>
-                                    </div>
+                                    <table style="width: 100%; background: #742384; border-radius: 12px; color: white; border-collapse: collapse; height: 120px;">
+                                        <tr>
+                                            <td style="padding: 20px; vertical-align: middle; text-align: left;">
+                                                <div style="font-size: 20px; font-weight: 900;">YAPE</div>
+                                                <p style="margin: 0; font-size: 14px;">TITULAR: ROSA RO***</p>
+                                            </td>
+                                            <td style="padding: 20px; vertical-align: middle; text-align: right; width: 110px;">
+                                                <table style="background: white; border-radius: 8px; width: 90px; height: 90px; border-collapse: collapse; margin-left: auto;">
+                                                    <tr>
+                                                        <td style="text-align: center; vertical-align: middle; padding: 0;">
+                                                            <img src="yape.png" style="width: 75px; height: 75px; display: block; margin: 0 auto;">
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </td>
                                 <td style="width: 52%; padding-left: 15px;">
-                                    <div style="background-color: #e9ecef; border-radius: 12px; border: 1px solid #dee2e6; padding: 20px; text-align: center;">
-                                        <p style="margin: 0; color: #495057; font-weight: bold;">TOTAL DEL MES</p>
-                                        <h2 style="margin: 0; font-size: 35px; color: #0d6efd;">S/ ${sumaTotal.toFixed(2)}</h2>
-                                    </div>
+                                    <table style="width: 100%; background-color: #e9ecef; border-radius: 12px; border: 1px solid #dee2e6; border-collapse: collapse; height: 120px;">
+                                        <tr>
+                                            <td style="text-align: center; vertical-align: middle; padding: 20px;">
+                                                <p style="margin: 0 0 5px 0; color: #212529; font-weight: 900; font-size: 18px; letter-spacing: 0.5px;">TOTAL DEL MES</p>
+                                                <h2 style="margin: 0; font-size: 42px; color: #0d6efd; font-weight: 900;">S/ ${sumaTotal.toFixed(2)}</h2>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </td>
                             </tr>
                         </table>
+                        <div style="text-align: center; color: #495057; font-size: 15px; margin-top: 25px; font-weight: bold; font-style: italic;">
+                            <p>Se agradece el pronto pago de su cuenta, Tenga un excelente día.</p>
+                        </div>
                     </div>
                 </div>
             `;
@@ -722,4 +763,22 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
     }
+
+    const navbar = document.getElementById("main-navbar");
+    let ultimoScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (navbar) {
+        window.addEventListener("scroll", () => {
+            let scrollActual = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollActual > ultimoScroll && scrollActual > 60) {
+                navbar.style.top = `-${navbar.offsetHeight}px`; // Esconde la barra hacia arriba
+            }
+            else {
+                navbar.style.top = "0"; // Muestra la barra
+            }
+            ultimoScroll = scrollActual <= 0 ? 0 : scrollActual; // Evita bugs al llegar al tope
+        });
+    }
+
+
 });

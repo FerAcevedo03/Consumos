@@ -14,6 +14,17 @@ body.bg-profes {
     background: linear-gradient(to right, #e3f2fd, #bbdefb);
 }
 
+#main-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+    /* La mantiene por encima de todo */
+    transition: top 0.3s ease-in-out, box-shadow 0.3s;
+    background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%) !important;
+    /* Azul degradado premium */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+}
+
 .header {
     color: white;
     padding: 1.5rem;
@@ -75,6 +86,7 @@ btn-eliminar-img {
     font-size: 1.2rem;
     line-height: 1.2;
 }
+
 .card-persona {
     transition: all 0.3s ease;
     border: 1px solid rgba(0, 0, 0, 0.05);
@@ -107,34 +119,84 @@ body.bg-alumnos {
 }
 
 /* --- AJUSTES DE MODO OSCURO GLOBAL --- */
-[data-bs-theme="dark"] body { background-color: #121212 !important; color: #f8f9fa !important; }
-[data-bs-theme="dark"] .bg-body-tertiary { background-color: #121212 !important; }
-[data-bs-theme="dark"] .card, [data-bs-theme="dark"] .bg-body { 
-    background-color: #1e1e1e !important; 
-    border-color: #333 !important; 
+[data-bs-theme="dark"] body {
+    background-color: #121212 !important;
+    color: #f8f9fa !important;
 }
-[data-bs-theme="dark"] .text-dark, [data-bs-theme="dark"] .card-title, [data-bs-theme="dark"] h1, [data-bs-theme="dark"] h2, [data-bs-theme="dark"] h4, [data-bs-theme="dark"] h5 { 
-    color: #ffffff !important; 
+
+[data-bs-theme="dark"] .bg-body-tertiary {
+    background-color: #121212 !important;
 }
-[data-bs-theme="dark"] .table { --bs-table-bg: #1e1e1e; --bs-table-color: #e0e0e0; border-color: #444; }
-[data-bs-theme="dark"] .list-group-item { background-color: transparent !important; color: #e0e0e0 !important; }
-[data-bs-theme="dark"] input, [data-bs-theme="dark"] select { background-color: #2b2b2b !important; border-color: #444 !important; color: white !important; }
+
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .bg-body {
+    background-color: #1e1e1e !important;
+    border-color: #333 !important;
+}
+
+[data-bs-theme="dark"] .text-dark,
+[data-bs-theme="dark"] .card-title,
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] h5 {
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .table {
+    --bs-table-bg: #1e1e1e;
+    --bs-table-color: #e0e0e0;
+    border-color: #444;
+}
+
+[data-bs-theme="dark"] .list-group-item {
+    background-color: transparent !important;
+    color: #e0e0e0 !important;
+}
+
+[data-bs-theme="dark"] input,
+[data-bs-theme="dark"] select {
+    background-color: #2b2b2b !important;
+    border-color: #444 !important;
+    color: white !important;
+}
 
 
 /* ANIMACIONES Y ESTILOS DEL LOGIN  */
 @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.anim-1 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.anim-2 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
-.anim-3 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
-.anim-4 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+.anim-1 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-2 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    opacity: 0;
+}
+
+.anim-3 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+    opacity: 0;
+}
+
+.anim-4 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    opacity: 0;
+}
 
 .login-sidebar {
-    background-color: #172033; 
-    background-size: 55%; 
+    background-color: #172033;
+    background-size: 55%;
     background-position: center;
     background-repeat: no-repeat;
     border-top-left-radius: 1rem;
@@ -156,9 +218,11 @@ body.bg-alumnos {
     border-color: #86b7fe;
 }
 
-.btn-login { transition: all 0.3s ease; }
+.btn-login {
+    transition: all 0.3s ease;
+}
+
 .btn-login:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important;
 }
-        
