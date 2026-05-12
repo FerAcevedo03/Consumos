@@ -20,11 +20,9 @@
         style="max-width: 950px; width: 95%; min-height: 550px;">
         <div class="row g-0 h-100">
 
-            <!-- LADO IZQUIERDO: carga de imagen -->
             <div class="col-md-5 d-none d-md-block login-sidebar" style="background-image: url('icono.jpg');">
             </div>
 
-            <!-- LADO DERECHO: formulario de registro -->
             <div class="col-md-7 p-4 p-sm-5 d-flex flex-column justify-content-center bg-body position-relative"
                 style="border-radius: 1rem;">
                 <div class="mb-5 anim-2 text-center">
@@ -75,10 +73,10 @@
         </div>
     </div>
 
-    <!-- FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        // AÑADIMOS setPersistence Y browserSessionPersistence
+        import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
@@ -107,13 +105,19 @@
             const password = document.getElementById('password').value;
 
             try {
+                // 1. Configuramos Firebase para que la sesión sea volátil (solo dure lo que dura la pestaña)
+                await setPersistence(auth, browserSessionPersistence);
+                
+                // 2. Iniciamos sesión
                 await signInWithEmailAndPassword(auth, email, password);
+                
+                // 3. Redirigimos al inicio
                 window.location.replace("index.html");
             } catch (error) {
                 loginError.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Credenciales inválidas. Verifique su correo y contraseña.';
                 loginError.classList.remove('d-none');
 
-                btnLogin.innerHTML = 'Autorizar Ingreso <i class="bi bi-box-arrow-in-right ms-2 fs-5"></i>';
+                btnLogin.innerHTML = 'INGRESAR <i class="bi bi-box-arrow-in-right ms-2 fs-5"></i>';
                 btnLogin.disabled = false;
             }
         });
