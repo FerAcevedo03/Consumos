@@ -118,47 +118,125 @@ body.bg-alumnos {
     background-color: #fffaf0;
 }
 
-/* --- AJUSTES DE MODO OSCURO GLOBAL --- */
-[data-bs-theme="dark"] body {
-    background-color: #121212 !important;
-    color: #f8f9fa !important;
+/* ==========================================================================
+   MODO OSCURO PRO Y DEFINITIVO (FUERZA BRUTA)
+   ========================================================================== */
+
+/* Fondo general de la página */
+[data-bs-theme="dark"], 
+[data-bs-theme="dark"] body, 
+[data-bs-theme="dark"] body.bg-light,
+[data-bs-theme="dark"] body.bg-alumnos,
+[data-bs-theme="dark"] body.bg-profes,
+[data-bs-theme="dark"] body.bg-admin {
+    background: #121212 !important;
 }
 
-[data-bs-theme="dark"] .bg-body-tertiary {
-    background-color: #121212 !important;
-}
-
+/* Tarjetas, cabeceras de tarjeta y fondos blancos/claros */
+[data-bs-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .bg-light,
 [data-bs-theme="dark"] .card,
-[data-bs-theme="dark"] .bg-body {
+[data-bs-theme="dark"] .card-header,
+[data-bs-theme="dark"] .list-group-item,
+[data-bs-theme="dark"] .menu-card,
+[data-bs-theme="dark"] .card-persona {
     background-color: #1e1e1e !important;
-    border-color: #333 !important;
+    color: #e0e0e0 !important;
+    border-color: #333333 !important;
 }
 
+/* CAZA DE ESTILOS EN LÍNEA TERCOS (Los rectángulos blancos rebeldes) */
+[data-bs-theme="dark"] [style*="background-color: #f8f9fa"],
+[data-bs-theme="dark"] [style*="background-color: #ffffff"],
+[data-bs-theme="dark"] [style*="background-color: white"] {
+    background-color: #1e1e1e !important;
+}
+
+/* Textos negros a blancos */
 [data-bs-theme="dark"] .text-dark,
-[data-bs-theme="dark"] .card-title,
 [data-bs-theme="dark"] h1,
 [data-bs-theme="dark"] h2,
 [data-bs-theme="dark"] h4,
-[data-bs-theme="dark"] h5 {
+[data-bs-theme="dark"] h5.text-dark,
+[data-bs-theme="dark"] th.text-dark,
+[data-bs-theme="dark"] .card-title,
+[data-bs-theme="dark"] [style*="color: #000000"],
+[data-bs-theme="dark"] [style*="color: #212529"] {
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Cabecera de la tabla (Ese azul claro brillante) -> Azul Noche */
+[data-bs-theme="dark"] .table-primary,
+[data-bs-theme="dark"] [style*="background-color: #dbeafe"] {
+    background-color: #0a213a !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid #0d6efd !important;
+}
+[data-bs-theme="dark"] .table-primary th {
+    background-color: transparent !important;
     color: #ffffff !important;
 }
 
+/* Tablas en general */
 [data-bs-theme="dark"] .table {
-    --bs-table-bg: #1e1e1e;
+    --bs-table-bg: transparent;
     --bs-table-color: #e0e0e0;
-    border-color: #444;
+    color: #e0e0e0 !important;
+    border-color: #333333 !important;
+}
+[data-bs-theme="dark"] .table td {
+    border-color: #333333 !important;
 }
 
-[data-bs-theme="dark"] .list-group-item {
-    background-color: transparent !important;
+/* Tarjeta inferior (Estado y abono) Azul pastel -> Azul Oscuro Elegante */
+[data-bs-theme="dark"] .card[style*="background-color: #e0f2fe"] {
+    background-color: #0a1f35 !important;
+    border-left-color: #0d6efd !important;
+}
+
+/* Semanas de colores inyectadas por JS */
+[data-bs-theme="dark"] td[style*="background-color: #f0f7ff"],
+[data-bs-theme="dark"] tr[style*="background-color: #f0f7ff"] {
+    background-color: #0c2b4b !important;
+}
+[data-bs-theme="dark"] td[style*="background-color: #d1e7dd"],
+[data-bs-theme="dark"] tr[style*="background-color: #d1e7dd"] {
+    background-color: #0f3f26 !important;
+}
+
+/* Inputs, calendarios y Dropdowns (Listas desplegables) */
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] input,
+[data-bs-theme="dark"] select,
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #2b2f32 !important;
+    color: #ffffff !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+    color: #888 !important;
+}
+
+/* Sugerencias de productos */
+[data-bs-theme="dark"] .dropdown-item {
     color: #e0e0e0 !important;
 }
+[data-bs-theme="dark"] .dropdown-item:hover,
+[data-bs-theme="dark"] .dropdown-item.active {
+    background-color: #0d6efd !important;
+    color: #ffffff !important;
+}
 
-[data-bs-theme="dark"] input,
-[data-bs-theme="dark"] select {
-    background-color: #2b2b2b !important;
-    border-color: #444 !important;
-    color: white !important;
+/* Sombras (para que no brillen como halos blancos en modo oscuro) */
+[data-bs-theme="dark"] .shadow-sm,
+[data-bs-theme="dark"] .shadow-lg {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
 
 

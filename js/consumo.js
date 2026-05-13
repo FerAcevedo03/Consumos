@@ -747,7 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (consumosDelMes.length === 0) { alert("No hay datos para exportar en el periodo seleccionado."); return; }
 
-            // ALERTA INTELIGENTE ANTES DEL PDF
+            // ALERTA INTELIGENTE PARA PDF EN CERO
             let sumaTotalPDF_Test = 0;
             consumosDelMes.forEach((r) => {
                 const fechaObj = new Date(r.fecha + 'T00:00:00');
@@ -792,7 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         : `<span style="color: #dc3545; font-size: 11px;">(⏳ PENDIENTE)</span>`;
 
                     filasHtml += `
-                        <tr style="background-color: #f0f7ff; page-break-after: avoid;">
+                        <tr style="background-color: #f0f7fe; page-break-after: avoid;">
                             <td colspan="4" style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; color: #0d6efd; font-weight: bold; font-size: 13px;">
                                 <span style="margin-right: 10px;">📅</span> ${textoCab} ${badgePDF}
                             </td>
@@ -805,15 +805,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
-                const bgFila = index % 2 === 0 ? "#ffffff" : "#fcfcfc";
-                const tachado = estaPagada ? "text-decoration: line-through; color: #6c757d !important;" : "";
+                const bgFila = index % 2 === 0 ? "#fffffe" : "#fcfcfb";
+                const tachado = estaPagada ? "text-decoration: line-through; color: #6c757c !important;" : "";
 
                 filasHtml += `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #000000; font-weight: bold; text-align: left; width: 10%; ${tachado}">${diasCortos[fechaObj.getDay()]}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #000001; font-weight: bold; text-align: left; width: 10%; ${tachado}">${diasCortos[fechaObj.getDay()]}</td>
                         <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #495057; text-align: left; width: 15%; ${tachado}">${d}/${m}/${y}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529; text-align: left; width: 55%; font-size: 14px; ${tachado}">${r.productoNombre}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212529; width: 20%;">
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212528; text-align: left; width: 55%; font-size: 14px; ${tachado}">${r.productoNombre}</td>
+                        <td style="padding: 12px 15px; border-bottom: 1px solid #dee2e6; color: #212528; width: 20%;">
                             <div style="display: flex; justify-content: space-between; width: 85px; margin-left: auto; font-weight: bold; font-size: 15px; ${tachado}">
                                 <span>S/</span>
                                 <span>${r.precio.toFixed(2)}</span>
@@ -825,12 +825,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const reciboPDF = document.createElement("div");
             reciboPDF.innerHTML = `
-                <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: white;">
+                <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #fffffe; color: #000001;">
                     <div style="text-align: center; border-bottom: 3px solid #0d6efd; padding-bottom: 10px; margin-bottom: 15px;">
-                        <h1 style="color: #0d6efd; margin: 0; font-size: 28px; font-weight: 900;">Quiosco</h1>
-                        <h3 style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase;">REPORTE DE CONSUMO - ${tituloPeriodo}</h3>
+                        <div style="color: #0d6efd; margin: 0; font-size: 32px; font-weight: 900;">Quiosco</div>
+                        <div style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; font-weight: bold;">REPORTE DE CONSUMO - ${tituloPeriodo}</div>
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fa; border: 1px solid #dee2e6;">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fb; border: 1px solid #dee2e6; color: #212528;">
                         <tr style="text-align: center;">
                             <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>CLIENTE:</strong><br>${nombreUsuario}</td>
                             <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>OCUPACIÓN:</strong><br>${ocupacionTexto}</td>
@@ -840,7 +840,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </table>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
                         <thead>
-                            <tr style="background-color: #0d6efd; color: white;">
+                            <tr style="background-color: #0d6efd; color: #fffffe;">
                                 <th style="padding: 12px 15px; text-align: left; width: 10%;">Día</th>
                                 <th style="padding: 12px 15px; text-align: left; width: 15%;">Fecha</th>
                                 <th style="padding: 12px 15px; text-align: left; width: 55%;">Detalle de Consumo</th>
@@ -853,14 +853,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
                                 <td style="width: 48%; padding-right: 15px;">
-                                    <table style="width: 100%; background: #742384; border-radius: 12px; color: white; border-collapse: collapse; height: 120px;">
+                                    <table style="width: 100%; background: #742384; border-radius: 12px; color: #fffffe; border-collapse: collapse; height: 120px;">
                                         <tr>
                                             <td style="padding: 20px; vertical-align: middle; text-align: left;">
                                                 <div style="font-size: 20px; font-weight: 900;">YAPE</div>
                                                 <p style="margin: 0; font-size: 14px;">TITULAR: ROSA RO***</p>
                                             </td>
                                             <td style="padding: 20px; vertical-align: middle; text-align: right; width: 110px;">
-                                                <table style="background: white; border-radius: 8px; width: 90px; height: 90px; border-collapse: collapse; margin-left: auto;">
+                                                <table style="background: #fffffe; border-radius: 8px; width: 90px; height: 90px; border-collapse: collapse; margin-left: auto;">
                                                     <tr>
                                                         <td style="text-align: center; vertical-align: middle; padding: 0;">
                                                             <img src="yape.png" style="width: 75px; height: 75px; display: block; margin: 0 auto;">
@@ -875,8 +875,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <table style="width: 100%; background-color: #e9ecef; border-radius: 12px; border: 1px solid #dee2e6; border-collapse: collapse; height: 120px;">
                                         <tr>
                                             <td style="text-align: center; vertical-align: middle; padding: 20px;">
-                                                <p style="margin: 0 0 5px 0; color: #212529; font-weight: 900; font-size: 18px; letter-spacing: 0.5px; text-transform: uppercase;">${tituloTotal}</p>
-                                                <h2 style="margin: 0; font-size: 42px; color: #0d6efd; font-weight: 900;">S/ ${sumaTotalPDF.toFixed(2)}</h2>
+                                                <div style="margin: 0 0 5px 0; color: #212528; font-weight: 900; font-size: 18px; letter-spacing: 0.5px; text-transform: uppercase;">${tituloTotal}</div>
+                                                <div style="margin: 0; font-size: 42px; color: #0d6efd; font-weight: 900;">S/ ${sumaTotalPDF.toFixed(2)}</div>
                                             </td>
                                         </tr>
                                     </table>

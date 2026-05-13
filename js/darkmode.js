@@ -1,31 +1,44 @@
-// aplicar tema oscuro
-const temaGuardado = localStorage.getItem("tema_nobel");
-if (temaGuardado === "dark") {
-    document.documentElement.setAttribute("data-bs-theme", "dark");
-} else {
-    document.documentElement.setAttribute("data-bs-theme", "light");
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const htmlElement = document.documentElement; // Etiqueta <html>
 
-// configuracion de boton 
-document.addEventListener("DOMContentLoaded", () => {
-    const btnDarkMode = document.getElementById("btnDarkMode");
-    if (!btnDarkMode) return;
+    // 1. Revisar si hay un tema guardado en la memoria del navegador
+    const savedTheme = localStorage.getItem('theme');
+    
+    // Si no hay nada guardado, revisar si la PC/Celular del usuario está en modo oscuro
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    // Definir el tema inicial
+    const currentTheme = savedTheme ? savedTheme : (systemPrefersDark ? 'dark' : 'light');
+    
+    // Aplicar el tema al iniciar
+    setTheme(currentTheme);
 
-    // actualizacion del icono inicial
-    actualizarIcono(document.documentElement.getAttribute("data-bs-theme"));
+    // 2. Evento del botón para alternar
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const isDark = htmlElement.getAttribute('data-bs-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+            setTheme(newTheme);
+        });
+    }
 
-    btnDarkMode.addEventListener("click", () => {
-        let actual = document.documentElement.getAttribute("data-bs-theme");
-        let nuevo = (actual === "dark") ? "light" : "dark";
-
-        document.documentElement.setAttribute("data-bs-theme", nuevo);
-        localStorage.setItem("tema_nobel", nuevo);
-        actualizarIcono(nuevo);
-    });
-
-    function actualizarIcono(tema) {
-        btnDarkMode.innerHTML = (tema === "dark") 
-            ? '<i class="bi bi-sun-fill text-warning"></i>' 
-            : '<i class="bi bi-moon-fill"></i>';
+    // 3. Función maestra que hace los cambios
+    function setTheme(theme) {
+        // Le avisa a Bootstrap que cambie sus colores internos
+        htmlElement.setAttribute('data-bs-theme', theme);
+        
+        // Lo guarda en memoria para que no se pierda al cambiar de página
+        localStorage.setItem('theme', theme);
+        
+        // Cambia el icono visualmente
+        if (themeIcon) {
+            if (theme === 'dark') {
+                themeIcon.className = 'bi bi-sun-fill text-warning'; // Sol amarillo en modo oscuro
+            } else {
+                themeIcon.className = 'bi bi-moon-fill text-dark'; // Luna oscura en modo claro
+            }
+        }
     }
 });
