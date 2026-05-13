@@ -28,16 +28,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const etiquetaRolEl = document.getElementById("etiquetaRol");
     const avatarFondoEl = document.getElementById("avatarFondo");
 
-    let iconoHtml = "", colorFondo = "", colorTexto = "text-white";
-    if (rolUsuario === "profesores") { iconoHtml = '<i class="bi bi-person-workspace"></i>'; colorFondo = "#0d6efd"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Profesor"; }
-    else if (rolUsuario === "alumnos") { iconoHtml = '<i class="bi bi-mortarboard-fill"></i>'; colorFondo = "#ffc107"; colorTexto = "text-dark"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Alumno"; }
-    else if (rolUsuario === "administrativos") { iconoHtml = '<i class="bi bi-person-badge-fill"></i>'; colorFondo = "#198754"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Administrativo"; }
-    else { iconoHtml = '<i class="bi bi-person-fill"></i>'; colorFondo = "#6c757d"; if (etiquetaRolEl) etiquetaRolEl.textContent = "Personal"; }
+    if (rolUsuario === "profesores") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Profesor"; }
+    else if (rolUsuario === "alumnos") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Alumno"; }
+    else if (rolUsuario === "administrativos") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Administrativo"; }
+    else { if (etiquetaRolEl) etiquetaRolEl.textContent = "Personal"; }
 
     if (nombrePersonaEl) nombrePersonaEl.textContent = nombreUsuario;
+
     if (avatarFondoEl) {
-        avatarFondoEl.style.backgroundColor = colorFondo;
-        avatarFondoEl.innerHTML = `<span class="fs-5 ${colorTexto}" style="line-height: 1;">${iconoHtml}</span>`;
+        const coloresAvatar = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#0097a7', '#00897b', '#43a047', '#689f38', '#ef6c00', '#e65100', '#f4511e'];
+        let sumaLetras = 0;
+        for (let i = 0; i < nombreUsuario.length; i++) {
+            sumaLetras += nombreUsuario.charCodeAt(i);
+        }
+        const colorAsignado = coloresAvatar[sumaLetras % coloresAvatar.length];
+        const inicial = nombreUsuario.charAt(0).toUpperCase();
+
+        avatarFondoEl.style.backgroundColor = colorAsignado;
+        avatarFondoEl.innerHTML = `<span class="fw-bold text-white shadow-sm" style="font-size: 1.1rem; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${inicial}</span>`;
     }
 
     const btnVolver = document.getElementById("btnVolver");
@@ -50,7 +58,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const formConsumo = document.getElementById("formConsumo");
     const tablaConsumos = document.getElementById("tablaConsumos");
     const totalAcumulado = document.getElementById("totalAcumulado");
+    
+    // ELEMENTOS DEL NUEVO MENÚ DE MESES
     const mesFiltro = document.getElementById("mesFiltro");
+    const textoMesVisual = document.getElementById("textoMesVisual");
+    const listaMesesUI = document.getElementById("listaMesesUI");
+
+    const inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
 
     const tituloEstadoMes = document.getElementById("tituloEstadoMes");
     const estadoCuentaMesVisual = document.getElementById("estadoCuentaMesVisual");
@@ -68,12 +82,61 @@ document.addEventListener("DOMContentLoaded", () => {
     let historialConsumos = [];
     let historialPagos = [];
     let semanasPagadas = []; 
-    const productosDB = JSON.parse(localStorage.getItem("base_productos")) || [];
+    
+    let productosDB = [];
+    onSnapshot(collection(db, "productos"), (snap) => {
+        if (!snap.empty) {
+            productosDB = [];
+            snap.forEach(doc => productosDB.push({ id: doc.id, ...doc.data() }));
+        } else {
+            productosDB = JSON.parse(localStorage.getItem("base_productos")) || [];
+        }
+    });
 
-    const fechaHoy = new Date();
-    if (fechaConsumo) fechaConsumo.valueAsDate = fechaHoy;
-    if (fechaAbono) fechaAbono.valueAsDate = fechaHoy;
+    if (fechaConsumo) {
+        flatpickr(fechaConsumo, {
+            locale: "es",
+            defaultDate: "today",
+            disableMobile: true
+        });
+    }
+    if (fechaAbono) {
+        flatpickr(fechaAbono, {
+            locale: "es",
+            defaultDate: "today",
+            disableMobile: true
+        });
+    }
 
+    // ----------------------------------------------------
+    // LÓGICA DE SINCRONIZACIÓN DEL MENÚ PREMIUM DE MESES
+    // ----------------------------------------------------
+    if (listaMesesUI) {
+        listaMesesUI.addEventListener("click", (e) => {
+            const item = e.target.closest(".dropdown-item");
+            if (!item) return;
+            e.preventDefault();
+            const valor = item.getAttribute("data-val");
+            if (mesFiltro.value !== valor) {
+                mesFiltro.value = valor;
+                mesFiltro.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    if (mesFiltro) {
+        mesFiltro.addEventListener("change", () => {
+            // Actualizar el texto del botón hermoso
+            if (textoMesVisual) {
+                textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
+            }
+            renderizarConsumos();
+            recalcularSaldoGlobal();
+            renderizarListaPagos(); 
+        });
+    }
+
+    // Si cambias el día en el calendario, te cambia de mes automáticamente
     if (fechaConsumo && mesFiltro) {
         fechaConsumo.addEventListener("change", () => {
             if (!fechaConsumo.value) return; 
@@ -86,7 +149,23 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-    if (mesFiltro) mesFiltro.value = fechaHoy.getMonth().toString();
+    
+    // Iniciar con el mes actual
+    const fechaHoy = new Date();
+    if (mesFiltro) {
+        mesFiltro.value = fechaHoy.getMonth().toString();
+        if (textoMesVisual) {
+            textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
+        }
+    }
+
+    // ----------------------------------------------------
+
+    if (inputBusquedaTabla) {
+        inputBusquedaTabla.addEventListener("input", () => {
+            renderizarConsumos();
+        });
+    }
 
     let indiceSeleccionado = -1;
     if (inputProducto) {
@@ -103,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     listaSugerencias.classList.add("show");
                     f.forEach(p => {
                         const li = document.createElement("li");
-                        li.innerHTML = `<a class="dropdown-item d-flex justify-content-between" href="#"><span>${p.nombre}</span><small>S/ ${p.precio.toFixed(2)}</small></a>`;
+                        li.innerHTML = `<a class="dropdown-item d-flex justify-content-between" href="#"><span>${p.nombre}</span><small>S/ ${parseFloat(p.precio).toFixed(2)}</small></a>`;
                         li.onmousedown = (e) => { e.preventDefault(); seleccionar(p.nombre); };
                         listaSugerencias.appendChild(li);
                     });
@@ -239,44 +318,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (btnMarcarMesPagado) {
-        btnMarcarMesPagado.onclick = async () => {
+        btnMarcarMesPagado.onclick = () => {
             const mesSeleccionado = mesFiltro.value;
             if (mesSeleccionado === "todos") return;
             
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
-            if (!confirm(`¿Deseas marcar TODO EL MES DE ${nombreMes} como cancelado?\n\nEsto saldará todas las semanas pendientes de este mes.`)) return;
+            
+            Swal.fire({
+                title: '¿Marcar mes como pagado?',
+                text: `¿Deseas marcar TODO EL MES DE ${nombreMes} como cancelado?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, cancelar mes',
+                cancelButtonText: 'No, regresar'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+                    const gruposSemanas = [...new Set(consumosDelMes.map(r => {
+                        let f = new Date(r.fecha + 'T00:00:00');
+                        return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
+                    }))];
 
-            const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-            const gruposSemanas = [...new Set(consumosDelMes.map(r => {
-                let f = new Date(r.fecha + 'T00:00:00');
-                return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
-            }))];
+                    if (gruposSemanas.length === 0) {
+                        Swal.fire('Vacío', 'No hay consumos en este mes.', 'info');
+                        return;
+                    }
 
-            if (gruposSemanas.length === 0) {
-                alert("No hay consumos en este mes para marcar.");
-                return;
-            }
+                    try {
+                        btnMarcarMesPagado.disabled = true;
+                        const batch = writeBatch(db);
+                        
+                        gruposSemanas.forEach(idGrupo => {
+                            const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+                            const docRef = doc(db, "semanas_pagadas", docId);
+                            batch.set(docRef, {
+                                nombreUsuario: nombreUsuario,
+                                idGrupo: idGrupo,
+                                timestamp: Date.now()
+                            });
+                        });
 
-            try {
-                btnMarcarMesPagado.disabled = true;
-                const batch = writeBatch(db);
-                
-                gruposSemanas.forEach(idGrupo => {
-                    const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
-                    const docRef = doc(db, "semanas_pagadas", docId);
-                    batch.set(docRef, {
-                        nombreUsuario: nombreUsuario,
-                        idGrupo: idGrupo,
-                        timestamp: Date.now()
-                    });
-                });
-
-                await batch.commit();
-            } catch (e) {
-                alert("Error al marcar el mes: " + e.message);
-            } finally {
-                btnMarcarMesPagado.disabled = false;
-            }
+                        await batch.commit();
+                        Swal.fire('¡Éxito!', `El mes de ${nombreMes} ha sido cancelado.`, 'success');
+                    } catch (e) {
+                        Swal.fire('Error', e.message, 'error');
+                    } finally {
+                        btnMarcarMesPagado.disabled = false;
+                    }
+                }
+            });
         };
     }
 
@@ -285,7 +377,10 @@ document.addEventListener("DOMContentLoaded", () => {
     window.editarRegistro = (id, productoActual, precioActual, fechaDB) => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        if (fechaConsumo) fechaConsumo.value = fechaDB;
+        if (fechaConsumo) {
+            fechaConsumo.value = fechaDB;
+            if (fechaConsumo._flatpickr) fechaConsumo._flatpickr.setDate(fechaDB);
+        }
         if (inputProducto) inputProducto.value = productoActual + " + ";
         if (inputCantidad) inputCantidad.value = 1;
 
@@ -305,37 +400,66 @@ document.addEventListener("DOMContentLoaded", () => {
         const p = fechaDB.split('-');
         const fechaUser = `${p[2]}-${p[1]}-${p[0]}`;
 
-        let nuevoMontoStr = prompt("1. EDITAR MONTO DEL ABONO (S/):", montoActual);
-        if (nuevoMontoStr === null) return;
-        let nuevoMonto = parseFloat(nuevoMontoStr.replace(',', '.'));
-        if (isNaN(nuevoMonto) || nuevoMonto <= 0) { alert("Monto inválido"); return; }
+        const { value: formValues } = await Swal.fire({
+            title: 'Editar Abono',
+            html: `
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold small text-muted">Monto Abonado (S/)</label>
+                    <input id="swal-monto" type="number" step="0.01" class="form-control form-control-lg" value="${montoActual}">
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold small text-muted">Fecha del Pago</label>
+                    <input id="swal-fecha" type="date" class="form-control" value="${fechaDB}">
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold small text-muted">Medio de Pago</label>
+                    <select id="swal-metodo" class="form-select">
+                        <option value="Efectivo" ${metodoActual === 'Efectivo' ? 'selected' : ''}>Efectivo</option>
+                        <option value="Yape" ${metodoActual === 'Yape' ? 'selected' : ''}>Yape</option>
+                    </select>
+                </div>
+                <div class="mb-1 text-start">
+                    <label class="form-label fw-bold small text-muted">Nombre del Pagador</label>
+                    <input id="swal-pagador" type="text" class="form-control" placeholder="Opcional" value="${pagadorActual || ''}">
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Cambios',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                return {
+                    monto: document.getElementById('swal-monto').value,
+                    fecha: document.getElementById('swal-fecha').value,
+                    metodo: document.getElementById('swal-metodo').value,
+                    pagador: document.getElementById('swal-pagador').value
+                }
+            }
+        });
 
-        let nuevaFechaUser = prompt("2. EDITAR FECHA (DD-MM-YYYY):", fechaUser);
-        if (!nuevaFechaUser) return;
-        if (!/^\d{2}-\d{2}-\d{4}$/.test(nuevaFechaUser)) { alert("Formato de fecha incorrecto."); return; }
-        const partes = nuevaFechaUser.split('-');
-        const nuevaFechaDB = `${partes[2]}-${partes[1]}-${partes[0]}`;
+        if (formValues) {
+            let nuevoMonto = parseFloat(formValues.monto);
+            if (isNaN(nuevoMonto) || nuevoMonto <= 0) { 
+                Swal.fire('Error', 'El monto ingresado es inválido.', 'error'); 
+                return; 
+            }
+            if (!formValues.fecha) { 
+                Swal.fire('Error', 'Debes seleccionar una fecha.', 'error'); 
+                return; 
+            }
 
-        let nuevoMetodo = prompt("3. EDITAR MÉTODO (Escribe 'Yape' o 'Efectivo'):", metodoActual || "Efectivo");
-        if (nuevoMetodo === null) return;
-        nuevoMetodo = nuevoMetodo.trim();
-        if (nuevoMetodo.toLowerCase() !== 'yape' && nuevoMetodo.toLowerCase() !== 'efectivo') {
-            nuevoMetodo = "Efectivo"; 
-        } else {
-            nuevoMetodo = nuevoMetodo.charAt(0).toUpperCase() + nuevoMetodo.slice(1).toLowerCase();
+            try {
+                await updateDoc(doc(db, "pagos", id), {
+                    monto: nuevoMonto,
+                    fecha: formValues.fecha,
+                    metodo: formValues.metodo,
+                    pagador: formValues.pagador.trim()
+                });
+                Swal.fire('¡Actualizado!', 'El abono ha sido modificado correctamente.', 'success');
+            } catch (e) { 
+                Swal.fire('Error al editar', e.message, 'error'); 
+            }
         }
-
-        let nuevoPagador = prompt("4. EDITAR NOMBRE DE QUIEN PAGÓ (Opcional):", pagadorActual || "");
-        if (nuevoPagador === null) return;
-
-        try {
-            await updateDoc(doc(db, "pagos", id), {
-                monto: nuevoMonto,
-                fecha: nuevaFechaDB,
-                metodo: nuevoMetodo,
-                pagador: nuevoPagador.trim()
-            });
-        } catch (e) { alert("Error al editar el pago: " + e.message); }
     };
 
     function renderizarListaPagos() {
@@ -386,26 +510,42 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    window.toggleSemanaPagada = async (idGrupo, estaPagada) => {
+    window.toggleSemanaPagada = (idGrupo, estaPagada) => {
         const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
         
-        try {
-            if (estaPagada) {
-                if(confirm("¿Desmarcar esta semana? Sus montos volverán a sumarse a la deuda actual del mes.")) {
-                    await deleteDoc(doc(db, "semanas_pagadas", docId));
-                }
-            } else {
-                if(confirm("¿Marcar esta semana como CANCELADA?\n\nAl confirmar, los consumos de esta semana se restarán de la deuda activa.")) {
-                    await setDoc(doc(db, "semanas_pagadas", docId), {
-                        nombreUsuario: nombreUsuario,
-                        idGrupo: idGrupo,
-                        timestamp: Date.now()
-                    });
+        let titulo = estaPagada ? '¿Desmarcar semana?' : '¿Marcar como cancelada?';
+        let texto = estaPagada 
+            ? 'Los montos volverán a sumarse a la deuda actual del mes.' 
+            : 'Al confirmar, los consumos de esta semana se restarán de la deuda activa.';
+        let icon = estaPagada ? 'warning' : 'question';
+        let confirmColor = estaPagada ? '#dc3545' : '#198754';
+
+        Swal.fire({
+            title: titulo,
+            text: texto,
+            icon: icon,
+            showCancelButton: true,
+            confirmButtonColor: confirmColor,
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, confirmar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    if (estaPagada) {
+                        await deleteDoc(doc(db, "semanas_pagadas", docId));
+                    } else {
+                        await setDoc(doc(db, "semanas_pagadas", docId), {
+                            nombreUsuario: nombreUsuario,
+                            idGrupo: idGrupo,
+                            timestamp: Date.now()
+                        });
+                    }
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
                 }
             }
-        } catch (e) {
-            alert("Error al actualizar la semana: " + e.message);
-        }
+        });
     };
 
     function renderizarConsumos() {
@@ -413,10 +553,17 @@ document.addEventListener("DOMContentLoaded", () => {
         tablaConsumos.innerHTML = "";
         let total = 0; 
         const mes = mesFiltro.value; 
-        const filtrados = historialConsumos.filter(r => mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
+        
+        const textoBusqueda = inputBusquedaTabla ? inputBusquedaTabla.value.toLowerCase() : "";
+
+        const filtrados = historialConsumos.filter(r => {
+            const coincideMes = (mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
+            const coincideBusqueda = r.productoNombre.toLowerCase().includes(textoBusqueda);
+            return coincideMes && coincideBusqueda;
+        });
 
         if (filtrados.length === 0) {
-            tablaConsumos.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No hay consumos en este mes.</td></tr>';
+            tablaConsumos.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No se encontraron registros en este periodo/búsqueda.</td></tr>';
             totalAcumulado.textContent = "S/ 0.00";
             return;
         }
@@ -494,8 +641,39 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    window.eliminarRegistro = async (id) => { if (confirm("¿Borrar este consumo?")) await deleteDoc(doc(db, "consumos", id)); };
-    window.eliminarPago = async (id) => { if (confirm("¿Estás seguro de anular este abono? El saldo de deuda/favor se recalculará automáticamente.")) await deleteDoc(doc(db, "pagos", id)); };
+    window.eliminarRegistro = (id) => { 
+        Swal.fire({
+            title: '¿Borrar este consumo?',
+            text: "No podrás revertir esto.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, borrar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, "consumos", id));
+            }
+        });
+    };
+    
+    window.eliminarPago = (id) => { 
+        Swal.fire({
+            title: '¿Anular este abono?',
+            text: "La deuda se recalculará automáticamente.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, anular',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, "pagos", id));
+            }
+        });
+    };
 
     if (formConsumo) {
         formConsumo.onsubmit = async (e) => {
@@ -532,7 +710,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombreLimpio.toLowerCase());
 
                 if (!productoEncontrado && precioPersonalizado === null) {
-                    alert(`El producto "${nombreLimpio}" NO EXISTE en tu inventario.\nPor favor, selecciónalo de la lista desplegable.`);
+                    Swal.fire('Producto no encontrado', `El producto "${nombreLimpio}" NO EXISTE en tu inventario. Selecciónalo de la lista.`, 'error');
                     return;
                 }
 
@@ -543,18 +721,27 @@ document.addEventListener("DOMContentLoaded", () => {
                     precioDelProducto = precioPersonalizado;
                     nombreParaHistorial = `${nombreLimpio} (S/ ${precioDelProducto.toFixed(2)})`;
                 } else {
-                    precioDelProducto = productoEncontrado.precio;
+                    precioDelProducto = parseFloat(productoEncontrado.precio); 
                     nombreParaHistorial = productoEncontrado.nombre;
 
                     let cat = (productoEncontrado.categoria || "").toLowerCase();
                     let nom = productoEncontrado.nombre.toLowerCase();
                     if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
-                        let precioIngresado = prompt(`Ingrese el precio para el plato "${productoEncontrado.nombre}":\n(Ej: 5, 7.50)`, productoEncontrado.precio);
-                        if (precioIngresado === null || precioIngresado.trim() === "" || isNaN(parseFloat(precioIngresado.replace(',', '.')))) {
-                            alert("Registro cancelado. Debe ingresar un precio válido.");
-                            return;
-                        }
-                        precioDelProducto = parseFloat(precioIngresado.replace(',', '.'));
+                        
+                        const { value: precioIngresado } = await Swal.fire({
+                            title: `Precio del plato`,
+                            text: `Ingresa el precio de cobro para "${productoEncontrado.nombre}":`,
+                            input: 'number',
+                            inputValue: productoEncontrado.precio,
+                            inputAttributes: { step: '0.01' },
+                            showCancelButton: true,
+                            confirmButtonText: 'Confirmar',
+                            cancelButtonText: 'Cancelar'
+                        });
+
+                        if (!precioIngresado) return; 
+                        
+                        precioDelProducto = parseFloat(precioIngresado);
                         nombreParaHistorial = `${productoEncontrado.nombre} (S/ ${precioDelProducto.toFixed(2)})`;
                     }
                 }
@@ -618,10 +805,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 inputCantidad.value = "1"; 
                 inputProducto.focus();
 
-            } catch (e) { alert("Error: " + e.message); }
+            } catch (e) { Swal.fire('Error', e.message, 'error'); }
             finally { 
                 btn.disabled = false; 
-                btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al carrito del día'; 
+                btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al registro de consumo'; 
             }
         };
     }
@@ -630,13 +817,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!montoAbono) return;
         let monto = parseFloat(montoAbono.value);
         if (isNaN(monto) || monto <= 0) {
-            alert("Por favor, ingresa un monto válido (Ejemplo: 15.50).");
+            Swal.fire('Cuidado', 'Por favor, ingresa un monto válido (Ejemplo: 15.50).', 'warning');
             return;
         }
 
         const fechaVal = fechaAbono.value;
         if (!fechaVal) {
-            alert("Por favor, selecciona una fecha.");
+            Swal.fire('Cuidado', 'Por favor, selecciona una fecha.', 'warning');
             return;
         }
 
@@ -669,7 +856,7 @@ document.addEventListener("DOMContentLoaded", () => {
             montoAbono.focus();
 
         } catch (e) { 
-            alert("Error al registrar abono: " + e.message); 
+            Swal.fire('Error', 'Error al registrar abono: ' + e.message, 'error');
         } finally { 
             if (btnAbonoYape) btnAbonoYape.disabled = false;
             if (btnAbonoEfectivo) btnAbonoEfectivo.disabled = false;
@@ -686,7 +873,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
             const consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
-            if (consumosDelMes.length === 0) { alert("No hay consumos registrados en este mes para enviar."); return; }
+            if (consumosDelMes.length === 0) { Swal.fire('Vacío', 'No hay consumos registrados en este mes para enviar.', 'info'); return; }
 
             const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
             const horaActual = new Date().getHours();
@@ -716,25 +903,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnExportarPDF = document.getElementById("btnExportarPDF");
 
     if (btnExportarPDF) {
-        btnExportarPDF.addEventListener("click", () => {
+        btnExportarPDF.addEventListener("click", async () => {
             const mesSeleccionado = mesFiltro.value;
             const nombreMesHeader = mesFiltro.options[mesFiltro.selectedIndex].text;
 
             if (mesSeleccionado === "todos") {
-                alert("Por favor, selecciona un mes específico en el filtro arriba para descargar el reporte.");
+                Swal.fire('Cuidado', 'Por favor, selecciona un mes específico en el filtro arriba para descargar el reporte.', 'warning');
                 return;
             }
 
-            const seleccion = prompt(
-                "¿Qué periodo deseas descargar en el PDF?\n\n" +
-                "1 - Semana 01\n" +
-                "2 - Semana 02\n" +
-                "3 - Semana 03\n" +
-                "4 - Semana 04\n" +
-                "5 - TODO EL MES (Excluye montos cancelados)", "5"
-            );
+            const { value: seleccion } = await Swal.fire({
+                title: 'Descargar Reporte PDF',
+                text: '¿Qué periodo deseas descargar?',
+                input: 'select',
+                inputOptions: {
+                    '1': 'Semana 01',
+                    '2': 'Semana 02',
+                    '3': 'Semana 03',
+                    '4': 'Semana 04',
+                    '5': 'TODO EL MES (Excluye montos cancelados)'
+                },
+                inputPlaceholder: 'Selecciona una opción',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Generar PDF',
+                cancelButtonText: 'Cancelar'
+            });
 
-            if (!seleccion || !["1", "2", "3", "4", "5"].includes(seleccion)) return;
+            if (!seleccion) return;
 
             let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
@@ -745,9 +941,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            if (consumosDelMes.length === 0) { alert("No hay datos para exportar en el periodo seleccionado."); return; }
+            if (consumosDelMes.length === 0) { Swal.fire('Vacío', 'No hay datos para exportar en el periodo seleccionado.', 'info'); return; }
 
-            // ALERTA INTELIGENTE PARA PDF EN CERO
             let sumaTotalPDF_Test = 0;
             consumosDelMes.forEach((r) => {
                 const fechaObj = new Date(r.fecha + 'T00:00:00');
@@ -763,9 +958,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const tituloTotal = seleccion === "5" ? "TOTAL PENDIENTE" : `TOTAL SEMANA 0${seleccion}`;
 
             if (sumaTotalPDF_Test === 0) {
-                if (!confirm(`El periodo seleccionado (${tituloPeriodo}) ya se encuentra totalmente CANCELADO.\n\n¿Deseas descargar el reporte de todas formas como comprobante?`)) {
-                    return; 
-                }
+                const confZero = await Swal.fire({
+                    title: 'Periodo Cancelado',
+                    text: `El periodo seleccionado (${tituloPeriodo}) ya no tiene deudas pendientes. ¿Deseas descargar el reporte de todas formas como comprobante?`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Sí, descargar',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confZero.isConfirmed) return;
             }
 
             btnExportarPDF.innerHTML = '<i class="bi bi-hourglass-split"></i>...';
@@ -904,6 +1106,91 @@ document.addEventListener("DOMContentLoaded", () => {
             }).catch(error => {
                 console.error("ERROR PDF:", error);
                 btnExportarPDF.disabled = false;
+            });
+        });
+    }
+
+    // LÓGICA DEL BOTÓN DE ESTADÍSTICAS (CHART.JS + SWEETALERT)
+    const btnEstadisticas = document.getElementById("btnEstadisticas");
+    if (btnEstadisticas) {
+        btnEstadisticas.addEventListener("click", () => {
+            const mesSeleccionado = mesFiltro.value;
+            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
+            const consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+
+            if (consumosDelMes.length === 0) {
+                Swal.fire('Sin datos', 'No hay consumos registrados para generar un gráfico.', 'info');
+                return;
+            }
+
+            const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            let gastosPorDia = { 'Lunes': 0, 'Martes': 0, 'Miércoles': 0, 'Jueves': 0, 'Viernes': 0, 'Sábado': 0 };
+
+            consumosDelMes.forEach(r => {
+                const f = new Date(r.fecha + 'T00:00:00');
+                const nombreDia = dias[f.getDay()];
+                if(gastosPorDia[nombreDia] !== undefined) {
+                    gastosPorDia[nombreDia] += r.precio;
+                }
+            });
+
+            const labels = Object.keys(gastosPorDia);
+            const data = Object.values(gastosPorDia);
+
+            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+            Swal.fire({
+                title: `Gastos de ${nombreMes}`,
+                html: '<canvas id="miGrafico" style="width:100%; max-height:300px;"></canvas>',
+                width: 600,
+                background: isDark ? '#1e1e1e' : '#ffffff', 
+                color: isDark ? '#f8f9fa' : '#212529', 
+                showConfirmButton: true,
+                confirmButtonText: '<i class="bi bi-check-lg"></i> Entendido',
+                confirmButtonColor: '#0d6efd',
+                didOpen: () => {
+                    const ctx = document.getElementById('miGrafico').getContext('2d');
+                    const textColor = isDark ? '#e0e0e0' : '#6c757d';
+
+                    new Chart(ctx, {
+                        type: 'bar', 
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total Gastado (S/)',
+                                data: data,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.7)',
+                                    'rgba(54, 162, 235, 0.7)',
+                                    'rgba(255, 206, 86, 0.7)',
+                                    'rgba(75, 192, 192, 0.7)',
+                                    'rgba(153, 102, 255, 0.7)',
+                                    'rgba(255, 159, 64, 0.7)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { labels: { color: textColor } }
+                            },
+                            scales: { 
+                                y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: isDark ? '#333' : '#e9ecef' } },
+                                x: { ticks: { color: textColor }, grid: { display: false } }
+                            }
+                        }
+                    });
+                }
             });
         });
     }
