@@ -93,10 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnAgregarModal) {
         btnAgregarModal.onclick = async () => {
             const { value: nombreNuevo } = await Swal.fire({
-                title: `Añadir Nuevo`,
+                title: `Añadir nuevo usuario`,
                 text: "Escribe el nombre completo",
                 input: 'text',
-                inputPlaceholder: 'Ej: Juan Pérez',
+                inputPlaceholder: '',
                 icon: 'person-add',
                 showCancelButton: true,
                 confirmButtonColor: colorFondo,

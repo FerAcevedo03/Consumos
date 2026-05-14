@@ -18,10 +18,8 @@ body.bg-profes {
     position: sticky;
     top: 0;
     z-index: 1050;
-    /* La mantiene por encima de todo */
     transition: top 0.3s ease-in-out, box-shadow 0.3s;
     background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%) !important;
-    /* Azul degradado premium */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -81,12 +79,6 @@ body.bg-profes {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
 }
 
-btn-eliminar-img {
-    padding: 0px 6px;
-    font-size: 1.2rem;
-    line-height: 1.2;
-}
-
 .card-persona {
     transition: all 0.3s ease;
     border: 1px solid rgba(0, 0, 0, 0.05);
@@ -97,7 +89,6 @@ btn-eliminar-img {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
     border-color: #ffc107 !important;
-    /* Borde amarillo al hacer hover */
 }
 
 .icono-avatar {
@@ -107,22 +98,18 @@ btn-eliminar-img {
     align-items: center;
     justify-content: center;
     background-color: #fff3cd;
-    /* Fondo amarillo clarito */
     color: #ffc107;
     border-radius: 50%;
     font-size: 1.5rem;
 }
 
-/* Fondo un poco más cálido para resaltar las tarjetas blancas */
 body.bg-alumnos {
     background-color: #fffaf0;
 }
 
 /* ==========================================================================
-   MODO OSCURO PRO Y DEFINITIVO (FUERZA BRUTA)
+   MODO OSCURO PRO Y DEFINITIVO
    ========================================================================== */
-
-/* Fondo general de la página */
 [data-bs-theme="dark"], 
 [data-bs-theme="dark"] body, 
 [data-bs-theme="dark"] body.bg-light,
@@ -132,7 +119,6 @@ body.bg-alumnos {
     background: #121212 !important;
 }
 
-/* Tarjetas, cabeceras de tarjeta y fondos blancos/claros */
 [data-bs-theme="dark"] .bg-white,
 [data-bs-theme="dark"] .bg-light,
 [data-bs-theme="dark"] .card,
@@ -145,14 +131,12 @@ body.bg-alumnos {
     border-color: #333333 !important;
 }
 
-/* CAZA DE ESTILOS EN LÍNEA TERCOS (Los rectángulos blancos rebeldes) */
 [data-bs-theme="dark"] [style*="background-color: #f8f9fa"],
 [data-bs-theme="dark"] [style*="background-color: #ffffff"],
 [data-bs-theme="dark"] [style*="background-color: white"] {
     background-color: #1e1e1e !important;
 }
 
-/* Textos negros a blancos */
 [data-bs-theme="dark"] .text-dark,
 [data-bs-theme="dark"] h1,
 [data-bs-theme="dark"] h2,
@@ -169,7 +153,6 @@ body.bg-alumnos {
     color: #adb5bd !important;
 }
 
-/* Cabecera de la tabla (Ese azul claro brillante) -> Azul Noche */
 [data-bs-theme="dark"] .table-primary,
 [data-bs-theme="dark"] [style*="background-color: #dbeafe"],
 [data-bs-theme="dark"] .table-info {
@@ -183,7 +166,6 @@ body.bg-alumnos {
     color: #ffffff !important;
 }
 
-/* Tablas en general */
 [data-bs-theme="dark"] .table {
     --bs-table-bg: transparent;
     --bs-table-color: #e0e0e0;
@@ -194,13 +176,11 @@ body.bg-alumnos {
     border-color: #333333 !important;
 }
 
-/* Tarjeta inferior (Estado y abono) Azul pastel -> Azul Oscuro Elegante */
 [data-bs-theme="dark"] .card[style*="background-color: #e0f2fe"] {
     background-color: #0a1f35 !important;
     border-left-color: #0d6efd !important;
 }
 
-/* Semanas de colores inyectadas por JS */
 [data-bs-theme="dark"] td[style*="background-color: #f0f7ff"],
 [data-bs-theme="dark"] tr[style*="background-color: #f0f7ff"] {
     background-color: #0c2b4b !important;
@@ -210,9 +190,9 @@ body.bg-alumnos {
     background-color: #0f3f26 !important;
 }
 
-/* Inputs, calendarios y Dropdowns (Listas desplegables) */
 [data-bs-theme="dark"] .form-control,
 [data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] .input-group-text,
 [data-bs-theme="dark"] input,
 [data-bs-theme="dark"] select,
 [data-bs-theme="dark"] .dropdown-menu {
@@ -225,7 +205,6 @@ body.bg-alumnos {
     color: #888 !important;
 }
 
-/* Sugerencias de productos */
 [data-bs-theme="dark"] .dropdown-item {
     color: #e0e0e0 !important;
 }
@@ -235,15 +214,34 @@ body.bg-alumnos {
     color: #ffffff !important;
 }
 
-/* Sombras (para que no brillen como halos blancos en modo oscuro) */
 [data-bs-theme="dark"] .shadow-sm,
 [data-bs-theme="dark"] .shadow-lg {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* ==========================================================================
-   PARCHE PARA MODO OSCURO EN LAS ALERTAS ANIMADAS (SWEETALERT2)
+   ARREGLO DE LÍNEA AZUL AL HACER CLIC EN CAJAS DE TEXTO (SIN PARPADEO)
    ========================================================================== */
+.input-group, .form-control, .input-group-text {
+    transition: all 0.2s ease-in-out !important; /* Sincroniza la animación para evitar el parpadeo */
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: none !important;
+    border-color: #0d6efd !important;
+}
+
+.input-group:focus-within {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15) !important;
+    border-radius: 0.375rem !important;
+}
+
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control {
+    border-color: #0d6efd !important;
+}
+
+/* MODO OSCURO SWEETALERT2 */
 [data-bs-theme="dark"] .swal2-popup {
     background-color: #1e1e1e !important;
     color: #f8f9fa !important;
@@ -267,37 +265,49 @@ body.bg-alumnos {
     color: #ffc107 !important;
 }
 
-/* ANIMACIONES Y ESTILOS DEL LOGIN  */
+/* MODO OSCURO FLATPICKR */
+[data-bs-theme="dark"] .flatpickr-calendar {
+    background: #2b2f32;
+    box-shadow: 1px 0 0 #333, -1px 0 0 #333, 0 1px 0 #333, 0 -1px 0 #333, 0 3px 13px rgba(0,0,0,0.5);
+}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-month,
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-current-month {
+    color: #fff;
+    fill: #fff;
+}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-weekday {
+    color: #aaa;
+}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day {
+    color: #e0e0e0;
+}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:hover,
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:focus {
+    background: #495057;
+    border-color: #495057;
+}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.selected {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.flatpickr-disabled {
+    color: #555;
+}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-time input {
+    color: #e0e0e0;
+}
+
+/* ANIMACIONES LOGIN */
 @keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.anim-1 {
-    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.anim-2 {
-    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
-    opacity: 0;
-}
-
-.anim-3 {
-    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-    opacity: 0;
-}
-
-.anim-4 {
-    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-    opacity: 0;
-}
+.anim-1 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.anim-2 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
+.anim-3 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
+.anim-4 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
 
 .login-sidebar {
     background-color: #172033;
@@ -308,25 +318,7 @@ body.bg-alumnos {
     border-bottom-left-radius: 1rem;
 }
 
-.form-control:focus {
-    box-shadow: none;
-    border-color: #dee2e6;
-}
-
-.input-group:focus-within {
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-    border-radius: 0.375rem;
-}
-
-.input-group:focus-within .input-group-text,
-.input-group:focus-within .form-control {
-    border-color: #86b7fe;
-}
-
-.btn-login {
-    transition: all 0.3s ease;
-}
-
+.btn-login { transition: all 0.3s ease; }
 .btn-login:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important;
