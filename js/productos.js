@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
@@ -14,132 +14,254 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
-    const formProducto = document.getElementById("formProducto");
-    const inputNombre = document.getElementById("prodNombre");
-    const inputPrecio = document.getElementById("prodPrecio");
-    const selectCategoria = document.getElementById("prodCategoria");
-    const tablaInventario = document.getElementById("tablaProductos");
+    const tablaProductos = document.getElementById("tablaProductos");
     const buscadorProductos = document.getElementById("buscadorProductos");
+    const btnAgregarModal = document.getElementById("btnAgregarModal");
 
-    const btnGuardar = document.getElementById("btnGuardar");
-    const btnCancelarEdicion = document.getElementById("btnCancelarEdicion");
-    const tituloFormulario = document.getElementById("tituloFormulario");
+    let productosDB = [];
 
-    let productos = [];
-    let idEdicionActual = null;
+    // LECTURA EN TIEMPO REAL DESDE FIREBASE
+    onSnapshot(query(collection(db, "productos")), (snap) => {
+        productosDB = [];
+        snap.forEach(doc => productosDB.push({ id: doc.id, ...doc.data() }));
+        
+        localStorage.setItem("base_productos", JSON.stringify(productosDB));
+        
+        // ORDEN LÓGICO DE QUIOSCO (Agrupados por categoría)
+        const ordenCategorias = {
+            "comida": 1,
+            "bebida": 2,
+            "pan": 3,
+            "keke": 4,
+            "postre": 5,
+            "galleta": 6,
+            "snack": 7,
+            "dulce": 8,
+            "utiles": 9,
+            "otro": 10
+        };
 
-    onSnapshot(collection(db, "productos"), (snapshot) => {
-        productos = [];
-        snapshot.forEach((doc) => {
-            productos.push({ id: doc.id, ...doc.data() });
+        productosDB.sort((a, b) => {
+            let catA = ordenCategorias[a.categoria] || 99;
+            let catB = ordenCategorias[b.categoria] || 99;
+            
+            // Si son de la misma categoría, los ordenamos alfabéticamente por nombre
+            if (catA === catB) {
+                const nombreA = a.nombre || "";
+                const nombreB = b.nombre || "";
+                return nombreA.localeCompare(nombreB);
+            }
+            return catA - catB;
         });
-        localStorage.setItem("base_productos", JSON.stringify(productos));
-        filtrarYRenderizar();
+
+        renderizarProductos();
+    }, (error) => {
+        Swal.fire('Error de conexión', 'No se pudo conectar con el inventario.', 'error');
+        if(tablaProductos) tablaProductos.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-5">Error al cargar inventario</td></tr>`;
     });
 
-    function renderizarTabla(lista) {
-        tablaInventario.innerHTML = "";
-        if (lista.length === 0) {
-            tablaInventario.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">No se encontraron productos.</td></tr>`;
+    if (buscadorProductos) {
+        buscadorProductos.addEventListener("input", renderizarProductos);
+    }
+
+    function renderizarProductos() {
+        if (!tablaProductos) return;
+        tablaProductos.innerHTML = "";
+        
+        const textoBusqueda = buscadorProductos ? buscadorProductos.value.toLowerCase() : "";
+        const filtrados = productosDB.filter(p => (p.nombre || "").toLowerCase().includes(textoBusqueda));
+
+        if (filtrados.length === 0) {
+            tablaProductos.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-5"><i class="bi bi-search fs-1"></i><p class="mt-2">No se encontraron productos.</p></td></tr>`;
             return;
         }
 
-        // ordenar por categoria y nombre
-        lista.sort((a, b) => {
-            const catA = (a.categoria || "otro").toLowerCase();
-            const catB = (b.categoria || "otro").toLowerCase();
-            if (catA < catB) return -1;
-            if (catA > catB) return 1;
-            return a.nombre.localeCompare(b.nombre);
-        }).forEach((prod) => {
+        const iconos = {
+            comida: "🍛", bebida: "🥤", pan: "🥖", galleta: "🍪", keke: "🧁", 
+            postre: "🍮", dulce: "🍬", snack: "🍟", utiles: "✏️", otro: "📦"
+        };
+
+        filtrados.forEach(p => {
             const tr = document.createElement("tr");
+            let icono = iconos[p.categoria] || "📦";
+            
             tr.innerHTML = `
-                <td class="text-center"><span class="fs-4">${obtenerEmoji(prod.categoria)}</span></td>
-                <td class="fw-bold text-dark">${prod.nombre}</td>
-                <td class="text-success fw-bold">S/ ${parseFloat(prod.precio).toFixed(2)}</td>
-                <td class="text-end pe-3">
-                    <button class="btn btn-outline-warning btn-sm me-1" onclick="editarProducto('${prod.id}')">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarProducto('${prod.id}')">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                <td class="text-center ps-4 fs-4">${icono}</td>
+                <td class="fw-bold text-dark">${p.nombre}</td>
+                <td class="fw-bold text-success">S/ ${parseFloat(p.precio).toFixed(2)}</td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-outline-primary rounded-1 me-1 shadow-sm" onclick="window.editarProducto('${p.id}', '${p.nombre.replace(/'/g, "\\'")}', ${p.precio}, '${p.categoria}')" title="Editar"><i class="bi bi-pencil-square"></i></button>
+                    <button class="btn btn-sm btn-outline-danger rounded-1 shadow-sm" onclick="window.eliminarProducto('${p.id}', '${p.nombre.replace(/'/g, "\\'")}')" title="Eliminar"><i class="bi bi-trash3"></i></button>
                 </td>
             `;
-            tablaInventario.appendChild(tr);
+            tablaProductos.appendChild(tr);
         });
     }
 
-    function obtenerEmoji(cat) {
-        const emojis = {
-            comida: "🍛", bebida: "🥤", pan: "🥖", galleta: "🍪", 
-            keke: "🧁", postre: "🍮", dulce: "🍬", snack: "🍟", utiles: "✏️", otro: "📦"
-        };
-        return emojis[cat] || "📦";
-    }
+    // AÑADIR PRODUCTO CON VENTANA ANIMADA
+    if (btnAgregarModal) {
+        btnAgregarModal.onclick = async () => {
+            const { value: formValues } = await Swal.fire({
+                title: 'Nuevo Producto',
+                html: `
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold small text-muted">Nombre del Producto</label>
+                        <input id="swal-prod-nombre" class="form-control form-control-lg" placeholder="Ej: Arroz con Pollo" autocomplete="off">
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold small text-muted">Precio (S/)</label>
+                        <input id="swal-prod-precio" type="number" step="0.10" min="0" class="form-control form-control-lg" placeholder="0.00">
+                    </div>
+                    <div class="mb-1 text-start">
+                        <label class="form-label fw-bold small text-muted">Categoría</label>
+                        <select id="swal-prod-cat" class="form-select form-select-lg">
+                            <option value="" selected disabled>Elegir...</option>
+                            <option value="comida">🍛 Comida (Menú)</option>
+                            <option value="bebida">🥤 Bebidas</option>
+                            <option value="pan">🥖 Pan / Sándwich</option>
+                            <option value="galleta">🍪 Galletas</option>
+                            <option value="keke">🧁 Kekes / Porciones</option>
+                            <option value="postre">🍮 Postres</option>
+                            <option value="dulce">🍬 Dulces</option>
+                            <option value="snack">🍟 Snacks</option>
+                            <option value="utiles">✏️ Útiles</option>
+                            <option value="otro">📦 Otro</option>
+                        </select>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonColor: '#0dcaf0',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-save text-dark"></i> <span class="text-dark fw-bold">Guardar</span>',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    return {
+                        nombre: document.getElementById('swal-prod-nombre').value,
+                        precio: document.getElementById('swal-prod-precio').value,
+                        categoria: document.getElementById('swal-prod-cat').value
+                    }
+                }
+            });
 
-    function filtrarYRenderizar() {
-        const texto = buscadorProductos ? buscadorProductos.value.toLowerCase().trim() : "";
-        const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(texto));
-        renderizarTabla(filtrados);
-    }
+            if (formValues) {
+                if (!formValues.nombre.trim() || !formValues.precio || !formValues.categoria) {
+                    Swal.fire('Campos Incompletos', 'Por favor, llena todos los datos del producto.', 'warning');
+                    return;
+                }
 
-    if (buscadorProductos) buscadorProductos.addEventListener("input", filtrarYRenderizar);
+                let nombreLimpio = formValues.nombre.trim();
+                nombreLimpio = nombreLimpio.charAt(0).toUpperCase() + nombreLimpio.slice(1);
+                
+                const existe = productosDB.some(p => (p.nombre || "").toLowerCase() === nombreLimpio.toLowerCase());
+                if (existe) {
+                    Swal.fire('Atención', `El producto <b>${nombreLimpio}</b> ya existe en tu inventario.`, 'warning');
+                    return;
+                }
 
-    formProducto.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const nombre = inputNombre.value.trim();
-        const precio = parseFloat(inputPrecio.value);
-        const categoria = selectCategoria.value;
-
-        if (!nombre || isNaN(precio) || !categoria) return;
-
-        btnGuardar.disabled = true;
-        btnGuardar.innerHTML = "⏳...";
-
-        try {
-            if (idEdicionActual) {
-                await updateDoc(doc(db, "productos", idEdicionActual), { nombre, precio, categoria });
-                salirModoEdicion();
-            } else {
-                await addDoc(collection(db, "productos"), { nombre, precio, categoria });
-                formProducto.reset();
+                try {
+                    await addDoc(collection(db, "productos"), {
+                        nombre: nombreLimpio,
+                        precio: parseFloat(formValues.precio),
+                        categoria: formValues.categoria
+                    });
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Producto añadido', showConfirmButton: false, timer: 2000 });
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
             }
-        } catch (error) {
-            alert("Error: " + error.message);
-        } finally {
-            btnGuardar.disabled = false;
-            btnGuardar.innerHTML = idEdicionActual ? "Actualizar" : "Guardar";
-        }
-    });
+        };
+    }
 
-    window.editarProducto = (id) => {
-        const prod = productos.find(p => p.id === id);
-        if (prod) {
-            inputNombre.value = prod.nombre;
-            inputPrecio.value = prod.precio;
-            selectCategoria.value = prod.categoria;
-            idEdicionActual = id;
-            tituloFormulario.textContent = "Editar Producto";
-            btnGuardar.textContent = "Actualizar";
-            btnCancelarEdicion.classList.remove("d-none");
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+    // ELIMINAR PRODUCTO (ALERTA DE CONFIRMACIÓN)
+    window.eliminarProducto = (id, nombre) => {
+        Swal.fire({
+            title: '¿Eliminar producto?',
+            html: `¿Estás seguro de que deseas borrar <b>${nombre}</b> del catálogo?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-trash3-fill"></i> Sí, borrar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, "productos", id));
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Borrado', showConfirmButton: false, timer: 2000 });
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        });
     };
 
-    btnCancelarEdicion.addEventListener("click", salirModoEdicion);
+    // EDITAR PRODUCTO (VENTANA ANIMADA PRE-LLENADA)
+    window.editarProducto = async (id, nombreViejo, precioViejo, catVieja) => {
+        const { value: formValues } = await Swal.fire({
+            title: 'Editar Producto',
+            html: `
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold small text-muted">Nombre del Producto</label>
+                    <input id="swal-edit-nombre" class="form-control form-control-lg" value="${nombreViejo}" autocomplete="off">
+                </div>
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold small text-muted">Precio (S/)</label>
+                    <input id="swal-edit-precio" type="number" step="0.10" min="0" class="form-control form-control-lg" value="${precioViejo}">
+                </div>
+                <div class="mb-1 text-start">
+                    <label class="form-label fw-bold small text-muted">Categoría</label>
+                    <select id="swal-edit-cat" class="form-select form-select-lg">
+                        <option value="comida" ${catVieja === 'comida' ? 'selected' : ''}>🍛 Comida (Menú)</option>
+                        <option value="bebida" ${catVieja === 'bebida' ? 'selected' : ''}>🥤 Bebidas</option>
+                        <option value="pan" ${catVieja === 'pan' ? 'selected' : ''}>🥖 Pan / Sándwich</option>
+                        <option value="galleta" ${catVieja === 'galleta' ? 'selected' : ''}>🍪 Galletas</option>
+                        <option value="keke" ${catVieja === 'keke' ? 'selected' : ''}>🧁 Kekes / Porciones</option>
+                        <option value="postre" ${catVieja === 'postre' ? 'selected' : ''}>🍮 Postres</option>
+                        <option value="dulce" ${catVieja === 'dulce' ? 'selected' : ''}>🍬 Dulces</option>
+                        <option value="snack" ${catVieja === 'snack' ? 'selected' : ''}>🍟 Snacks</option>
+                        <option value="utiles" ${catVieja === 'utiles' ? 'selected' : ''}>✏️ Útiles</option>
+                        <option value="otro" ${catVieja === 'otro' ? 'selected' : ''}>📦 Otro</option>
+                    </select>
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonColor: '#0dcaf0',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-save text-dark"></i> <span class="text-dark fw-bold">Actualizar</span>',
+            cancelButtonText: 'Cancelar',
+            preConfirm: () => {
+                return {
+                    nombre: document.getElementById('swal-edit-nombre').value,
+                    precio: document.getElementById('swal-edit-precio').value,
+                    categoria: document.getElementById('swal-edit-cat').value
+                }
+            }
+        });
 
-    function salirModoEdicion() {
-        formProducto.reset();
-        idEdicionActual = null;
-        tituloFormulario.textContent = "Agregar Nuevo Producto o Comida";
-        btnGuardar.textContent = "Guardar";
-        btnCancelarEdicion.classList.add("d-none");
-    }
+        if (formValues) {
+            if (!formValues.nombre.trim() || !formValues.precio) return;
 
-    window.eliminarProducto = async (id) => {
-        if (confirm("¿Eliminar de la nube?")) {
-            await deleteDoc(doc(db, "productos", id));
+            let nombreLimpio = formValues.nombre.trim();
+            nombreLimpio = nombreLimpio.charAt(0).toUpperCase() + nombreLimpio.slice(1);
+            
+            const existe = productosDB.some(p => (p.nombre || "").toLowerCase() === nombreLimpio.toLowerCase() && p.id !== id);
+            if (existe) {
+                Swal.fire('Atención', `Ya existe otro producto llamado <b>${nombreLimpio}</b>.`, 'warning');
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "productos", id), {
+                    nombre: nombreLimpio,
+                    precio: parseFloat(formValues.precio),
+                    categoria: formValues.categoria
+                });
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Producto actualizado', showConfirmButton: false, timer: 2000 });
+            } catch (e) {
+                Swal.fire('Error', e.message, 'error');
+            }
         }
     };
 });

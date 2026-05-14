@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, addDoc, doc, deleteDoc, updateDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// config de fire base
 const firebaseConfig = {
     apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
     authDomain: "quiosco-nobel-school.firebaseapp.com",
@@ -15,192 +14,178 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
+    const tipo = document.body.getAttribute("data-tipo") || "alumnos";
     const listaPersonas = document.getElementById("listaPersonas");
-    const btnAgregar = document.getElementById("btnAgregar");
-    const inputNuevo = document.getElementById("nuevoNombre");
-    const buscadorNombres = document.getElementById("buscadorNombres"); 
+    const buscadorNombres = document.getElementById("buscadorNombres");
+    const btnAgregarModal = document.getElementById("btnAgregarModal");
 
-    // proteccion
-    if (!listaPersonas || !btnAgregar || !inputNuevo) {
-        console.error("Error: No se encontraron los campos en el HTML.");
-        return; 
-    }
+    let personasDB = [];
 
-    // detectar la pag en que estamos
-    let tipo = document.body.getAttribute("data-tipo");
-    if (!tipo) {
-        if (window.location.href.includes("alumnos")) tipo = "alumnos";
-        else if (window.location.href.includes("administrativos")) tipo = "administrativos";
-        else tipo = "profesores"; 
-    }
+    // Configuramos colores según si es alumno, profesor o administrativo
+    let colorFondo = "#ffc107", colorIcono = "#000", iconoHtml = "bi-mortarboard-fill", btnTheme = "btn-warning";
+    if (tipo === "profesores") { colorFondo = "#0d6efd"; colorIcono = "#fff"; iconoHtml = "bi-person-workspace"; btnTheme = "btn-primary"; }
+    else if (tipo === "administrativos") { colorFondo = "#198754"; colorIcono = "#fff"; iconoHtml = "bi-person-badge-fill"; btnTheme = "btn-success"; }
 
-    // adaptacion de colores segun el rol designado
-    let colorClase = "text-warning";
-    let btnClase = "btn-primary"; // Botón de consumos
-    let iconoClase = "bi-mortarboard-fill";
-    
-    if (tipo === "profesores") {
-        colorClase = "text-primary";
-        btnClase = "btn-primary";
-        iconoClase = "bi-person-workspace";
-    } else if (tipo === "administrativos") {
-        colorClase = "text-success";
-        btnClase = "btn-success";
-        iconoClase = "bi-person-badge-fill";
-    }
-
-    let personas = [];
-
-    // lectura en la base de datos en tiempo real 
-    onSnapshot(collection(db, tipo), (snapshot) => {
-        personas = [];
-        snapshot.forEach((doc) => {
-            personas.push({ id: doc.id, nombre: doc.data().nombre });
-        });
+    // 1. LECTURA EN TIEMPO REAL DESDE FIREBASE
+    onSnapshot(query(collection(db, tipo)), (snap) => {
+        personasDB = [];
+        snap.forEach(doc => personasDB.push({ id: doc.id, ...doc.data() }));
         
-        personas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        // SOLUCIÓN AL CARGADO INFINITO: Evitar que choque si un documento no tiene nombre
+        personasDB.sort((a, b) => {
+            const nombreA = a.nombre || "";
+            const nombreB = b.nombre || "";
+            return nombreA.localeCompare(nombreB);
+        });
 
-        if (buscadorNombres && buscadorNombres.value.trim() !== "") {
-            const textoBusqueda = buscadorNombres.value.toLowerCase().trim();
-            const personasFiltradas = personas.filter(p => p.nombre.toLowerCase().includes(textoBusqueda));
-            mostrarPersonas(personasFiltradas);
-        } else {
-            mostrarPersonas(personas);
-        }
+        renderizarPersonas();
+    }, (error) => {
+        Swal.fire('Error de conexión', 'No se pudo conectar con la base de datos.', 'error');
+        if (listaPersonas) listaPersonas.innerHTML = `<div class="col-12 text-center py-5 text-danger"><i class="bi bi-x-circle fs-1"></i><p class="mt-2">Error al cargar datos.</p></div>`;
     });
 
-    // funcion para las tarjetas
-    function mostrarPersonas(personasAMostrar = personas) {
-        listaPersonas.innerHTML = "";
-
-        if (personasAMostrar.length === 0) {
-            listaPersonas.innerHTML = `<div class="col-12 text-center text-muted mt-4"><i class="bi bi-search fs-3 d-block mb-2"></i> No se encontraron registros.</div>`;
-            return;
-        }
-
-        personasAMostrar.forEach((persona) => {
-            let col = document.createElement("div");
-            col.className = "col-12 col-md-6 col-lg-4 mb-3";
-            col.innerHTML = `
-                <div class="card card-persona shadow-sm border-0 h-100 rounded-4">
-                    <div class="card-body p-4 position-relative">
-                        <button class="btn btn-sm btn-light position-absolute top-0 end-0 mt-2 me-2 rounded-circle shadow-sm text-primary" 
-                                onclick="editarNombrePersona('${persona.id}', '${persona.nombre}')" title="Modificar Nombre">
-                            <i class="bi bi-pencil-fill"></i>
-                        </button>
-
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="icono-avatar me-3 shadow-sm" style="background-color: #f8f9fa;">
-                                <i class="bi ${iconoClase} ${colorClase}"></i>
-                            </div>
-                            <div>
-                                <h5 class="fw-bold mb-0 text-dark text-capitalize lh-1" style="font-size: 1.15rem;">${persona.nombre}</h5>
-                                <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-check-circle-fill text-success me-1"></i>Registrado en sistema</small>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between gap-2 mt-3 pt-3 border-top" style="border-color: #f1f5f9 !important;">
-                            <button class="btn ${btnClase} btn-sm rounded-3 px-3 flex-grow-1 fw-bold shadow-sm" onclick="verConsumo('${persona.nombre}', '${tipo}')">
-                                <i class="bi bi-bar-chart-fill me-1"></i> Consumos
-                            </button>
-                            <button class="btn btn-outline-danger btn-sm rounded-3 px-3 fw-bold" onclick="eliminarPersona('${persona.id}', '${persona.nombre}')" title="Eliminar">
-                                <i class="bi bi-trash3-fill"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            listaPersonas.appendChild(col);
-        });
-    }
-
-    // buscador en tiempo real
     if (buscadorNombres) {
-        buscadorNombres.addEventListener("input", (e) => {
-            const textoBusqueda = e.target.value.toLowerCase().trim();
-            const personasFiltradas = personas.filter(p => p.nombre.toLowerCase().includes(textoBusqueda));
-            mostrarPersonas(personasFiltradas);
-        });
+        buscadorNombres.addEventListener("input", renderizarPersonas);
     }
 
-    // agregar a nuevos usuarios 
-    btnAgregar.addEventListener("click", agregarPersona);
-    inputNuevo.addEventListener("keypress", (e) => { if (e.key === "Enter") agregarPersona(); });
+    function renderizarPersonas() {
+        if (!listaPersonas) return;
+        listaPersonas.innerHTML = "";
+        
+        const textoBusqueda = buscadorNombres ? buscadorNombres.value.toLowerCase() : "";
+        const filtrados = personasDB.filter(p => (p.nombre || "").toLowerCase().includes(textoBusqueda));
 
-    async function agregarPersona() {
-        const nombre = inputNuevo.value.trim();
-        if (nombre !== "") {
-            btnAgregar.disabled = true;
-            btnAgregar.innerHTML = "⏳...";
-
-            try {
-                await addDoc(collection(db, tipo), { nombre: nombre });
-                inputNuevo.value = "";
-                if (buscadorNombres) buscadorNombres.value = ""; 
-            } catch (error) {
-                alert("Error al conectar con la Nube: " + error.message);
-            } finally {
-                btnAgregar.disabled = false;
-                btnAgregar.innerHTML = "➕ Añadir";
-                inputNuevo.focus();
-            }
-        } else {
-            alert("Por favor escribe un nombre válido.");
-        }
-    }
-
-    // editacion de nombre
-    window.editarNombrePersona = async (idDocumento, nombreAntiguo) => {
-        const nuevoNombre = prompt(
-            `Editando a: ${nombreAntiguo}\n\nEscribe el nuevo nombre exacto. \n(El sistema actualizará todos sus recibos y pagos antiguos a este nuevo nombre de forma segura):`, 
-            nombreAntiguo
-        );
-
-        if (!nuevoNombre || nuevoNombre.trim() === "" || nuevoNombre.trim() === nombreAntiguo) {
+        if (filtrados.length === 0) {
+            listaPersonas.innerHTML = `<div class="col-12 text-center py-5 text-muted"><i class="bi bi-search fs-1"></i><p class="mt-2">No se encontraron resultados en esta lista.</p></div>`;
             return;
         }
 
-        const nombreFinal = nuevoNombre.trim();
+        filtrados.forEach(p => {
+            const div = document.createElement("div");
+            div.className = "col-12 col-md-6 col-lg-4";
+            div.innerHTML = `
+              <div class="card h-100 shadow-sm border-0 rounded-4 card-persona" style="background-color: var(--bs-card-bg);">
+                <div class="card-body p-4 position-relative">
+                  <button class="btn btn-sm text-primary position-absolute top-0 end-0 m-3 bg-light rounded-circle shadow-sm d-flex align-items-center justify-content-center" onclick="window.editarPersona('${p.id}', '${p.nombre}')" style="width: 32px; height: 32px; border: 1px solid #dee2e6;"><i class="bi bi-pencil-fill"></i></button>
 
-        if (confirm(`¿Confirmas que deseas cambiar a "${nombreAntiguo}" por "${nombreFinal}"?`)) {
-            try {
-                // 1. se actualiza el nombre
-                await updateDoc(doc(db, tipo, idDocumento), { nombre: nombreFinal });
+                  <div class="d-flex align-items-center mb-4 mt-2">
+                    <div class="rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0" style="width: 48px; height: 48px; background-color: ${colorFondo}; color: ${colorIcono};">
+                      <i class="${iconoHtml} fs-4"></i>
+                    </div>
+                    <div>
+                      <h5 class="fw-bold mb-0 text-body-emphasis text-truncate" style="max-width: 180px;">${p.nombre}</h5>
+                      <small class="text-success fw-bold d-flex align-items-center" style="font-size: 0.75rem;"><i class="bi bi-check-circle-fill me-1"></i>Registrado en sistema</small>
+                    </div>
+                  </div>
 
-                // 2. se busca y actualiza sus consumos
-                const qConsumos = query(collection(db, "consumos"), where("nombreUsuario", "==", nombreAntiguo));
-                const snapConsumos = await getDocs(qConsumos);
-                snapConsumos.forEach(async (docSnap) => {
-                    await updateDoc(doc(db, "consumos", docSnap.id), { nombreUsuario: nombreFinal });
-                });
+                  <div class="d-flex gap-2">
+                    <button class="btn ${btnTheme} w-100 fw-bold shadow-sm rounded-pill py-2" onclick="window.irAConsumo('${p.nombre}', '${tipo}')"><i class="bi bi-bar-chart-fill me-1"></i> Consumos</button>
+                    <button class="btn btn-outline-danger shadow-sm rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;" onclick="window.eliminarPersona('${p.id}', '${p.nombre}')"><i class="bi bi-trash3-fill"></i></button>
+                  </div>
+                </div>
+              </div>
+            `;
+            listaPersonas.appendChild(div);
+        });
+    }
 
-                // 3. busca y actualiza pagos
-                const qPagos = query(collection(db, "pagos"), where("nombreUsuario", "==", nombreAntiguo));
-                const snapPagos = await getDocs(qPagos);
-                snapPagos.forEach(async (docSnap) => {
-                    await updateDoc(doc(db, "pagos", docSnap.id), { nombreUsuario: nombreFinal });
-                });
+    // 2. AÑADIR NUEVO CON ALERTA ANIMADA (SWEETALERT2)
+    if (btnAgregarModal) {
+        btnAgregarModal.onclick = async () => {
+            const { value: nombreNuevo } = await Swal.fire({
+                title: `Añadir Nuevo`,
+                text: "Escribe el nombre completo",
+                input: 'text',
+                inputPlaceholder: 'Ej: Juan Pérez',
+                icon: 'person-add',
+                showCancelButton: true,
+                confirmButtonColor: colorFondo,
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-save"></i> Guardar',
+                cancelButtonText: 'Cancelar',
+                customClass: { confirmButton: tipo === 'alumnos' ? 'text-dark' : 'text-white' },
+                inputValidator: (value) => {
+                    if (!value || value.trim() === '') return '¡Necesitas escribir un nombre!';
+                }
+            });
 
+            if (nombreNuevo) {
+                let nombreFormateado = nombreNuevo.trim().split(' ').map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase()).join(' ');
                 
-            } catch (error) {
-                alert("Ocurrió un error al actualizar los datos: " + error.message);
-            }
-        }
-    };
+                const existe = personasDB.some(p => (p.nombre || "").toLowerCase() === nombreFormateado.toLowerCase());
+                if (existe) {
+                    Swal.fire('Atención', `<b>${nombreFormateado}</b> ya está registrado.`, 'warning');
+                    return;
+                }
 
-    // eliminar persona de Firebase
-    window.eliminarPersona = async (idFirebase, nombre) => {
-        if(confirm(`¿Seguro que deseas eliminar a ${nombre} de esta lista?\n(Se mantendrá su historial de consumos guardado en la base de datos)`)) {
-            try {
-                await deleteDoc(doc(db, tipo, idFirebase));
-            } catch (error) {
-                alert("Error al eliminar: " + error.message);
+                try {
+                    await addDoc(collection(db, tipo), { nombre: nombreFormateado, timestamp: Date.now() });
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Registrado con éxito', showConfirmButton: false, timer: 2000 });
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
             }
-        }
-    };
+        };
+    }
 
-    // redirigir a consumos
-    window.verConsumo = (nombre, rol) => {
+    window.irAConsumo = (nombre, rol) => {
         window.location.href = `consumo.html?nombre=${encodeURIComponent(nombre)}&rol=${encodeURIComponent(rol)}`;
+    };
+
+    // 3. ELIMINAR CON ALERTA ANIMADA DE CONFIRMACIÓN
+    window.eliminarPersona = (id, nombre) => {
+        Swal.fire({
+            title: '¿Eliminar persona?',
+            html: `¿Estás seguro de que deseas eliminar a <b>${nombre}</b>?<br><small class="text-danger">Se borrará de esta lista, pero sus consumos en el historial se mantendrán a salvo.</small>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-trash3-fill"></i> Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await deleteDoc(doc(db, tipo, id));
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Eliminado', showConfirmButton: false, timer: 2000 });
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        });
+    };
+
+    // 4. EDITAR CON ALERTA ANIMADA
+    window.editarPersona = async (id, nombreViejo) => {
+        const { value: nombreEditado } = await Swal.fire({
+            title: `Editar Nombre`,
+            input: 'text',
+            inputValue: nombreViejo,
+            showCancelButton: true,
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-save"></i> Actualizar',
+            cancelButtonText: 'Cancelar',
+            inputValidator: (value) => {
+                if (!value || value.trim() === '') return '¡El nombre no puede estar vacío!'
+            }
+        });
+
+        if (nombreEditado && nombreEditado.trim() !== nombreViejo) {
+            let nombreFormateado = nombreEditado.trim().split(' ').map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase()).join(' ');
+            
+            const existe = personasDB.some(p => (p.nombre || "").toLowerCase() === nombreFormateado.toLowerCase() && p.id !== id);
+            if (existe) {
+                Swal.fire('Atención', `Ya existe otra persona llamada <b>${nombreFormateado}</b>.`, 'warning');
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, tipo, id), { nombre: nombreFormateado });
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Nombre actualizado', showConfirmButton: false, timer: 2000 });
+            } catch (e) {
+                Swal.fire('Error', e.message, 'error');
+            }
+        }
     };
 });

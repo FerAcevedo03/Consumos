@@ -1,44 +1,53 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeIcon = document.getElementById('theme-icon');
-    const htmlElement = document.documentElement; // Etiqueta <html>
+// ==========================================================================
+// EJECUCIÓN INMEDIATA (CERO PARPADEO)
+// ==========================================================================
+// Este código corre antes de que el navegador dibuje el body, 
+// bloqueando el molesto "flash blanco".
+const temaGuardado = localStorage.getItem("tema_nobel");
 
-    // 1. Revisar si hay un tema guardado en la memoria del navegador
-    const savedTheme = localStorage.getItem('theme');
-    
-    // Si no hay nada guardado, revisar si la PC/Celular del usuario está en modo oscuro
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    // Definir el tema inicial
-    const currentTheme = savedTheme ? savedTheme : (systemPrefersDark ? 'dark' : 'light');
-    
-    // Aplicar el tema al iniciar
-    setTheme(currentTheme);
+if (temaGuardado === "dark") {
+    document.documentElement.setAttribute("data-bs-theme", "dark");
+} else if (temaGuardado === "light") {
+    document.documentElement.setAttribute("data-bs-theme", "light");
+} else {
+    // Si es su primera vez, detecta si su celular ya está en modo oscuro
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute("data-bs-theme", "dark");
+    }
+}
 
-    // 2. Evento del botón para alternar
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => {
-            const isDark = htmlElement.getAttribute('data-bs-theme') === 'dark';
-            const newTheme = isDark ? 'light' : 'dark';
-            setTheme(newTheme);
-        });
+// ==========================================================================
+// LÓGICA DEL BOTÓN AL CARGAR LA PÁGINA
+// ==========================================================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Busca el botón, sin importar si estás en index.html o en consumo.html
+    const btnTheme = document.getElementById("theme-toggle") || document.getElementById("btnDarkMode");
+    
+    function actualizarIcono(tema) {
+        if (!btnTheme) return;
+        const icono = btnTheme.querySelector("i");
+        if (!icono) return;
+
+        if (tema === "dark") {
+            icono.className = "bi bi-sun-fill";
+            icono.style.color = "#ffc107"; // Sol amarillo
+        } else {
+            icono.className = "bi bi-moon-fill";
+            icono.style.color = ""; 
+        }
     }
 
-    // 3. Función maestra que hace los cambios
-    function setTheme(theme) {
-        // Le avisa a Bootstrap que cambie sus colores internos
-        htmlElement.setAttribute('data-bs-theme', theme);
-        
-        // Lo guarda en memoria para que no se pierda al cambiar de página
-        localStorage.setItem('theme', theme);
-        
-        // Cambia el icono visualmente
-        if (themeIcon) {
-            if (theme === 'dark') {
-                themeIcon.className = 'bi bi-sun-fill text-warning'; // Sol amarillo en modo oscuro
-            } else {
-                themeIcon.className = 'bi bi-moon-fill text-dark'; // Luna oscura en modo claro
-            }
-        }
+    // Seteamos el icono según como cargó la página
+    actualizarIcono(document.documentElement.getAttribute("data-bs-theme"));
+
+    if (btnTheme) {
+        btnTheme.addEventListener("click", () => {
+            let temaActual = document.documentElement.getAttribute("data-bs-theme");
+            let nuevoTema = temaActual === "dark" ? "light" : "dark";
+            
+            document.documentElement.setAttribute("data-bs-theme", nuevoTema);
+            localStorage.setItem("tema_nobel", nuevoTema);
+            actualizarIcono(nuevoTema);
+        });
     }
 });

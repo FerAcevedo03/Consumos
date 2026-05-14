@@ -6,7 +6,6 @@
   <title>Registro de Consumo - Nobel School</title>
   <link rel="icon" href="logo.png" type="image/png">
   
-  <!-- conversion para futura app movil en PWA -->
   <link rel="manifest" href="manifest.json">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -17,22 +16,38 @@
 
 <body class="bg-body-tertiary">
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container d-flex justify-content-between align-items-center">
-      <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="logo.png" alt="Logo" width="40" height="40" class="me-2 rounded bg-white p-1">
-        <span class="fs-4 fw-bold">Nobel School</span>
-      </a>
-
-      <!-- CONTENEDOR DE BOTONES (SALIR Y MODO OSCURO) -->
-      <div class="d-flex align-items-center">
-        <button onclick="cerrarSesion()" class="btn btn-danger shadow-sm me-2 fw-bold" style="border-radius: 8px;" title="Cerrar Sesión">
-          <i class="bi bi-box-arrow-right"></i> Salir
-        </button>
-        <button id="btnDarkMode" class="btn btn-primary border-light shadow-sm" style="border-radius: 8px;">
-          <i class="bi bi-moon-fill"></i>
+  <nav id="main-navbar" class="navbar navbar-dark py-2 px-1 px-md-0 shadow-sm" style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
+    <div class="container-fluid container-md d-flex justify-content-between align-items-center">
+      
+      <div class="d-flex justify-content-start" style="width: 25%;">
+        <button onclick="cerrarSesion()" class="btn btn-danger d-flex align-items-center px-2 px-sm-3 py-1 shadow-sm border-0" style="border-radius: 8px; font-weight: 500;">
+          <i class="bi bi-box-arrow-right"></i> 
+          <span class="ms-2 d-none d-sm-inline">Salir</span>
         </button>
       </div>
+
+      <div class="d-flex justify-content-center" style="width: 50%;">
+        <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-2 pe-sm-3 shadow-sm border border-light" style="cursor: default; max-width: 100%; white-space: nowrap;">
+          <button id="theme-toggle" class="btn btn-sm btn-outline-secondary rounded-circle me-1 me-sm-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0" style="width: 32px; height: 32px;">
+            <i id="theme-icon" class="bi bi-moon-fill" style="font-size: 0.9rem;"></i>
+          </button>
+          <div class="rounded-circle d-flex align-items-center justify-content-center me-1 me-sm-2 shadow-sm flex-shrink-0" style="width: 32px; height: 32px; background-color: #6c757d;">
+            <span class="fs-6 text-white" style="line-height: 1;"><i class="bi bi-shield-lock-fill"></i></span>
+          </div>
+          <div class="d-flex flex-column lh-1 text-start text-truncate">
+            <span class="fw-bold text-dark text-truncate" style="font-size: 0.85rem; max-width: 100px;">Panel Control</span>
+            <span class="text-muted mt-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">Administrador</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end align-items-center" style="width: 25%;">
+        <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
+          <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block" style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
+          <img src="logo.png" alt="Logo Nobel School" width="38" height="38" class="rounded bg-white p-1 shadow-sm">
+        </a>
+      </div>
+
     </div>
   </nav>
 

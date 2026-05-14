@@ -59,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const tablaConsumos = document.getElementById("tablaConsumos");
     const totalAcumulado = document.getElementById("totalAcumulado");
     
-    // ELEMENTOS DEL NUEVO MENÚ DE MESES
     const mesFiltro = document.getElementById("mesFiltro");
     const textoMesVisual = document.getElementById("textoMesVisual");
     const listaMesesUI = document.getElementById("listaMesesUI");
@@ -93,24 +92,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // =================================================================
+    // CONFIGURACIÓN DE CALENDARIO PREMIUM (FORMATO DÍA-MES-AÑO VISUAL)
+    // =================================================================
     if (fechaConsumo) {
         flatpickr(fechaConsumo, {
             locale: "es",
             defaultDate: "today",
-            disableMobile: true
+            disableMobile: true,
+            altInput: true,          // Muestra un campo alternativo para el usuario
+            altFormat: "d-m-Y",      // Formato Peruano (Día-Mes-Año)
+            dateFormat: "Y-m-d"      // Formato oculto para que Firebase no se rompa
         });
     }
     if (fechaAbono) {
         flatpickr(fechaAbono, {
             locale: "es",
             defaultDate: "today",
-            disableMobile: true
+            disableMobile: true,
+            altInput: true,
+            altFormat: "d-m-Y",
+            dateFormat: "Y-m-d"
         });
     }
 
-    // ----------------------------------------------------
-    // LÓGICA DE SINCRONIZACIÓN DEL MENÚ PREMIUM DE MESES
-    // ----------------------------------------------------
     if (listaMesesUI) {
         listaMesesUI.addEventListener("click", (e) => {
             const item = e.target.closest(".dropdown-item");
@@ -126,7 +131,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mesFiltro) {
         mesFiltro.addEventListener("change", () => {
-            // Actualizar el texto del botón hermoso
             if (textoMesVisual) {
                 textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
             }
@@ -136,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Si cambias el día en el calendario, te cambia de mes automáticamente
     if (fechaConsumo && mesFiltro) {
         fechaConsumo.addEventListener("change", () => {
             if (!fechaConsumo.value) return; 
@@ -150,7 +153,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     
-    // Iniciar con el mes actual
     const fechaHoy = new Date();
     if (mesFiltro) {
         mesFiltro.value = fechaHoy.getMonth().toString();
@@ -158,8 +160,6 @@ document.addEventListener("DOMContentLoaded", () => {
             textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
         }
     }
-
-    // ----------------------------------------------------
 
     if (inputBusquedaTabla) {
         inputBusquedaTabla.addEventListener("input", () => {
@@ -247,14 +247,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const mesSeleccionado = mesFiltro.value;
 
-        let consumidoMostrar = 0;
-        let pagadoMostrar = 0;
+        let totalConsumoBruto = 0;
+        let consumoSemanasPagadas = 0;
+        let totalPagosBruto = 0;
 
         if (mesSeleccionado === "todos") {
             tituloEstadoMes.innerHTML = "ESTADO DE CUENTA: HISTÓRICO GENERAL";
             if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "none";
-            consumidoMostrar = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
-            pagadoMostrar = historialPagos.reduce((acc, p) => acc + p.monto, 0);
+            
+            totalConsumoBruto = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
+            totalPagosBruto = historialPagos.reduce((acc, p) => acc + p.monto, 0);
+            
+            historialConsumos.forEach(r => {
+                let fechaObj = new Date(r.fecha + 'T00:00:00');
+                let nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+                let numSemana = obtenerSemanaDelMes(fechaObj);
+                let idGrupo = `${nombreMesConsumo}_${numSemana}`;
+                if (semanasPagadas.some(s => s.idGrupo === idGrupo)) {
+                    consumoSemanasPagadas += r.precio;
+                }
+            });
+            
         } else {
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
             tituloEstadoMes.innerHTML = `ESTADO DE GESTIÓN: ${nombreMes}`;
@@ -266,49 +279,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 return mesDelPago === mesSeleccionado;
             });
 
-            let totalConsumoBruto = 0;
-            let consumoSemanasPagadas = 0;
-
             consumosDelMes.forEach(r => {
                 totalConsumoBruto += r.precio;
                 let fechaObj = new Date(r.fecha + 'T00:00:00');
                 let nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
                 let numSemana = obtenerSemanaDelMes(fechaObj);
                 let idGrupo = `${nombreMesConsumo}_${numSemana}`;
-                
                 if (semanasPagadas.some(s => s.idGrupo === idGrupo)) {
                     consumoSemanasPagadas += r.precio;
                 }
             });
 
-            consumidoMostrar = totalConsumoBruto - consumoSemanasPagadas;
-            let totalPagosBruto = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
-            pagadoMostrar = totalPagosBruto - consumoSemanasPagadas;
-            if (pagadoMostrar < 0) pagadoMostrar = 0; 
+            totalPagosBruto = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
         }
 
-        if (estadoCuentaGlobalVisual) estadoCuentaGlobalVisual.style.display = "none";
+        let deudaActiva = totalConsumoBruto - consumoSemanasPagadas;
+        if (deudaActiva < 0) deudaActiva = 0;
+        
+        let saldoAFavor = totalPagosBruto - consumoSemanasPagadas;
+        if (saldoAFavor < 0) saldoAFavor = 0;
 
-        const saldo = pagadoMostrar - consumidoMostrar;
+        const saldoFinal = saldoAFavor - deudaActiva;
 
         let badgeHTML = "";
-        if (saldo < -0.01) {
-            badgeHTML = `<span class="badge bg-danger px-4 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-exclamation-triangle-fill me-1"></i> DEUDA: S/ ${Math.abs(saldo).toFixed(2)}</span>`;
-        } else if (saldo > 0.01) {
-            badgeHTML = `<span class="badge bg-success px-4 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-check-circle-fill me-1"></i> A FAVOR: S/ ${saldo.toFixed(2)}</span>`;
+        if (saldoFinal < -0.01) {
+            badgeHTML = `<span class="badge bg-danger px-4 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-exclamation-triangle-fill me-1"></i> FALTA PAGAR: S/ ${Math.abs(saldoFinal).toFixed(2)}</span>`;
+        } else if (saldoFinal > 0.01) {
+            badgeHTML = `<span class="badge bg-success px-4 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-gift-fill me-1"></i> A CUENTA: S/ ${saldoFinal.toFixed(2)}</span>`;
         } else {
             badgeHTML = `<span class="badge bg-secondary px-4 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-shield-check me-1"></i> PAGADO AL DÍA</span>`;
         }
 
+        if (estadoCuentaGlobalVisual) estadoCuentaGlobalVisual.style.display = "none";
+
         estadoCuentaMesVisual.innerHTML = `
-            <div class="d-inline-flex bg-white px-4 py-3 rounded-4 shadow-sm border border-light mb-3 w-100 justify-content-center" style="max-width: 320px;">
+            <div class="d-inline-flex bg-white px-4 py-3 rounded-4 shadow-sm border border-light mb-3 w-100 justify-content-center" style="max-width: 350px;">
                 <div class="pe-4 border-end w-50 text-center">
-                    <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">POR CANCELAR</span>
-                    <span class="fw-bold text-dark lh-1" style="font-size: 1.4rem;">S/ ${consumidoMostrar.toFixed(2)}</span>
+                    <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">PAGO PENDIENTE:</span>
+                    <span class="fw-bold text-dark lh-1" style="font-size: 1.4rem;">S/ ${deudaActiva.toFixed(2)}</span>
                 </div>
                 <div class="ps-4 w-50 text-center">
-                    <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">PAGO:</span>
-                    <span class="fw-bold text-success lh-1" style="font-size: 1.4rem;">S/ ${pagadoMostrar.toFixed(2)}</span>
+                    <span class="d-block text-muted" style="font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px;">CANCELO:</span>
+                    <span class="fw-bold text-success lh-1" style="font-size: 1.4rem;">S/ ${saldoAFavor.toFixed(2)}</span>
                 </div>
             </div>
             <div class="text-center mt-1">
@@ -401,10 +413,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const fechaUser = `${p[2]}-${p[1]}-${p[0]}`;
 
         const { value: formValues } = await Swal.fire({
-            title: 'Editar Abono',
+            title: 'Editar Pago',
             html: `
                 <div class="mb-3 text-start">
-                    <label class="form-label fw-bold small text-muted">Monto Abonado (S/)</label>
+                    <label class="form-label fw-bold small text-muted">Monto (S/)</label>
                     <input id="swal-monto" type="number" step="0.01" class="form-control form-control-lg" value="${montoActual}">
                 </div>
                 <div class="mb-3 text-start">
@@ -419,8 +431,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     </select>
                 </div>
                 <div class="mb-1 text-start">
-                    <label class="form-label fw-bold small text-muted">Nombre del Pagador</label>
-                    <input id="swal-pagador" type="text" class="form-control" placeholder="Opcional" value="${pagadorActual || ''}">
+                    <label class="form-label fw-bold small text-muted">Concepto / Pagador</label>
+                    <input id="swal-pagador" type="text" class="form-control" placeholder="Ej: Pago de Sem 2" value="${pagadorActual || ''}">
                 </div>
             `,
             focusConfirm: false,
@@ -455,7 +467,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     metodo: formValues.metodo,
                     pagador: formValues.pagador.trim()
                 });
-                Swal.fire('¡Actualizado!', 'El abono ha sido modificado correctamente.', 'success');
+                Swal.fire('¡Actualizado!', 'El pago ha sido modificado correctamente.', 'success');
             } catch (e) { 
                 Swal.fire('Error al editar', e.message, 'error'); 
             }
@@ -487,7 +499,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const colorMetodo = metodo === "Yape" ? "#742384" : "#198754";
             const iconoMetodo = metodo === "Yape" ? "bi-qr-code" : "bi-cash-stack";
             
-            const textoPagador = pago.pagador ? `<br><small class="text-secondary fw-bold"><i class="bi bi-person me-1"></i>${pago.pagador}</small>` : "";
+            const textoPagador = pago.pagador ? `<br><small class="text-secondary fw-bold"><i class="bi bi-chat-left-text me-1"></i>${pago.pagador}</small>` : "";
 
             const li = document.createElement("li");
             li.className = "list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-bottom";
@@ -498,7 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                     <div>
                         <span class="d-block text-dark fw-bold" style="font-size: 0.95rem;">S/ ${pago.monto.toFixed(2)} <span class="badge ms-1" style="background-color: ${colorMetodo}; font-size: 0.65rem; padding: 0.25em 0.5em;">${metodo}</span></span>
-                        <small class="text-muted" style="font-size: 0.8rem;">Abonado el ${d}/${m}/${y}</small>${textoPagador}
+                        <small class="text-muted" style="font-size: 0.8rem;">Pagado el ${d}-${m}-${y}</small>${textoPagador}
                     </div>
                 </div>
                 <div>
@@ -510,13 +522,41 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    window.abonoRapidoSemana = (monto, textoSemana) => {
+        const montoAbono = document.getElementById("montoAbono");
+        const inputPagador = document.getElementById("inputPagador");
+        
+        if (montoAbono) {
+            montoAbono.value = monto.toFixed(2);
+            if(inputPagador) {
+                inputPagador.value = `Pago de ${textoSemana}`; 
+            }
+            
+            montoAbono.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                montoAbono.focus();
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: `S/ ${monto.toFixed(2)} listos para abonar.`
+                });
+            }, 500);
+        }
+    };
+
     window.toggleSemanaPagada = (idGrupo, estaPagada) => {
         const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
         
         let titulo = estaPagada ? '¿Desmarcar semana?' : '¿Marcar como cancelada?';
         let texto = estaPagada 
             ? 'Los montos volverán a sumarse a la deuda actual del mes.' 
-            : 'Al confirmar, los consumos de esta semana se restarán de la deuda activa.';
+            : 'Al confirmar, los consumos de esta semana desaparecerán de la deuda activa.';
         let icon = estaPagada ? 'warning' : 'question';
         let confirmColor = estaPagada ? '#dc3545' : '#198754';
 
@@ -568,6 +608,16 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        let totalesPorGrupo = {};
+        filtrados.forEach(r => {
+            const fechaObj = new Date(r.fecha + 'T00:00:00');
+            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+            let numSemana = obtenerSemanaDelMes(fechaObj);
+            const idGrupo = `${nombreMesConsumo}_${numSemana}`;
+            if (!totalesPorGrupo[idGrupo]) totalesPorGrupo[idGrupo] = 0;
+            totalesPorGrupo[idGrupo] += r.precio;
+        });
+
         let grupoActual = ""; 
 
         filtrados.forEach(r => {
@@ -582,6 +632,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (identificadorGrupo !== grupoActual) {
                 grupoActual = identificadorGrupo;
                 
+                let totalSemana = totalesPorGrupo[identificadorGrupo];
+
                 const textoCabecera = mes === "todos" 
                     ? `${nombreMesConsumo} - SEMANA 0${numSemana}` 
                     : `SEMANA 0${numSemana}`;
@@ -589,16 +641,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 let colorFondo = estaPagada ? '#d1e7dd' : '#f0f7ff';
                 let colorBorde = estaPagada ? '#198754' : '#0d6efd';
                 let colorTexto = estaPagada ? 'text-success' : 'text-primary';
+
+                let badgeTotal = estaPagada ? '' : `<span class="badge bg-danger rounded-pill shadow-sm px-2 ms-2" style="font-size: 0.75rem;">S/ ${totalSemana.toFixed(2)}</span>`;
+
+                let btnAbonoRapido = estaPagada 
+                    ? '' 
+                    : `<button class="btn btn-sm btn-warning text-dark fw-bold rounded-pill py-0 px-3 shadow-sm border-0" style="font-size: 0.75rem;" onclick="window.abonoRapidoSemana(${totalSemana}, '${textoCabecera}')"><i class="bi bi-lightning-charge-fill me-1"></i>Pagar exacto</button>`;
+
                 let botonAccion = estaPagada 
-                    ? `<button class="btn btn-sm btn-success rounded-pill fw-bold py-0 shadow-sm" onclick="window.toggleSemanaPagada('${identificadorGrupo}', true)"><i class="bi bi-check-circle-fill me-1"></i> Cancelada</button>`
-                    : `<button class="btn btn-sm btn-outline-primary rounded-pill fw-bold bg-white py-0 shadow-sm" onclick="window.toggleSemanaPagada('${identificadorGrupo}', false)"><i class="bi bi-wallet2 me-1"></i> Marcar pagada</button>`;
+                    ? `<button class="btn btn-sm btn-success rounded-pill fw-bold py-0 shadow-sm border-0" style="font-size: 0.75rem;" onclick="window.toggleSemanaPagada('${identificadorGrupo}', true)"><i class="bi bi-check-circle-fill me-1"></i>Cancelada</button>`
+                    : `<button class="btn btn-sm btn-outline-primary rounded-pill fw-bold bg-white py-0 shadow-sm" style="font-size: 0.75rem; border-width: 1.5px;" onclick="window.toggleSemanaPagada('${identificadorGrupo}', false)"><i class="bi bi-check2-circle me-1"></i>Marcar pagada</button>`;
 
                 const trSemana = document.createElement("tr");
                 trSemana.innerHTML = `
-                    <td colspan="4" class="fw-bold py-2 ps-4 ${colorTexto}" style="background-color: ${colorFondo}; border-left: 5px solid ${colorBorde}; font-size: 0.9rem;">
-                        <div class="d-flex justify-content-between align-items-center pe-2">
-                            <span><i class="bi bi-calendar3 me-2"></i> ${textoCabecera}</span>
-                            ${botonAccion}
+                    <td colspan="4" class="py-2 ps-3 ps-md-4" style="background-color: ${colorFondo}; border-left: 5px solid ${colorBorde}; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pe-2">
+                            <div class="d-flex align-items-center flex-wrap">
+                                <span class="fw-bold ${colorTexto}" style="font-size: 0.9rem; letter-spacing: 0.5px;"><i class="bi bi-calendar3 me-2"></i>${textoCabecera}</span>
+                                ${badgeTotal}
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                ${btnAbonoRapido}
+                                ${botonAccion}
+                            </div>
                         </div>
                     </td>
                 `;
@@ -660,7 +725,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     window.eliminarPago = (id) => { 
         Swal.fire({
-            title: '¿Anular este abono?',
+            title: '¿Anular este pago?',
             text: "La deuda se recalculará automáticamente.",
             icon: 'warning',
             showCancelButton: true,
@@ -679,7 +744,9 @@ document.addEventListener("DOMContentLoaded", () => {
         formConsumo.onsubmit = async (e) => {
             e.preventDefault();
             const btn = formConsumo.querySelector("button[type='submit']");
-            const fecha = fechaConsumo.value;
+            const fechaVal = fechaConsumo._flatpickr ? fechaConsumo.value : fechaConsumo.value; 
+            const fecha = fechaVal;
+            
             let prodCrudo = inputProducto.value.trim();
             if (prodCrudo.endsWith("+")) prodCrudo = prodCrudo.slice(0, -1).trim();
             const cant = parseInt(inputCantidad.value);
@@ -808,7 +875,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (e) { Swal.fire('Error', e.message, 'error'); }
             finally { 
                 btn.disabled = false; 
-                btn.innerHTML = '<i class="bi bi-plus-lg"></i> Agregar al registro de consumo'; 
+                btn.innerHTML = '<i class="bi bi-plus-circle-fill"></i> Agregar al registro de consumo'; 
             }
         };
     }
@@ -856,7 +923,7 @@ document.addEventListener("DOMContentLoaded", () => {
             montoAbono.focus();
 
         } catch (e) { 
-            Swal.fire('Error', 'Error al registrar abono: ' + e.message, 'error');
+            Swal.fire('Error', 'Error al registrar pago: ' + e.message, 'error');
         } finally { 
             if (btnAbonoYape) btnAbonoYape.disabled = false;
             if (btnAbonoEfectivo) btnAbonoEfectivo.disabled = false;
@@ -907,44 +974,65 @@ document.addEventListener("DOMContentLoaded", () => {
             const mesSeleccionado = mesFiltro.value;
             const nombreMesHeader = mesFiltro.options[mesFiltro.selectedIndex].text;
 
+            let consumosExportar = [];
+            let tituloPeriodo = "";
+
             if (mesSeleccionado === "todos") {
-                Swal.fire('Cuidado', 'Por favor, selecciona un mes específico en el filtro arriba para descargar el reporte.', 'warning');
-                return;
-            }
-
-            const { value: seleccion } = await Swal.fire({
-                title: 'Descargar Reporte PDF',
-                text: '¿Qué periodo deseas descargar?',
-                input: 'select',
-                inputOptions: {
-                    '1': 'Semana 01',
-                    '2': 'Semana 02',
-                    '3': 'Semana 03',
-                    '4': 'Semana 04',
-                    '5': 'TODO EL MES (Excluye montos cancelados)'
-                },
-                inputPlaceholder: 'Selecciona una opción',
-                showCancelButton: true,
-                confirmButtonColor: '#dc3545',
-                confirmButtonText: 'Generar PDF',
-                cancelButtonText: 'Cancelar'
-            });
-
-            if (!seleccion) return;
-
-            let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-
-            if (seleccion !== "5") {
-                consumosDelMes = consumosDelMes.filter(r => {
-                    let numSem = obtenerSemanaDelMes(new Date(r.fecha + 'T00:00:00'));
-                    return numSem == seleccion;
+                const { isConfirmed } = await Swal.fire({
+                    title: 'Reporte Global',
+                    text: 'Vas a descargar el historial de TODOS los meses registrados. ¿Deseas continuar?',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-file-pdf"></i> Sí, descargar todo',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#0d6efd'
                 });
+                
+                if (!isConfirmed) return;
+                
+                consumosExportar = historialConsumos;
+                tituloPeriodo = "HISTÓRICO COMPLETO";
+                
+            } else {
+                const { value: seleccion } = await Swal.fire({
+                    title: 'Descargar Reporte PDF',
+                    text: `Mes seleccionado: ${nombreMesHeader}`,
+                    input: 'select',
+                    inputOptions: {
+                        '5': 'Todo el mes',
+                        '1': 'Solo Semana 01',
+                        '2': 'Solo Semana 02',
+                        '3': 'Solo Semana 03',
+                        '4': 'Solo Semana 04'
+                    },
+                    inputValue: '5',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: '<i class="bi bi-file-pdf"></i> Generar PDF',
+                    cancelButtonText: 'Cancelar'
+                });
+
+                if (!seleccion) return;
+
+                let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+
+                if (seleccion !== "5") {
+                    consumosDelMes = consumosDelMes.filter(r => obtenerSemanaDelMes(new Date(r.fecha + 'T00:00:00')) == seleccion);
+                    tituloPeriodo = `SEMANA 0${seleccion} - ${nombreMesHeader}`;
+                } else {
+                    tituloPeriodo = `MES DE ${nombreMesHeader}`;
+                }
+                
+                consumosExportar = consumosDelMes;
             }
 
-            if (consumosDelMes.length === 0) { Swal.fire('Vacío', 'No hay datos para exportar en el periodo seleccionado.', 'info'); return; }
+            if (consumosExportar.length === 0) { 
+                Swal.fire('Vacío', 'No hay datos para exportar en el periodo seleccionado.', 'info'); 
+                return; 
+            }
 
             let sumaTotalPDF_Test = 0;
-            consumosDelMes.forEach((r) => {
+            consumosExportar.forEach((r) => {
                 const fechaObj = new Date(r.fecha + 'T00:00:00');
                 const nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
                 let numSem = obtenerSemanaDelMes(fechaObj);
@@ -954,8 +1042,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const ocupacionTexto = etiquetaRolEl ? etiquetaRolEl.textContent : 'Personal';
-            const tituloPeriodo = seleccion === "5" ? `MES DE ${nombreMesHeader}` : `SEMANA 0${seleccion} - ${nombreMesHeader}`;
-            const tituloTotal = seleccion === "5" ? "TOTAL PENDIENTE" : `TOTAL SEMANA 0${seleccion}`;
+            const tituloTotal = "TOTAL PENDIENTE";
 
             if (sumaTotalPDF_Test === 0) {
                 const confZero = await Swal.fire({
@@ -975,9 +1062,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let grupoActualPDF = "";
             let filasHtml = "";
-            let sumaTotalPDF = 0;
 
-            consumosDelMes.forEach((r, index) => {
+            consumosExportar.forEach((r, index) => {
                 const fechaObj = new Date(r.fecha + 'T00:00:00');
                 const [y, m, d] = r.fecha.split('-');
                 const nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
@@ -988,7 +1074,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (idGrupo !== grupoActualPDF) {
                     grupoActualPDF = idGrupo;
-                    const textoCab = mesSeleccionado === "todos" ? `${nombreMesR} - SEMANA 0${numSem}` : `SEMANA 0${numSem}`;
+                    
                     const badgePDF = estaPagada 
                         ? `<span style="color: #198754; font-size: 11px;">(✅ CANCELADA)</span>` 
                         : `<span style="color: #dc3545; font-size: 11px;">(⏳ PENDIENTE)</span>`;
@@ -996,14 +1082,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     filasHtml += `
                         <tr style="background-color: #f0f7fe; page-break-after: avoid;">
                             <td colspan="4" style="padding: 10px 15px; border-bottom: 1px solid #dee2e6; color: #0d6efd; font-weight: bold; font-size: 13px;">
-                                <span style="margin-right: 10px;">📅</span> ${textoCab} ${badgePDF}
+                                <span style="margin-right: 10px;">📅</span> ${nombreMesR} - SEMANA 0${numSem} ${badgePDF}
                             </td>
                         </tr>
                     `;
-                }
-
-                if (!estaPagada) {
-                    sumaTotalPDF += r.precio;
                 }
 
                 const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
@@ -1078,7 +1160,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <tr>
                                             <td style="text-align: center; vertical-align: middle; padding: 20px;">
                                                 <div style="margin: 0 0 5px 0; color: #212528; font-weight: 900; font-size: 18px; letter-spacing: 0.5px; text-transform: uppercase;">${tituloTotal}</div>
-                                                <div style="margin: 0; font-size: 42px; color: #0d6efd; font-weight: 900;">S/ ${sumaTotalPDF.toFixed(2)}</div>
+                                                <div style="margin: 0; font-size: 42px; color: #0d6efd; font-weight: 900;">S/ ${sumaTotalPDF_Test.toFixed(2)}</div>
                                             </td>
                                         </tr>
                                     </table>
@@ -1110,7 +1192,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // LÓGICA DEL BOTÓN DE ESTADÍSTICAS (CHART.JS + SWEETALERT)
     const btnEstadisticas = document.getElementById("btnEstadisticas");
     if (btnEstadisticas) {
         btnEstadisticas.addEventListener("click", () => {
