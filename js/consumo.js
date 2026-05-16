@@ -245,10 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const mesSeleccionado = mesFiltro.value;
 
         let totalConsumoBruto = 0;
-        let consumoSemanasPagadas = 0;
         let totalPagosBruto = 0;
-        
-        let consumosDelMes = [];
 
         if (mesSeleccionado === "todos") {
             tituloEstadoMes.innerHTML = "ESTADO DE CUENTA: HISTÓRICO GENERAL";
@@ -256,43 +253,18 @@ document.addEventListener("DOMContentLoaded", () => {
             
             totalConsumoBruto = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
             totalPagosBruto = historialPagos.reduce((acc, p) => acc + p.monto, 0);
-            
-            historialConsumos.forEach(r => {
-                let fechaObj = new Date(r.fecha + 'T00:00:00');
-                let nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-                let numSemana = obtenerSemanaDelMes(fechaObj);
-                let idGrupo = `${nombreMesConsumo}_${numSemana}`;
-                
-                let semana = semanasPagadas.find(s => s.idGrupo === idGrupo);
-                if (semana && (!r.timestamp || r.timestamp <= semana.timestamp)) {
-                    consumoSemanasPagadas += r.precio;
-                }
-            });
-            
         } else {
             const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
             tituloEstadoMes.innerHTML = `ESTADO DE GESTIÓN: ${nombreMes}`;
             if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "inline-block";
 
-            consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
             const pagosDelMes = historialPagos.filter(p => {
                 let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : new Date(p.fecha + 'T00:00:00').getMonth().toString();
                 return mesDelPago === mesSeleccionado;
             });
 
-            consumosDelMes.forEach(r => {
-                totalConsumoBruto += r.precio;
-                let fechaObj = new Date(r.fecha + 'T00:00:00');
-                let nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-                let numSemana = obtenerSemanaDelMes(fechaObj);
-                let idGrupo = `${nombreMesConsumo}_${numSemana}`;
-                
-                let semana = semanasPagadas.find(s => s.idGrupo === idGrupo);
-                if (semana && (!r.timestamp || r.timestamp <= semana.timestamp)) {
-                    consumoSemanasPagadas += r.precio;
-                }
-            });
-
+            totalConsumoBruto = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
             totalPagosBruto = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
         }
 
@@ -336,7 +308,9 @@ document.addEventListener("DOMContentLoaded", () => {
             totalAcumulado.textContent = `S/ ${deudaActiva.toFixed(2)}`;
         }
 
+        // Lógica del botón de Desmarcar Mes
         if (btnMarcarMesPagado && mesSeleccionado !== "todos") {
+            const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
             let todosSemanasPagadas = false;
             
             if (consumosDelMes.length > 0) {
@@ -421,7 +395,49 @@ document.addEventListener("DOMContentLoaded", () => {
             let deudaFaltante = totalConsumoMes - totalPagosMes;
 
             if (deudaFaltante > 0.01) {
-                window.abonoRapidoSemana(deudaFaltante, `Mes de ${nombreMes}`);
+                // AQUÍ ESTABA EL ERROR: Faltaba este Swal.fire envolviendo la acción
+                Swal.fire({
+                    title: '¿Cerrar Mes?',
+                    html: `Se marcarán las semanas de <b>${nombreMes}</b> como cerradas y te llevaremos al formulario inferior para registrar el pago faltante de <b>S/ ${deudaFaltante.toFixed(2)}</b>.`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, cerrar y pagar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#198754'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const gruposSemanas = [...new Set(consumosDelMes.map(r => {
+                            let f = new Date(r.fecha + 'T00:00:00');
+                            return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
+                        }))];
+
+                        if (gruposSemanas.length > 0) {
+                            try {
+                                btnMarcarMesPagado.disabled = true;
+                                const batch = writeBatch(db);
+                                gruposSemanas.forEach(idGrupo => {
+                                    const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+                                    const docRef = doc(db, "semanas_pagadas", docId);
+                                    batch.set(docRef, {
+                                        nombreUsuario: nombreUsuario,
+                                        idGrupo: idGrupo,
+                                        timestamp: Date.now()
+                                    });
+                                });
+                                await batch.commit();
+                            } catch (e) {
+                                Swal.fire('Error', e.message, 'error');
+                                btnMarcarMesPagado.disabled = false;
+                                return;
+                            } finally {
+                                btnMarcarMesPagado.disabled = false;
+                            }
+                        }
+                        
+                        // Y ahora sí, te bajamos al formulario mágicamente
+                        window.abonoRapidoSemana(deudaFaltante, `Mes de ${nombreMes}`);
+                    }
+                });
             } else {
                 Swal.fire({
                     title: 'Mes sin deudas',
@@ -1262,7 +1278,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                                 <p style="margin: 0; font-size: 14px;">TITULAR: ROSA RO***</p>
                                             </td>
                                             <td style="padding: 20px; vertical-align: middle; text-align: right; width: 110px;">
-                                                <table style="background: #fffffe; border-radius: 8px; width: 90px; height: 90px; border-collapse: collapse; margin-left: auto;">
+                                                <table style="background: #fffffe; border-radius: 8px; width: 90px; height: 90px; border-collapse: margin-left: auto;">
                                                     <tr>
                                                         <td style="text-align: center; vertical-align: middle; padding: 0;">
                                                             <img src="yape.png" style="width: 75px; height: 75px; display: block; margin: 0 auto;">
