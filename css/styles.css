@@ -75,7 +75,7 @@ body.bg-profes {
 }
 
 .menu-card:hover {
-    transform: translateY(-10px);
+    transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -140,6 +140,7 @@ body.bg-alumnos {
 [data-bs-theme="dark"] .text-dark,
 [data-bs-theme="dark"] h1,
 [data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
 [data-bs-theme="dark"] h4,
 [data-bs-theme="dark"] h5.text-dark,
 [data-bs-theme="dark"] th.text-dark,
@@ -190,6 +191,10 @@ body.bg-alumnos {
     background-color: #0f3f26 !important;
 }
 
+.input-group, .form-control, .input-group-text {
+    transition: all 0.2s ease-in-out !important; 
+}
+
 [data-bs-theme="dark"] .form-control,
 [data-bs-theme="dark"] .form-select,
 [data-bs-theme="dark"] .input-group-text,
@@ -219,29 +224,16 @@ body.bg-alumnos {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* ==========================================================================
-   ARREGLO DE LÍNEA AZUL AL HACER CLIC EN CAJAS DE TEXTO (SIN PARPADEO)
-   ========================================================================== */
-.input-group, .form-control, .input-group-text {
-    transition: all 0.2s ease-in-out !important; /* Sincroniza la animación para evitar el parpadeo */
-}
-
 .form-control:focus, .form-select:focus {
     box-shadow: none !important;
     border-color: #0d6efd !important;
 }
-
-.input-group:focus-within {
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15) !important;
-    border-radius: 0.375rem !important;
-}
-
 .input-group:focus-within .input-group-text,
 .input-group:focus-within .form-control {
     border-color: #0d6efd !important;
+    box-shadow: none !important;
 }
 
-/* MODO OSCURO SWEETALERT2 */
 [data-bs-theme="dark"] .swal2-popup {
     background-color: #1e1e1e !important;
     color: #f8f9fa !important;
@@ -265,40 +257,20 @@ body.bg-alumnos {
     color: #ffc107 !important;
 }
 
-/* MODO OSCURO FLATPICKR */
 [data-bs-theme="dark"] .flatpickr-calendar {
     background: #2b2f32;
     box-shadow: 1px 0 0 #333, -1px 0 0 #333, 0 1px 0 #333, 0 -1px 0 #333, 0 3px 13px rgba(0,0,0,0.5);
 }
 [data-bs-theme="dark"] .flatpickr-calendar .flatpickr-month,
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-current-month {
-    color: #fff;
-    fill: #fff;
-}
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-weekday {
-    color: #aaa;
-}
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day {
-    color: #e0e0e0;
-}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-current-month { color: #fff; fill: #fff; }
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-weekday { color: #aaa; }
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day { color: #e0e0e0; }
 [data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:hover,
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:focus {
-    background: #495057;
-    border-color: #495057;
-}
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.selected {
-    background: #0d6efd;
-    color: #fff;
-    border-color: #0d6efd;
-}
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.flatpickr-disabled {
-    color: #555;
-}
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-time input {
-    color: #e0e0e0;
-}
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:focus { background: #495057; border-color: #495057; }
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.selected { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.flatpickr-disabled { color: #555; }
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-time input { color: #e0e0e0; }
 
-/* ANIMACIONES LOGIN */
 @keyframes fadeSlideUp {
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
@@ -322,4 +294,46 @@ body.bg-alumnos {
 .btn-login:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #495057; }
+[data-bs-theme="dark"] ::-webkit-scrollbar-track { background: #121212; }
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb { background: #333333; }
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #495057; }
+
+/* ==========================================================================
+   DISEÑO DE BOTONES GIGANTES (TARJETAS PRINCIPALES)
+   ========================================================================== */
+.btn-tarjeta-profesores {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+    border: none !important;
+}
+.btn-tarjeta-personal {
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%) !important;
+    border: none !important;
+}
+.btn-tarjeta-alumnos {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+    border: none !important;
+}
+.btn-tarjeta-alumnos h4, .btn-tarjeta-alumnos p {
+    color: #212529 !important; /* Letra oscura en la tarjeta amarilla para contraste */
+}
+.btn-tarjeta-inventario {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
+    border: none !important;
+}
+.btn-tarjeta-inventario h4, .btn-tarjeta-inventario p {
+    color: #212529 !important; /* Letra oscura en la tarjeta celeste para contraste */
+}
+
+/* Evitar que el modo oscuro sobrescriba los colores de estos botones gigantes */
+[data-bs-theme="dark"] .btn-tarjeta-profesores,
+[data-bs-theme="dark"] .btn-tarjeta-personal,
+[data-bs-theme="dark"] .btn-tarjeta-alumnos,
+[data-bs-theme="dark"] .btn-tarjeta-inventario {
+    color: #fff !important;
 }
