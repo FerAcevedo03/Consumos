@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saludoUsuarioEl.innerHTML = `<i class="bi ${icono} me-2"></i>${saludo}, Bienvenido(a) de vuelta.`;
     }
 
-    // 2. CONTADORES DE TARJETAS
+    // 2. CONTADORES DE TARJETAS CON LAYOUT DEFENSIVO PARA MÓVIL
     const countProfesores = document.getElementById("count-profesores");
     const countAdministrativos = document.getElementById("count-administrativos");
     const countAlumnos = document.getElementById("count-alumnos");
@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
         onSnapshot(collection(db, col), (snap) => { 
             elemento.innerHTML = formatoFn(snap.size); 
         }, () => {
-            elemento.innerHTML = `<i class="bi bi-wifi-off me-1"></i> Sin conexión`;
+            elemento.innerHTML = `<i class="bi bi-wifi-off me-1"></i> Error`;
         });
     }
 
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. LÓGICA FINANCIERA Y GRÁFICO
+    // 4. LÓGICA FINANCIERA Y GRÁFICO ALTAMENTE RESPONSIVO
     const elDineroMes = document.getElementById("dineroMes");
     const elDeudaGlobal = document.getElementById("deudaGlobal");
     const feed = document.getElementById("feed-actividad");
@@ -150,16 +150,16 @@ document.addEventListener("DOMContentLoaded", () => {
             feed.innerHTML = mix.map(item => {
                 const isP = item.tipo === 'p';
                 return `<div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom mx-3 px-0 bg-transparent">
-                    <div class="d-flex align-items-center">
-                        <div class="rounded-circle d-flex justify-content-center align-items-center me-3 ${isP ? 'bg-success text-success' : 'bg-danger text-danger'} bg-opacity-10" style="width: 40px; height: 40px;">
+                    <div class="d-flex align-items-center" style="max-width: 75%;">
+                        <div class="rounded-circle d-flex justify-content-center align-items-center me-2 me-md-3 ${isP ? 'bg-success text-success' : 'bg-danger text-danger'} bg-opacity-10 flex-shrink-0" style="width: 38px; height: 38px;">
                             <i class="bi ${isP ? 'bi-cash-coin' : 'bi-cart-check'}"></i>
                         </div>
-                        <div class="lh-sm">
-                            <p class="mb-0 fw-bold small text-body">${item.nombreUsuario}</p>
-                            <small class="text-muted" style="font-size: 0.7rem;">${isP ? 'Abonó con ' + item.metodo : 'Consumió ' + item.productoNombre}</small>
+                        <div class="lh-sm text-truncate">
+                            <p class="mb-0 fw-bold small text-body text-truncate">${item.nombreUsuario}</p>
+                            <small class="text-muted text-truncate d-block" style="font-size: 0.7rem;">${isP ? 'Abonó con ' + item.metodo : 'Consumió ' + item.productoNombre}</small>
                         </div>
                     </div>
-                    <div class="text-end">
+                    <div class="text-end flex-shrink-0">
                         <p class="mb-0 fw-bold small ${isP ? 'text-success' : 'text-danger'}">${isP ? '+' : '-'} S/ ${(isP ? item.monto : item.precio).toFixed(2)}</p>
                     </div>
                 </div>`;
@@ -192,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         label: 'Ingresos',
                         data: dataIngresos,
                         backgroundColor: '#198754',
-                        borderRadius: 6,
+                        borderRadius: 5,
                         borderSkipped: false
                     }]
                 },
@@ -204,11 +204,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         y: { 
                             beginAtZero: true, 
                             grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, 
-                            ticks: { color: textColor, font: { size: 10 } } 
+                            ticks: { color: textColor, font: { size: 9 } } 
                         },
                         x: { 
                             grid: { display: false }, 
-                            ticks: { color: textColor, font: { size: 11, weight: 'bold' } } 
+                            ticks: { color: textColor, font: { size: 10, weight: 'bold' } } 
                         }
                     }
                 }
