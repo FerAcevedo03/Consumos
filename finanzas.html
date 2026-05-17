@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bóveda de Finanzas - Nobel School</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/auth.js"></script>
+  <script src="js/darkmode.js"></script>
+</head>
+
+<body class="bg-body-tertiary">
+
+  <nav id="main-navbar" class="navbar navbar-dark py-2 px-1 px-md-0 shadow-sm" style="background: linear-gradient(90deg, #198754 0%, #146c43 100%);">
+    <div class="container-fluid container-md d-flex justify-content-between align-items-center">
+      <div class="d-flex justify-content-start" style="width: 25%;">
+        <a href="index.html" class="btn btn-outline-light d-flex align-items-center px-2 px-sm-3 py-1 shadow-sm text-decoration-none" style="border-radius: 8px; font-weight: 500; border-width: 1.5px;">
+          <i class="bi bi-arrow-left"></i> <span class="ms-2 d-none d-sm-inline">Volver</span>
+        </a>
+      </div>
+      <div class="d-flex justify-content-center" style="width: 50%;">
+        <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-2 pe-sm-3 shadow-sm border border-light" style="cursor: default;">
+          <button id="theme-toggle" class="btn btn-sm btn-outline-secondary rounded-circle me-1 me-sm-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0" style="width: 32px; height: 32px;">
+            <i id="theme-icon" class="bi bi-moon-fill" style="font-size: 0.9rem;"></i>
+          </button>
+          <div class="rounded-circle d-flex align-items-center justify-content-center me-1 me-sm-2 shadow-sm flex-shrink-0 text-white" style="width: 32px; height: 32px; background-color: #198754;">
+            <i class="bi bi-safe-fill"></i>
+          </div>
+          <div class="d-flex flex-column lh-1 text-start text-truncate">
+            <span class="fw-bold text-dark" style="font-size: 0.85rem;">Bóveda</span>
+            <span class="text-muted mt-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800;">FINANZAS</span>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end align-items-center" style="width: 25%;">
+        <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
+          <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block" style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
+          <img src="logo.png" alt="Logo" width="38" height="38" class="rounded bg-white p-1 shadow-sm">
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4 mb-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h2 class="fw-bold text-body-emphasis mb-0"><i class="bi bi-wallet2 text-success me-2"></i>Reporte Financiero</h2>
+        <button id="btnPrivacidad" class="btn btn-outline-secondary rounded-pill shadow-sm fw-bold px-3"><i class="bi bi-eye-slash-fill me-2"></i>Ocultar Saldos</button>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-12 col-lg-4 d-flex flex-column gap-4">
+            <div class="card border-0 shadow-sm rounded-4 flex-grow-1" style="background-color: var(--bs-card-bg); border-left: 6px solid #198754 !important;">
+                <div class="card-body p-4 d-flex flex-column justify-content-center text-start">
+                    <span class="d-block text-muted fw-bold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">INGRESOS (MENSUALES)</span>
+                    <h2 class="fw-bold text-success mb-1 fs-1 dato-privado" id="dineroMes">S/ 0.00</h2>
+                    <small class="text-muted"><i class="bi bi-check-circle-fill text-success me-1"></i>Ya cobrado</small>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm rounded-4 flex-grow-1" style="background-color: var(--bs-card-bg); border-left: 6px solid #dc3545 !important;">
+                <div class="card-body p-4 d-flex flex-column justify-content-center text-start">
+                    <span class="d-block text-muted fw-bold text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.5px;">FALTA COBRAR (TOTAL)</span>
+                    <h2 class="fw-bold text-danger mb-1 fs-1 dato-privado" id="deudaGlobal">S/ 0.00</h2>
+                    <small class="text-muted"><i class="bi bi-exclamation-circle-fill text-danger me-1"></i>Pagos pendientes</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4 h-100" style="background-color: var(--bs-card-bg);">
+                <div class="card-header bg-transparent pt-4 px-4 border-bottom-0">
+                    <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-fill text-success me-2"></i>Historial de Ingresos</h5>
+                </div>
+                <div class="card-body p-3 p-md-4 d-flex align-items-center" style="transition: filter 0.3s ease;" id="contenedorGrafico">
+                    <div class="w-100" style="position: relative; height: 260px;"><canvas id="graficoDashboard"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center mb-3 mt-2 border-bottom pb-3">
+        <h4 class="fw-bold text-body-emphasis mb-0"><i class="bi bi-list-check text-danger me-2"></i>Pendientes de Cobro</h4>
+        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill fw-medium ms-3">Separado por categorías</span>
+    </div>
+
+    <div class="row g-4 d-flex align-items-stretch">
+        
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100 d-flex flex-column" style="background-color: var(--bs-card-bg); border-top: 4px solid #ffc107;">
+                <div class="card-header border-bottom-0 d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4" style="background-color: rgba(255, 193, 7, 0.08);">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-mortarboard-fill text-warning fs-4 me-2"></i>
+                        <h5 class="fw-bold mb-0 text-body-emphasis">Alumnos</h5>
+                    </div>
+                    <span class="badge bg-warning text-dark rounded-pill fw-bold shadow-sm" id="subtotalAlumnos">S/ 0.00</span>
+                </div>
+                <div class="card-body p-0 flex-grow-1 overflow-auto" style="max-height: 450px;">
+                    <ul class="list-group list-group-flush" id="listaDeudoresAlumnos">
+                        <li class="list-group-item text-center py-4 text-muted bg-transparent border-0"><div class="spinner-border spinner-border-sm text-warning mb-2"></div><p class="small mb-0">Cargando...</p></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100 d-flex flex-column" style="background-color: var(--bs-card-bg); border-top: 4px solid #0d6efd;">
+                <div class="card-header border-bottom-0 d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4" style="background-color: rgba(13, 110, 253, 0.08);">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-workspace text-primary fs-4 me-2"></i>
+                        <h5 class="fw-bold mb-0 text-body-emphasis">Profesores</h5>
+                    </div>
+                    <span class="badge bg-primary text-white rounded-pill fw-bold shadow-sm" id="subtotalProfesores">S/ 0.00</span>
+                </div>
+                <div class="card-body p-0 flex-grow-1 overflow-auto" style="max-height: 450px;">
+                    <ul class="list-group list-group-flush" id="listaDeudoresProfesores">
+                        <li class="list-group-item text-center py-4 text-muted bg-transparent border-0"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><p class="small mb-0">Cargando...</p></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 h-100 d-flex flex-column" style="background-color: var(--bs-card-bg); border-top: 4px solid #198754;">
+                <div class="card-header border-bottom-0 d-flex align-items-center justify-content-between py-3 px-4 rounded-top-4" style="background-color: rgba(25, 135, 84, 0.08);">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-badge-fill text-success fs-4 me-2"></i>
+                        <h5 class="fw-bold mb-0 text-body-emphasis">Personal</h5>
+                    </div>
+                    <span class="badge bg-success text-white rounded-pill fw-bold shadow-sm" id="subtotalPersonal">S/ 0.00</span>
+                </div>
+                <div class="card-body p-0 flex-grow-1 overflow-auto" style="max-height: 450px;">
+                    <ul class="list-group list-group-flush" id="listaDeudoresPersonal">
+                        <li class="list-group-item text-center py-4 text-muted bg-transparent border-0"><div class="spinner-border spinner-border-sm text-success mb-2"></div><p class="small mb-0">Cargando...</p></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="js/finanzas.js"></script>
+</body>
+</html>

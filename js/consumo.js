@@ -19,6 +19,43 @@ function obtenerSemanaDelMes(fechaObj) {
     return Math.ceil((fechaObj.getDate() + ajuste) / 7);
 }
 
+// Diccionario Ampliado y Cerebro Lector para la búsqueda en Consumos
+const categoriasVisuales = {
+    'comida': { emoji: '🍛', color: 'text-warning', bg: 'bg-warning' },
+    'bebida': { emoji: '🥤', color: 'text-info', bg: 'bg-info' },
+    'snack': { emoji: '🥐', color: 'text-success', bg: 'bg-success' },
+    'galleta': { emoji: '🍪', color: 'text-secondary', bg: 'bg-secondary' },
+    'dulce': { emoji: '🍬', color: 'text-danger', bg: 'bg-danger' },
+    'helado': { emoji: '🍦', color: 'text-primary', bg: 'bg-primary' },
+    'libreria': { emoji: '✏️', color: 'text-dark', bg: 'bg-dark' },
+    'otro': { emoji: '📦', color: 'text-secondary', bg: 'bg-secondary' }
+};
+
+function obtenerVisual(catReal, nombreProd) {
+    let c = catReal ? catReal.toLowerCase() : 'otro';
+    
+    if(c.includes('comida') || c.includes('menú') || c.includes('menu')) c = 'comida';
+    else if(c.includes('bebida') || c.includes('gaseosa') || c.includes('jugo')) c = 'bebida';
+    else if(c.includes('snack') || c.includes('salado')) c = 'snack';
+    else if(c.includes('galleta')) c = 'galleta';
+    else if(c.includes('dulce') || c.includes('golosina')) c = 'dulce';
+    else if(c.includes('helado') || c.includes('marciano')) c = 'helado';
+    else if(c.includes('libreria') || c.includes('utiles')) c = 'libreria';
+    
+    if (c === 'otro') {
+        const n = nombreProd.toLowerCase();
+        if (n.includes('aji') || n.includes('arroz') || n.includes('pollo') || n.includes('pan') || n.includes('papa') || n.includes('empanada') || n.includes('torta') || n.includes('tallarin') || n.includes('causa')) c = 'comida';
+        else if (n.includes('agua') || n.includes('frugos') || n.includes('sporade') || n.includes('coca') || n.includes('inka') || n.includes('chicha')) c = 'bebida';
+        else if (n.includes('picaras') || n.includes('margarita') || n.includes('casino') || n.includes('morochas') || n.includes('tentacion')) c = 'galleta';
+        else if (n.includes('chifle') || n.includes('doritos') || n.includes('lays') || n.includes('cuates') || n.includes('habas')) c = 'snack';
+        else if (n.includes('chupetin') || n.includes('bonobom') || n.includes('sublime') || n.includes('caramelo') || n.includes('acuña') || n.includes('bombom') || n.includes('bonbo')) c = 'dulce';
+        else if (n.includes('marciano') || n.includes('helado') || n.includes('chupete')) c = 'helado';
+        else if (n.includes('cuaderno') || n.includes('lapiz') || n.includes('copia')) c = 'libreria';
+    }
+
+    return { id: c, ...categoriasVisuales[c] || categoriasVisuales['otro'] };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const nombreUsuario = params.get("nombre") || "Usuario Desconocido";
@@ -94,22 +131,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (fechaConsumo) {
         flatpickr(fechaConsumo, {
-            locale: "es",
-            defaultDate: "today",
-            disableMobile: true,
-            altInput: true,
-            altFormat: "d-m-Y",
-            dateFormat: "Y-m-d"
+            locale: "es", defaultDate: "today", disableMobile: true, altInput: true, altFormat: "d-m-Y", dateFormat: "Y-m-d"
         });
     }
     if (fechaAbono) {
         flatpickr(fechaAbono, {
-            locale: "es",
-            defaultDate: "today",
-            disableMobile: true,
-            altInput: true,
-            altFormat: "d-m-Y",
-            dateFormat: "Y-m-d"
+            locale: "es", defaultDate: "today", disableMobile: true, altInput: true, altFormat: "d-m-Y", dateFormat: "Y-m-d"
         });
     }
 
@@ -128,9 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mesFiltro) {
         mesFiltro.addEventListener("change", () => {
-            if (textoMesVisual) {
-                textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
-            }
+            if (textoMesVisual) textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
             renderizarConsumos();
             recalcularSaldoGlobal();
             renderizarListaPagos(); 
@@ -153,15 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const fechaHoy = new Date();
     if (mesFiltro) {
         mesFiltro.value = fechaHoy.getMonth().toString();
-        if (textoMesVisual) {
-            textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
-        }
+        if (textoMesVisual) textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
     }
 
     if (inputBusquedaTabla) {
-        inputBusquedaTabla.addEventListener("input", () => {
-            renderizarConsumos();
-        });
+        inputBusquedaTabla.addEventListener("input", () => { renderizarConsumos(); });
     }
 
     let indiceSeleccionado = -1;
@@ -179,7 +200,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     listaSugerencias.classList.add("show");
                     f.forEach(p => {
                         const li = document.createElement("li");
-                        li.innerHTML = `<a class="dropdown-item d-flex justify-content-between" href="#"><span>${p.nombre}</span><small>S/ ${parseFloat(p.precio).toFixed(2)}</small></a>`;
+                        let visual = obtenerVisual(p.categoria, p.nombre);
+
+                        li.innerHTML = `
+                            <a class="dropdown-item d-flex justify-content-between align-items-center py-2 px-3" href="#" style="transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center">
+                                    <span class="fs-4 me-2 lh-1">${visual.emoji}</span>
+                                    <span class="fw-bold text-body-emphasis">${p.nombre}</span>
+                                </div>
+                                <span class="badge bg-light border text-dark fs-6 ms-3">S/ ${parseFloat(p.precio).toFixed(2)}</span>
+                            </a>
+                        `;
                         li.onmousedown = (e) => { e.preventDefault(); seleccionar(p.nombre); };
                         listaSugerencias.appendChild(li);
                     });
@@ -196,15 +227,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault(); indiceSeleccionado--; if (indiceSeleccionado < 0) indiceSeleccionado = items.length - 1; actSel(items);
             } else if (e.key === "Enter") {
                 e.preventDefault();
-                if (indiceSeleccionado > -1) seleccionar(items[indiceSeleccionado].querySelector("span").textContent);
-                else if (items.length > 0) seleccionar(items[0].querySelector("span").textContent);
+                if (indiceSeleccionado > -1) seleccionar(items[indiceSeleccionado].querySelector(".text-body-emphasis").textContent);
+                else if (items.length > 0) seleccionar(items[0].querySelector(".text-body-emphasis").textContent);
             }
         });
 
         function actSel(items) {
             items.forEach((item, i) => {
-                if (i === indiceSeleccionado) { item.classList.add("active"); item.style.backgroundColor = "#0d6efd"; item.style.color = "white"; item.scrollIntoView({ block: "nearest" }); }
-                else { item.classList.remove("active"); item.style.backgroundColor = ""; item.style.color = ""; }
+                if (i === indiceSeleccionado) { 
+                    item.classList.add("active"); 
+                    item.style.backgroundColor = "#0d6efd"; 
+                    item.querySelector('.text-body-emphasis').style.color = "white";
+                    item.querySelector('.badge').classList.replace('text-dark', 'text-primary');
+                    item.scrollIntoView({ block: "nearest" }); 
+                } else { 
+                    item.classList.remove("active"); 
+                    item.style.backgroundColor = ""; 
+                    item.querySelector('.text-body-emphasis').style.color = "";
+                    item.querySelector('.badge').classList.replace('text-primary', 'text-dark');
+                }
             });
         }
         function seleccionar(n) {
@@ -285,8 +326,6 @@ document.addEventListener("DOMContentLoaded", () => {
             badgeHTML = `<span class="badge bg-secondary px-4 py-2 rounded-pill shadow-sm" style="font-size: 0.9rem;"><i class="bi bi-shield-check me-1"></i> PAGADO AL DÍA</span>`;
         }
 
-        if (estadoCuentaGlobalVisual) estadoCuentaGlobalVisual.style.display = "none";
-
         estadoCuentaMesVisual.innerHTML = `
             <div class="d-inline-flex bg-white px-4 py-3 rounded-4 shadow-sm border border-light mb-3 w-100 justify-content-center" style="max-width: 350px;">
                 <div class="pe-4 border-end w-50 text-center">
@@ -303,12 +342,10 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
 
-        const inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
         if(totalAcumulado && (!inputBusquedaTabla || inputBusquedaTabla.value.trim() === "")) {
             totalAcumulado.textContent = `S/ ${deudaActiva.toFixed(2)}`;
         }
 
-        // Lógica del botón de Desmarcar Mes
         if (btnMarcarMesPagado && mesSeleccionado !== "todos") {
             const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
             let todosSemanasPagadas = false;
@@ -395,7 +432,6 @@ document.addEventListener("DOMContentLoaded", () => {
             let deudaFaltante = totalConsumoMes - totalPagosMes;
 
             if (deudaFaltante > 0.01) {
-                // AQUÍ ESTABA EL ERROR: Faltaba este Swal.fire envolviendo la acción
                 Swal.fire({
                     title: '¿Cerrar Mes?',
                     html: `Se marcarán las semanas de <b>${nombreMes}</b> como cerradas y te llevaremos al formulario inferior para registrar el pago faltante de <b>S/ ${deudaFaltante.toFixed(2)}</b>.`,
@@ -433,8 +469,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 btnMarcarMesPagado.disabled = false;
                             }
                         }
-                        
-                        // Y ahora sí, te bajamos al formulario mágicamente
                         window.abonoRapidoSemana(deudaFaltante, `Mes de ${nombreMes}`);
                     }
                 });
@@ -471,6 +505,194 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
         };
+    }
+
+    // =========================================================================
+    // LÓGICA DE PAGO EN 1 SOLO CLIC (COBRAR Y TACHAR AUTOMÁTICAMENTE)
+    // =========================================================================
+    window.pagarYMarcarSemana = (idGrupo, deudaSemana, textoCabecera) => {
+        Swal.fire({
+            title: 'Cobrar Semana',
+            html: `Vas a registrar un pago de <b>S/ ${deudaSemana.toFixed(2)}</b> por la <b>${textoCabecera}</b>.<br><br>¿Cómo te pagaron?`,
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: '#198754',
+            denyButtonColor: '#742384',
+            confirmButtonText: '<i class="bi bi-cash"></i> Efectivo',
+            denyButtonText: '<i class="bi bi-qr-code"></i> Yape',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed || result.isDenied) {
+                const metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
+                const mesDestino = mesFiltro.value === "todos" ? new Date().getMonth().toString() : mesFiltro.value;
+                const docIdSemana = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+
+                try {
+                    // 1. Guardar el Pago
+                    await addDoc(collection(db, "pagos"), {
+                        nombreUsuario: nombreUsuario,
+                        monto: deudaSemana,
+                        fecha: new Date().toISOString().split('T')[0],
+                        metodo: metodoPago,
+                        pagador: `Pago exacto: ${textoCabecera}`,
+                        mesAplicado: mesDestino,
+                        timestamp: Date.now()
+                    });
+
+                    // 2. Marcar y Tachar la semana
+                    await setDoc(doc(db, "semanas_pagadas", docIdSemana), {
+                        nombreUsuario: nombreUsuario,
+                        idGrupo: idGrupo,
+                        timestamp: Date.now()
+                    });
+
+                    Swal.fire('¡Cobrado!', 'La semana ha sido pagada y tachada del registro.', 'success');
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        });
+    };
+
+    window.desmarcarSemana = (idGrupo) => {
+        const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+        Swal.fire({
+            title: '¿Deshacer tachado?',
+            text: 'La semana volverá a mostrarse pendiente (Nota: Esto NO borra el pago en dinero que hayas registrado, si quieres borrar el dinero debes hacerlo en la lista de abajo).',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Sí, desmarcar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, "semanas_pagadas", docId));
+            }
+        });
+    };
+
+    function renderizarConsumos() {
+        if (!tablaConsumos) return;
+        tablaConsumos.innerHTML = "";
+        let totalBusqueda = 0; 
+        const mes = mesFiltro.value; 
+        const textoBusqueda = inputBusquedaTabla ? inputBusquedaTabla.value.toLowerCase() : "";
+
+        const filtrados = historialConsumos.filter(r => {
+            const coincideMes = (mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
+            const coincideBusqueda = r.productoNombre.toLowerCase().includes(textoBusqueda);
+            return coincideMes && coincideBusqueda;
+        });
+
+        if (filtrados.length === 0) {
+            tablaConsumos.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No se encontraron registros en este periodo/búsqueda.</td></tr>';
+            if (totalAcumulado) totalAcumulado.textContent = "S/ 0.00";
+            return;
+        }
+
+        let consumosPorGrupo = {}; 
+
+        filtrados.forEach(r => {
+            const fechaObj = new Date(r.fecha + 'T00:00:00');
+            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+            let numSemana = obtenerSemanaDelMes(fechaObj);
+            const idGrupo = `${nombreMesConsumo}_${numSemana}`;
+            
+            if (!consumosPorGrupo[idGrupo]) consumosPorGrupo[idGrupo] = [];
+            consumosPorGrupo[idGrupo].push(r);
+        });
+
+        let grupoActual = ""; 
+
+        filtrados.forEach(r => {
+            const fechaObj = new Date(r.fecha + 'T00:00:00');
+            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+            let numSemana = obtenerSemanaDelMes(fechaObj);
+            const identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
+
+            let semanaDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
+            let itemPagado = false;
+            if (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp)) {
+                itemPagado = true;
+            }
+
+            if (identificadorGrupo !== grupoActual) {
+                grupoActual = identificadorGrupo;
+                
+                let todosPagados = consumosPorGrupo[identificadorGrupo].every(item => {
+                    let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
+                    return sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp);
+                });
+
+                let deudaSemana = consumosPorGrupo[identificadorGrupo]
+                    .filter(item => {
+                        let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
+                        return !(sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp));
+                    })
+                    .reduce((acc, curr) => acc + curr.precio, 0);
+
+                const textoCabecera = mes === "todos" ? `${nombreMesConsumo} - SEMANA 0${numSemana}` : `SEMANA 0${numSemana}`;
+
+                let colorFondo = todosPagados ? '#d1e7dd' : '#f0f7ff';
+                let colorBorde = todosPagados ? '#198754' : '#0d6efd';
+                let colorTexto = todosPagados ? 'text-success' : 'text-primary';
+
+                let badgeTotal = todosPagados ? '' : `<span class="badge bg-danger rounded-pill shadow-sm px-2 ms-2" style="font-size: 0.75rem;">S/ ${deudaSemana.toFixed(2)}</span>`;
+
+                // BOTÓN UNIFICADO MÁGICO DE 1 SOLO CLIC, SIN MOSTRAR MONTO REPETIDO
+                let botonAccion = todosPagados 
+                    ? `<button class="btn btn-sm btn-success rounded-pill fw-bold py-1 px-3 shadow-sm border-0" onclick="window.desmarcarSemana('${identificadorGrupo}')"><i class="bi bi-check-circle-fill me-1"></i>Pagado</button>`
+                    : `<button class="btn btn-sm btn-warning text-dark rounded-pill fw-bold py-1 px-3 shadow-sm border-0" onclick="window.pagarYMarcarSemana('${identificadorGrupo}', ${deudaSemana}, '${textoCabecera}')"><i class="bi bi-cash-coin me-1"></i>Pagar y Tachar</button>`;
+
+                const trSemana = document.createElement("tr");
+                trSemana.innerHTML = `
+                    <td colspan="4" class="py-2 ps-3 ps-md-4" style="background-color: ${colorFondo}; border-left: 5px solid ${colorBorde}; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pe-2">
+                            <div class="d-flex align-items-center flex-wrap">
+                                <span class="fw-bold ${colorTexto}" style="font-size: 0.9rem; letter-spacing: 0.5px;"><i class="bi bi-calendar3 me-2"></i>${textoCabecera}</span>
+                                ${badgeTotal}
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                ${botonAccion}
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tablaConsumos.appendChild(trSemana);
+            }
+
+            if (!itemPagado) {
+                totalBusqueda += r.precio;
+            }
+            
+            const f = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+            const tr = document.createElement("tr");
+            const nombreSeguro = r.productoNombre.replace(/'/g, "\\'");
+            
+            // EL SUBRAYADO CON CLASES DE BOOTSTRAP PURAS
+            const tachadoClase = itemPagado ? "text-decoration-line-through text-opacity-50" : "";
+            const colorLetra = itemPagado ? "text-muted" : "text-dark";
+
+            tr.innerHTML = `
+                <td class="ps-4 text-muted small ${tachadoClase}">${f.charAt(0).toUpperCase() + f.slice(1)}</td>
+                <td class="fw-bold ${colorLetra} ${tachadoClase}">${r.productoNombre}</td>
+                <td class="text-center fw-bold ${colorLetra} ${tachadoClase}">S/ ${r.precio.toFixed(2)}</td>
+                <td class="text-center" style="white-space: nowrap;">
+                    <button class="btn btn-sm btn-outline-primary rounded-1 me-1" onclick="window.editarRegistro('${r.id}', '${nombreSeguro}', ${r.precio}, '${r.fecha}')" title="Editar consumo">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger rounded-1" onclick="eliminarRegistro('${r.id}')" title="Eliminar registro">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </td>
+            `;
+            tablaConsumos.appendChild(tr);
+        });
+
+        if (textoBusqueda !== "") {
+            if (totalAcumulado) totalAcumulado.textContent = `S/ ${totalBusqueda.toFixed(2)} (Buscando)`;
+        }
     }
 
     window.modoEdicionActiva = null; 
@@ -584,281 +806,58 @@ document.addEventListener("DOMContentLoaded", () => {
         pagosFiltrados.forEach((pago) => {
             const [y, m, d] = pago.fecha.split('-');
             
+            // Colores vibrantes estilo App Bancaria
             const metodo = pago.metodo || "Efectivo";
-            const colorMetodo = metodo === "Yape" ? "#742384" : "#198754";
-            const iconoMetodo = metodo === "Yape" ? "bi-qr-code" : "bi-cash-stack";
+            const esYape = metodo === "Yape";
             
-            const textoPagador = pago.pagador ? `<br><small class="text-secondary fw-bold"><i class="bi bi-chat-left-text me-1"></i>${pago.pagador}</small>` : "";
+            const colorFondoIcono = esYape ? "#742384" : "#198754";
+            const iconoMetodo = esYape ? "bi-qr-code-scan" : "bi-cash-stack";
+
+            const colorBadgeTexto = esYape ? "#d8b4fe" : "#86efac"; 
+            const colorBadgeFondo = esYape ? "rgba(116, 35, 132, 0.2)" : "rgba(25, 135, 84, 0.2)";
+
+            const textoPagador = pago.pagador 
+                ? `<div class="mt-1 text-truncate"><small style="color: #94a3b8; font-size: 0.75rem;"><i class="bi bi-chat-right-text me-1 opacity-75"></i>${pago.pagador}</small></div>` 
+                : "";
 
             const li = document.createElement("li");
-            li.className = "list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-bottom";
+            li.className = "list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-0 border-bottom bg-transparent";
+            li.style.transition = "background-color 0.2s ease";
+            li.onmouseover = () => li.style.backgroundColor = "rgba(255,255,255,0.03)";
+            li.onmouseout = () => li.style.backgroundColor = "transparent";
+
             li.innerHTML = `
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm flex-shrink-0" style="width: 35px; height: 35px; background-color: ${colorMetodo}; color: white;">
-                        <i class="bi ${iconoMetodo}" style="font-size: 1rem;"></i>
+                <div class="d-flex align-items-center overflow-hidden pe-2" style="max-width: 75%;">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm flex-shrink-0" style="width: 45px; height: 45px; background-color: ${colorFondoIcono}; color: #ffffff;">
+                        <i class="bi ${iconoMetodo} fs-5"></i>
                     </div>
-                    <div>
-                        <span class="d-block text-dark fw-bold" style="font-size: 0.95rem;">S/ ${pago.monto.toFixed(2)} <span class="badge ms-1" style="background-color: ${colorMetodo}; font-size: 0.65rem; padding: 0.25em 0.5em;">${metodo}</span></span>
-                        <small class="text-muted" style="font-size: 0.8rem;">Pagado el ${d}-${m}-${y}</small>${textoPagador}
+                    <div class="text-truncate">
+                        <div class="d-flex align-items-center mb-0">
+                            <span class="fw-bolder text-body-emphasis me-2" style="font-size: 1.1rem; letter-spacing: -0.5px;">S/ ${pago.monto.toFixed(2)}</span>
+                            <span class="badge rounded-pill fw-bold" style="background-color: ${colorBadgeFondo}; color: ${colorBadgeTexto}; font-size: 0.65rem; padding: 0.35em 0.6em; border: 1px solid ${colorBadgeFondo};">${metodo}</span>
+                        </div>
+                        <small class="text-muted d-block text-truncate mt-1" style="font-size: 0.75rem;"><i class="bi bi-calendar3 me-1 opacity-50"></i>${d}/${m}/${y}</small>
+                        ${textoPagador}
                     </div>
                 </div>
-                <div>
-                    <button class="btn btn-sm text-primary p-0 me-3" onclick="window.editarPago('${pago.id}', ${pago.monto}, '${pago.fecha}', '${metodo}', '${pago.pagador || ''}')"><i class="bi bi-pencil-square fs-5"></i></button>
-                    <button class="btn btn-sm text-danger p-0" onclick="eliminarPago('${pago.id}')"><i class="bi bi-x-lg fs-5"></i></button>
+                <div class="d-flex gap-2 flex-shrink-0">
+                    <button class="btn btn-sm d-flex align-items-center justify-content-center rounded-circle border-0 shadow-none text-primary" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1);" onclick="window.editarPago('${pago.id}', ${pago.monto}, '${pago.fecha}', '${metodo}', '${pago.pagador || ''}')" title="Editar">
+                        <i class="bi bi-pencil-fill"></i>
+                    </button>
+                    <button class="btn btn-sm d-flex align-items-center justify-content-center rounded-circle border-0 shadow-none text-danger" style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.1);" onclick="window.eliminarPago('${pago.id}')" title="Eliminar">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
                 </div>
             `;
             listaPagosVisual.appendChild(li);
         });
     }
 
-    window.abonoRapidoSemana = (monto, textoSemana) => {
-        const montoAbono = document.getElementById("montoAbono");
-        const inputPagador = document.getElementById("inputPagador");
-        
-        if (montoAbono) {
-            montoAbono.value = monto.toFixed(2);
-            if(inputPagador) {
-                inputPagador.value = `Pago de ${textoSemana}`; 
-            }
-            
-            montoAbono.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => {
-                montoAbono.focus();
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    timerProgressBar: true
-                });
-                Toast.fire({
-                    icon: 'success',
-                    title: `S/ ${monto.toFixed(2)} listos para abonar.`
-                });
-            }, 500);
-        }
-    };
-
-    window.toggleSemanaPagada = (idGrupo, estaPagada) => {
-        const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
-        
-        let titulo = estaPagada ? '¿Desmarcar semana?' : '¿Marcar como cancelada?';
-        let texto = estaPagada 
-            ? 'La semana volverá a mostrarse activa (No altera la deuda global).' 
-            : 'La semana se tachará visualmente (No altera la deuda global).';
-        let icon = estaPagada ? 'warning' : 'question';
-        let confirmColor = estaPagada ? '#dc3545' : '#198754';
-
-        Swal.fire({
-            title: titulo,
-            text: texto,
-            icon: icon,
-            showCancelButton: true,
-            confirmButtonColor: confirmColor,
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, confirmar',
-            cancelButtonText: 'Cancelar'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    if (estaPagada) {
-                        await deleteDoc(doc(db, "semanas_pagadas", docId));
-                    } else {
-                        await setDoc(doc(db, "semanas_pagadas", docId), {
-                            nombreUsuario: nombreUsuario,
-                            idGrupo: idGrupo,
-                            timestamp: Date.now()
-                        });
-                    }
-                } catch (e) {
-                    Swal.fire('Error', e.message, 'error');
-                }
-            }
-        });
-    };
-
-    function renderizarConsumos() {
-        if (!tablaConsumos) return;
-        tablaConsumos.innerHTML = "";
-        let totalBusqueda = 0; 
-        const mes = mesFiltro.value; 
-        
-        const textoBusqueda = inputBusquedaTabla ? inputBusquedaTabla.value.toLowerCase() : "";
-
-        const filtrados = historialConsumos.filter(r => {
-            const coincideMes = (mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
-            const coincideBusqueda = r.productoNombre.toLowerCase().includes(textoBusqueda);
-            return coincideMes && coincideBusqueda;
-        });
-
-        if (filtrados.length === 0) {
-            tablaConsumos.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No se encontraron registros en este periodo/búsqueda.</td></tr>';
-            if (totalAcumulado) totalAcumulado.textContent = "S/ 0.00";
-            return;
-        }
-
-        let totalesPorGrupo = {};
-        let consumosPorGrupo = {}; 
-
-        filtrados.forEach(r => {
-            const fechaObj = new Date(r.fecha + 'T00:00:00');
-            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-            let numSemana = obtenerSemanaDelMes(fechaObj);
-            const idGrupo = `${nombreMesConsumo}_${numSemana}`;
-            
-            if (!totalesPorGrupo[idGrupo]) totalesPorGrupo[idGrupo] = 0;
-            if (!consumosPorGrupo[idGrupo]) consumosPorGrupo[idGrupo] = [];
-            
-            totalesPorGrupo[idGrupo] += r.precio;
-            consumosPorGrupo[idGrupo].push(r);
-        });
-
-        let grupoActual = ""; 
-
-        filtrados.forEach(r => {
-            const fechaObj = new Date(r.fecha + 'T00:00:00');
-            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-            let numSemana = obtenerSemanaDelMes(fechaObj);
-            const identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
-
-            let semanaDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
-            let itemPagado = false;
-            if (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp)) {
-                itemPagado = true;
-            }
-
-            if (identificadorGrupo !== grupoActual) {
-                grupoActual = identificadorGrupo;
-                
-                let todosPagados = consumosPorGrupo[identificadorGrupo].every(item => {
-                    let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
-                    return sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp);
-                });
-
-                let deudaSemana = consumosPorGrupo[identificadorGrupo]
-                    .filter(item => {
-                        let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
-                        return !(sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp));
-                    })
-                    .reduce((acc, curr) => acc + curr.precio, 0);
-
-                const textoCabecera = mes === "todos" 
-                    ? `${nombreMesConsumo} - SEMANA 0${numSemana}` 
-                    : `SEMANA 0${numSemana}`;
-
-                let colorFondo = todosPagados ? '#d1e7dd' : '#f0f7ff';
-                let colorBorde = todosPagados ? '#198754' : '#0d6efd';
-                let colorTexto = todosPagados ? 'text-success' : 'text-primary';
-
-                let badgeTotal = todosPagados ? '' : `<span class="badge bg-danger rounded-pill shadow-sm px-2 ms-2" style="font-size: 0.75rem;">S/ ${deudaSemana.toFixed(2)}</span>`;
-
-                let btnAbonoRapido = todosPagados 
-                    ? '' 
-                    : `<button class="btn btn-sm btn-warning text-dark fw-bold rounded-pill py-0 px-3 shadow-sm border-0" style="font-size: 0.75rem;" onclick="window.abonoRapidoSemana(${deudaSemana}, '${textoCabecera}')"><i class="bi bi-lightning-charge-fill me-1"></i>Pagar exacto</button>`;
-
-                let botonAccion = todosPagados 
-                    ? `<button class="btn btn-sm btn-success rounded-pill fw-bold py-0 shadow-sm border-0" style="font-size: 0.75rem;" onclick="window.toggleSemanaPagada('${identificadorGrupo}', true)"><i class="bi bi-check-circle-fill me-1"></i>Cancelada</button>`
-                    : `<button class="btn btn-sm btn-outline-primary rounded-pill fw-bold bg-white py-0 shadow-sm" style="font-size: 0.75rem; border-width: 1.5px;" onclick="window.toggleSemanaPagada('${identificadorGrupo}', false)"><i class="bi bi-check2-circle me-1"></i>Marcar pagada</button>`;
-
-                const trSemana = document.createElement("tr");
-                trSemana.innerHTML = `
-                    <td colspan="4" class="py-2 ps-3 ps-md-4" style="background-color: ${colorFondo}; border-left: 5px solid ${colorBorde}; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pe-2">
-                            <div class="d-flex align-items-center flex-wrap">
-                                <span class="fw-bold ${colorTexto}" style="font-size: 0.9rem; letter-spacing: 0.5px;"><i class="bi bi-calendar3 me-2"></i>${textoCabecera}</span>
-                                ${badgeTotal}
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                ${btnAbonoRapido}
-                                ${botonAccion}
-                            </div>
-                        </div>
-                    </td>
-                `;
-                tablaConsumos.appendChild(trSemana);
-            }
-
-            if (!itemPagado) {
-                totalBusqueda += r.precio;
-            }
-            
-            const f = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
-            const tr = document.createElement("tr");
-            const nombreSeguro = r.productoNombre.replace(/'/g, "\\'");
-            
-            const tachado = itemPagado ? "text-decoration: line-through; opacity: 0.6;" : "";
-
-            tr.innerHTML = `
-                <td class="ps-4 text-muted small" style="${tachado}">${f.charAt(0).toUpperCase() + f.slice(1)}</td>
-                <td class="fw-bold text-dark" style="${tachado}">${r.productoNombre}</td>
-                <td class="text-center fw-bold text-dark" style="${tachado}">S/ ${r.precio.toFixed(2)}</td>
-                <td class="text-center" style="white-space: nowrap;">
-                    <button class="btn btn-sm btn-outline-primary rounded-1 me-1" onclick="window.editarRegistro('${r.id}', '${nombreSeguro}', ${r.precio}, '${r.fecha}')" title="Editar consumo">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger rounded-1" onclick="eliminarRegistro('${r.id}')" title="Eliminar registro">
-                        <i class="bi bi-x"></i>
-                    </button>
-                </td>
-            `;
-            tablaConsumos.appendChild(tr);
-        });
-
-        if (textoBusqueda !== "") {
-            if (totalAcumulado) totalAcumulado.textContent = `S/ ${totalBusqueda.toFixed(2)} (Buscando)`;
-        } else {
-            recalcularSaldoGlobal();
-        }
-    }
-
-    if (mesFiltro) {
-        mesFiltro.addEventListener("change", () => {
-            renderizarConsumos();
-            recalcularSaldoGlobal();
-            renderizarListaPagos(); 
-        });
-    }
-
-    window.eliminarRegistro = (id) => { 
-        Swal.fire({
-            title: '¿Borrar este consumo?',
-            text: "No podrás revertir esto.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, borrar',
-            cancelButtonText: 'Cancelar'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                await deleteDoc(doc(db, "consumos", id));
-            }
-        });
-    };
-    
-    window.eliminarPago = (id) => { 
-        Swal.fire({
-            title: '¿Anular este pago?',
-            text: "La deuda se recalculará automáticamente.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, anular',
-            cancelButtonText: 'Cancelar'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                await deleteDoc(doc(db, "pagos", id));
-            }
-        });
-    };
-
     if (formConsumo) {
         formConsumo.onsubmit = async (e) => {
             e.preventDefault();
             const btn = formConsumo.querySelector("button[type='submit']");
             const fechaVal = fechaConsumo._flatpickr ? fechaConsumo.value : fechaConsumo.value; 
-            const fecha = fechaVal;
             
             let prodCrudo = inputProducto.value.trim();
             if (prodCrudo.endsWith("+")) prodCrudo = prodCrudo.slice(0, -1).trim();
@@ -957,14 +956,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     await updateDoc(doc(db, "consumos", window.modoEdicionActiva.id), {
                         productoNombre: textoNuevoPedido,
                         precio: precioTotalFinal,
-                        fecha: fecha
+                        fecha: fechaVal
                     });
                     
                     window.modoEdicionActiva = null;
                     btn.classList.remove("btn-success");
                     btn.classList.add("btn-primary");
                 } else {
-                    const indexExistente = historialConsumos.findIndex(r => r.fecha === fecha);
+                    const indexExistente = historialConsumos.findIndex(r => r.fecha === fechaVal);
                     if (indexExistente !== -1) {
                         let reg = historialConsumos[indexExistente];
                         await updateDoc(doc(db, "consumos", reg.id), {
@@ -974,7 +973,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else {
                         await addDoc(collection(db, "consumos"), {
                             nombreUsuario: nombreUsuario,
-                            fecha: fecha,
+                            fecha: fechaVal,
                             productoNombre: textoNuevoPedido,
                             precio: precioTotalFinal,
                             timestamp: Date.now() 
@@ -997,16 +996,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const guardarAbono = async (metodo) => {
         if (!montoAbono) return;
         let monto = parseFloat(montoAbono.value);
-        if (isNaN(monto) || monto <= 0) {
-            Swal.fire('Cuidado', 'Por favor, ingresa un monto válido (Ejemplo: 15.50).', 'warning');
-            return;
-        }
+        if (isNaN(monto) || monto <= 0) return;
 
         const fechaVal = fechaAbono.value;
-        if (!fechaVal) {
-            Swal.fire('Cuidado', 'Por favor, selecciona una fecha.', 'warning');
-            return;
-        }
+        if (!fechaVal) return;
 
         let pagador = "";
         if (inputPagador) {
@@ -1046,6 +1039,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnAbonoYape) btnAbonoYape.addEventListener("click", () => guardarAbono("Yape"));
     if (btnAbonoEfectivo) btnAbonoEfectivo.addEventListener("click", () => guardarAbono("Efectivo"));
+
+    // LAS 2 FUNCIONES PARA ELIMINAR REGISTROS Y PAGOS CON CONFIRMACIÓN
+    window.eliminarRegistro = (id) => { 
+        Swal.fire({
+            title: '¿Borrar este consumo?',
+            text: "No podrás revertir esto.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, borrar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, "consumos", id));
+            }
+        });
+    };
+    
+    window.eliminarPago = (id) => { 
+        Swal.fire({
+            title: '¿Anular este pago?',
+            text: "La deuda se recalculará automáticamente.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, anular',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, "pagos", id));
+            }
+        });
+    };
 
     const btnWhatsApp = document.getElementById("btnWhatsApp");
     if (btnWhatsApp) {
@@ -1278,7 +1306,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                                 <p style="margin: 0; font-size: 14px;">TITULAR: ROSA RO***</p>
                                             </td>
                                             <td style="padding: 20px; vertical-align: middle; text-align: right; width: 110px;">
-                                                <table style="background: #fffffe; border-radius: 8px; width: 90px; height: 90px; border-collapse: margin-left: auto;">
+                                                <table style="background: #fffffe; border-radius: 8px; width: 90px; height: 90px; border-collapse: collapse; margin-left: auto;">
                                                     <tr>
                                                         <td style="text-align: center; vertical-align: middle; padding: 0;">
                                                             <img src="yape.png" style="width: 75px; height: 75px; display: block; margin: 0 auto;">

@@ -48,6 +48,12 @@ body.bg-profes {
     background: #6f42c1;
 }
 
+.btn-check:checked+.btn-cat {
+    background-color: var(--bs-primary);
+    color: white !important;
+    border-color: var(--bs-primary) !important;
+}
+
 .btn-back {
     background: linear-gradient(to right, #6a11cb, #2575fc);
     color: white;
@@ -107,11 +113,9 @@ body.bg-alumnos {
     background-color: #fffaf0;
 }
 
-/* ==========================================================================
-   MODO OSCURO PRO Y DEFINITIVO
-   ========================================================================== */
-[data-bs-theme="dark"], 
-[data-bs-theme="dark"] body, 
+
+[data-bs-theme="dark"],
+[data-bs-theme="dark"] body,
 [data-bs-theme="dark"] body.bg-light,
 [data-bs-theme="dark"] body.bg-alumnos,
 [data-bs-theme="dark"] body.bg-profes,
@@ -161,6 +165,7 @@ body.bg-alumnos {
     color: #ffffff !important;
     border-bottom: 2px solid #0d6efd !important;
 }
+
 [data-bs-theme="dark"] .table-primary th,
 [data-bs-theme="dark"] .table-info th {
     background-color: transparent !important;
@@ -173,6 +178,7 @@ body.bg-alumnos {
     color: #e0e0e0 !important;
     border-color: #333333 !important;
 }
+
 [data-bs-theme="dark"] .table td {
     border-color: #333333 !important;
 }
@@ -186,13 +192,16 @@ body.bg-alumnos {
 [data-bs-theme="dark"] tr[style*="background-color: #f0f7ff"] {
     background-color: #0c2b4b !important;
 }
+
 [data-bs-theme="dark"] td[style*="background-color: #d1e7dd"],
 [data-bs-theme="dark"] tr[style*="background-color: #d1e7dd"] {
     background-color: #0f3f26 !important;
 }
 
-.input-group, .form-control, .input-group-text {
-    transition: all 0.2s ease-in-out !important; 
+.input-group,
+.form-control,
+.input-group-text {
+    transition: all 0.2s ease-in-out !important;
 }
 
 [data-bs-theme="dark"] .form-control,
@@ -213,6 +222,7 @@ body.bg-alumnos {
 [data-bs-theme="dark"] .dropdown-item {
     color: #e0e0e0 !important;
 }
+
 [data-bs-theme="dark"] .dropdown-item:hover,
 [data-bs-theme="dark"] .dropdown-item.active {
     background-color: #0d6efd !important;
@@ -224,10 +234,12 @@ body.bg-alumnos {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus,
+.form-select:focus {
     box-shadow: none !important;
     border-color: #0d6efd !important;
 }
+
 .input-group:focus-within .input-group-text,
 .input-group:focus-within .form-control {
     border-color: #0d6efd !important;
@@ -239,19 +251,23 @@ body.bg-alumnos {
     color: #f8f9fa !important;
     border: 1px solid #333333 !important;
 }
+
 [data-bs-theme="dark"] .swal2-title,
 [data-bs-theme="dark"] .swal2-html-container {
     color: #f8f9fa !important;
 }
+
 [data-bs-theme="dark"] .swal2-input,
 [data-bs-theme="dark"] .swal2-select {
     background-color: #2b2f32 !important;
     color: #ffffff !important;
     border-color: #495057 !important;
 }
+
 [data-bs-theme="dark"] .swal2-input::placeholder {
     color: #888 !important;
 }
+
 [data-bs-theme="dark"] .swal2-validation-message {
     background-color: #2b2f32 !important;
     color: #ffc107 !important;
@@ -259,27 +275,73 @@ body.bg-alumnos {
 
 [data-bs-theme="dark"] .flatpickr-calendar {
     background: #2b2f32;
-    box-shadow: 1px 0 0 #333, -1px 0 0 #333, 0 1px 0 #333, 0 -1px 0 #333, 0 3px 13px rgba(0,0,0,0.5);
+    box-shadow: 1px 0 0 #333, -1px 0 0 #333, 0 1px 0 #333, 0 -1px 0 #333, 0 3px 13px rgba(0, 0, 0, 0.5);
 }
+
 [data-bs-theme="dark"] .flatpickr-calendar .flatpickr-month,
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-current-month { color: #fff; fill: #fff; }
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-weekday { color: #aaa; }
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day { color: #e0e0e0; }
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-current-month {
+    color: #fff;
+    fill: #fff;
+}
+
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-weekday {
+    color: #aaa;
+}
+
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day {
+    color: #e0e0e0;
+}
+
 [data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:hover,
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:focus { background: #495057; border-color: #495057; }
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.selected { background: #0d6efd; color: #fff; border-color: #0d6efd; }
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.flatpickr-disabled { color: #555; }
-[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-time input { color: #e0e0e0; }
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day:focus {
+    background: #495057;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.selected {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-day.flatpickr-disabled {
+    color: #555;
+}
+
+[data-bs-theme="dark"] .flatpickr-calendar .flatpickr-time input {
+    color: #e0e0e0;
+}
 
 @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.anim-1 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.anim-2 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; opacity: 0; }
-.anim-3 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards; opacity: 0; }
-.anim-4 { animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; opacity: 0; }
+.anim-1 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-2 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    opacity: 0;
+}
+
+.anim-3 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+    opacity: 0;
+}
+
+.anim-4 {
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    opacity: 0;
+}
 
 .login-sidebar {
     background-color: #172033;
@@ -290,44 +352,76 @@ body.bg-alumnos {
     border-bottom-left-radius: 1rem;
 }
 
-.btn-login { transition: all 0.3s ease; }
+.btn-login {
+    transition: all 0.3s ease;
+}
+
 .btn-login:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important;
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #6c757d; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #495057; }
-[data-bs-theme="dark"] ::-webkit-scrollbar-track { background: #121212; }
-[data-bs-theme="dark"] ::-webkit-scrollbar-thumb { background: #333333; }
-[data-bs-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #495057; }
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
 
-/* ==========================================================================
-   DISEÑO DE BOTONES GIGANTES (TARJETAS PRINCIPALES)
-   ========================================================================== */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #6c757d;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #495057;
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-track {
+    background: #121212;
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #333333;
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #495057;
+}
+
+
 .btn-tarjeta-profesores {
     background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
     border: none !important;
 }
+
 .btn-tarjeta-personal {
     background: linear-gradient(135deg, #198754 0%, #146c43 100%) !important;
     border: none !important;
 }
+
 .btn-tarjeta-alumnos {
     background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
     border: none !important;
 }
-.btn-tarjeta-alumnos h4, .btn-tarjeta-alumnos p {
-    color: #212529 !important; /* Letra oscura en la tarjeta amarilla para contraste */
+
+.btn-tarjeta-alumnos h4,
+.btn-tarjeta-alumnos p {
+    color: #212529 !important;
+    /* Letra oscura en la tarjeta amarilla para contraste */
 }
+
 .btn-tarjeta-inventario {
     background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
     border: none !important;
 }
-.btn-tarjeta-inventario h4, .btn-tarjeta-inventario p {
-    color: #212529 !important; /* Letra oscura en la tarjeta celeste para contraste */
+
+.btn-tarjeta-inventario h4,
+.btn-tarjeta-inventario p {
+    color: #212529 !important;
+    /* Letra oscura en la tarjeta celeste para contraste */
 }
 
 /* Evitar que el modo oscuro sobrescriba los colores de estos botones gigantes */

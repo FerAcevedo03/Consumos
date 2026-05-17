@@ -14,8 +14,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
-    
-    // 1. FECHA Y SALUDO GRANDES EN EL PANEL
+
     const fechaActualEl = document.getElementById("fechaActual");
     if (fechaActualEl) {
         const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -28,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const hora = new Date().getHours();
         let saludo = "¡Buenas noches!";
         let icono = "bi-moon-stars-fill text-warning";
-        
+
         if (hora >= 6 && hora < 12) {
             saludo = "¡Buenos días!";
             icono = "bi-brightness-alt-high-fill text-warning";
@@ -36,31 +35,24 @@ document.addEventListener("DOMContentLoaded", () => {
             saludo = "¡Buenas tardes!";
             icono = "bi-sun-fill text-warning";
         }
-        
+
         saludoUsuarioEl.innerHTML = `<i class="bi ${icono} me-2"></i>${saludo}, Bienvenido(a) de vuelta.`;
     }
 
-    // 2. CONTADORES DE TARJETAS CON LAYOUT DEFENSIVO PARA MÓVIL
-    const countProfesores = document.getElementById("count-profesores");
-    const countAdministrativos = document.getElementById("count-administrativos");
-    const countAlumnos = document.getElementById("count-alumnos");
-    const countProductos = document.getElementById("count-productos");
-
     function escucharColeccion(col, elemento, formatoFn) {
         if (!elemento) return;
-        onSnapshot(collection(db, col), (snap) => { 
-            elemento.innerHTML = formatoFn(snap.size); 
+        onSnapshot(collection(db, col), (snap) => {
+            elemento.innerHTML = formatoFn(snap.size);
         }, () => {
             elemento.innerHTML = `<i class="bi bi-wifi-off me-1"></i> Error`;
         });
     }
 
-    escucharColeccion("profesores", countProfesores, (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} profesores registrados`);
-    escucharColeccion("administrativos", countAdministrativos, (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} de personal registrado`);
-    escucharColeccion("alumnos", countAlumnos, (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} alumnos registrados`);
-    escucharColeccion("productos", countProductos, (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} productos en catálogo`);
+    escucharColeccion("profesores", document.getElementById("count-profesores"), (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} profesores registrados`);
+    escucharColeccion("administrativos", document.getElementById("count-administrativos"), (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} de personal registrado`);
+    escucharColeccion("alumnos", document.getElementById("count-alumnos"), (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} alumnos registrados`);
+    escucharColeccion("productos", document.getElementById("count-productos"), (n) => `<i class="bi bi-graph-up-arrow me-1"></i> Hay ${n} productos en catálogo`);
 
-    // 3. BUSCADOR GLOBAL MODO DIOS
     const buscadorGlobal = document.getElementById("buscadorGlobal");
     const listaResultadosGlobal = document.getElementById("listaResultadosGlobal");
     let sacoPersonas = [];
@@ -75,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
         onSnapshot(collection(db, col.id), (snap) => {
             sacoPersonas = sacoPersonas.filter(p => p.rol !== col.id);
             snap.forEach(doc => {
-                if(doc.data().nombre) sacoPersonas.push({ nombre: doc.data().nombre, rol: col.id, icon: col.icon, color: col.color });
+                if (doc.data().nombre) sacoPersonas.push({ nombre: doc.data().nombre, rol: col.id, icon: col.icon, color: col.color });
             });
             sacoPersonas.sort((a, b) => a.nombre.localeCompare(b.nombre));
         });
@@ -105,114 +97,55 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. LÓGICA FINANCIERA Y GRÁFICO ALTAMENTE RESPONSIVO
-    const elDineroMes = document.getElementById("dineroMes");
-    const elDeudaGlobal = document.getElementById("deudaGlobal");
-    const feed = document.getElementById("feed-actividad");
-    
-    let logsConsumo = [];
-    let logsPago = [];
-    let logsSemanas = [];
-    let miGrafico = null;
+    const btnBoveda = document.getElementById("btnBoveda");
+    if (btnBoveda) {
+        btnBoveda.addEventListener("click", async (e) => {
+            e.preventDefault();
 
-    onSnapshot(collection(db, "semanas_pagadas"), (snap) => { logsSemanas = snap.docs.map(d => d.data()); procesarTodo(); });
-    onSnapshot(collection(db, "consumos"), (snap) => { logsConsumo = snap.docs.map(d => d.data()); procesarTodo(); });
-    onSnapshot(collection(db, "pagos"), (snap) => { logsPago = snap.docs.map(d => d.data()); procesarTodo(); });
-
-    function procesarTodo() {
-        const hoy = new Date();
-        const mesAct = hoy.getMonth();
-        const anioAct = hoy.getFullYear();
-        
-        const recaudado = logsPago.filter(p => {
-            const f = p.mesAplicado !== undefined ? parseInt(p.mesAplicado) : new Date(p.fecha + 'T00:00:00').getMonth();
-            return f === mesAct;
-        }).reduce((acc, curr) => acc + curr.monto, 0);
-        
-        if (elDineroMes) elDineroMes.textContent = `S/ ${recaudado.toFixed(2)}`;
-
-        let deudaTotal = 0;
-        logsConsumo.forEach(r => {
-            const f = new Date(r.fecha + 'T00:00:00');
-            const numSem = Math.ceil((f.getDate() + (new Date(f.getFullYear(), f.getMonth(), 1).getDay() === 0 ? 6 : new Date(f.getFullYear(), f.getMonth(), 1).getDay() - 1)) / 7);
-            const idG = `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${numSem}`;
-            const sDoc = logsSemanas.find(s => s.idGrupo === idG && s.nombreUsuario === r.nombreUsuario);
-            if (!(sDoc && (!r.timestamp || r.timestamp <= sDoc.timestamp))) deudaTotal += r.precio;
-        });
-        const abonosTotales = logsPago.reduce((acc, p) => acc + p.monto, 0);
-        const deudaFinal = deudaTotal - abonosTotales;
-        if (elDeudaGlobal) elDeudaGlobal.textContent = `S/ ${(deudaFinal < 0 ? 0 : deudaFinal).toFixed(2)}`;
-
-        if (feed) {
-            const mix = [...logsConsumo.map(c => ({...c, tipo: 'c'})), ...logsPago.map(p => ({...p, tipo: 'p'}))]
-                .sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 15);
-            
-            feed.innerHTML = mix.map(item => {
-                const isP = item.tipo === 'p';
-                return `<div class="list-group-item d-flex justify-content-between align-items-center py-3 border-0 border-bottom mx-3 px-0 bg-transparent">
-                    <div class="d-flex align-items-center" style="max-width: 75%;">
-                        <div class="rounded-circle d-flex justify-content-center align-items-center me-2 me-md-3 ${isP ? 'bg-success text-success' : 'bg-danger text-danger'} bg-opacity-10 flex-shrink-0" style="width: 38px; height: 38px;">
-                            <i class="bi ${isP ? 'bi-cash-coin' : 'bi-cart-check'}"></i>
-                        </div>
-                        <div class="lh-sm text-truncate">
-                            <p class="mb-0 fw-bold small text-body text-truncate">${item.nombreUsuario}</p>
-                            <small class="text-muted text-truncate d-block" style="font-size: 0.7rem;">${isP ? 'Abonó con ' + item.metodo : 'Consumió ' + item.productoNombre}</small>
-                        </div>
-                    </div>
-                    <div class="text-end flex-shrink-0">
-                        <p class="mb-0 fw-bold small ${isP ? 'text-success' : 'text-danger'}">${isP ? '+' : '-'} S/ ${(isP ? item.monto : item.precio).toFixed(2)}</p>
-                    </div>
-                </div>`;
-            }).join("");
-        }
-
-        const ctxElement = document.getElementById('graficoDashboard');
-        if (ctxElement) {
-            const ctx = ctxElement.getContext('2d');
-            const labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            const dataIngresos = new Array(12).fill(0);
-
-            logsPago.forEach(p => {
-                const f = new Date(p.fecha + 'T00:00:00');
-                let mesDelPago = (p.mesAplicado !== undefined && p.mesAplicado !== "todos") ? parseInt(p.mesAplicado) : f.getMonth();
-                if (f.getFullYear() === anioAct) {
-                    dataIngresos[mesDelPago] += p.monto;
-                }
-            });
-
-            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-            const textColor = isDark ? '#e0e0e0' : '#6c757d';
-            
-            if (miGrafico) miGrafico.destroy();
-            miGrafico = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Ingresos',
-                        data: dataIngresos,
-                        backgroundColor: '#198754',
-                        borderRadius: 5,
-                        borderSkipped: false
-                    }]
+            const { value: password } = await Swal.fire({
+                title: 'Acceso Restringido',
+                text: 'Ingresa la contraseña maestra para ver las finanzas.',
+                input: 'password',
+                inputPlaceholder: 'Contraseña',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, 
-                            ticks: { color: textColor, font: { size: 9 } } 
-                        },
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { color: textColor, font: { size: 10, weight: 'bold' } } 
-                        }
-                    }
-                }
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="bi bi-unlock-fill me-1"></i> Desbloquear',
+                cancelButtonText: 'Cancelar'
             });
-        }
+
+            if (password) {
+                if (password === '75992939') {
+                    window.location.href = 'finanzas.html';
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acceso Denegado',
+                        text: 'La contraseña es incorrecta.',
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+            }
+        });
+    }
+
+    const navbar = document.getElementById("main-navbar");
+    let ultimoScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (navbar) {
+        window.addEventListener("scroll", () => {
+            let scrollActual = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollActual > ultimoScroll && scrollActual > 60) {
+                navbar.style.top = `-${navbar.offsetHeight}px`;
+            }
+            else {
+                navbar.style.top = "0";
+            }
+            ultimoScroll = scrollActual <= 0 ? 0 : scrollActual;
+        });
     }
 });

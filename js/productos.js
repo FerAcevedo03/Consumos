@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         localStorage.setItem("base_productos", JSON.stringify(productosDB));
         
-        // ORDEN LÓGICO DE QUIOSCO (Agrupados por categoría)
+        // TU ORDEN LÓGICO ORIGINAL INTACTO
         const ordenCategorias = {
             "comida": 1,
             "bebida": 2,
@@ -45,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
             let catA = ordenCategorias[a.categoria] || 99;
             let catB = ordenCategorias[b.categoria] || 99;
             
-            // Si son de la misma categoría, los ordenamos alfabéticamente por nombre
             if (catA === catB) {
                 const nombreA = a.nombre || "";
                 const nombreB = b.nombre || "";
@@ -81,24 +80,51 @@ document.addEventListener("DOMContentLoaded", () => {
             postre: "🍮", dulce: "🍬", snack: "🍟", utiles: "✏️", otro: "📦"
         };
 
+        const nombresCategorias = {
+            comida: "🍛 COMIDA (MENÚ)", bebida: "🥤 BEBIDAS", pan: "🥖 PAN / SÁNDWICH", 
+            galleta: "🍪 GALLETAS", keke: "🧁 KEKES / PORCIONES", postre: "🍮 POSTRES", 
+            dulce: "🍬 DULCES", snack: "🍟 SNACKS", utiles: "✏️ ÚTILES", otro: "📦 OTROS"
+        };
+
+        let categoriaActual = "";
+
         filtrados.forEach(p => {
+            let catLimpia = p.categoria || "otro";
+
+            // AQUÍ ESTÁ LA MAGIA: Si cambia la categoría, dibujamos una fila separadora
+            if (catLimpia !== categoriaActual) {
+                categoriaActual = catLimpia;
+                let nombreMostrado = nombresCategorias[catLimpia] || "📦 OTROS";
+                
+                const trHeader = document.createElement("tr");
+                trHeader.innerHTML = `
+                    <td colspan="4" class="py-2 px-4 shadow-sm" style="background-color: var(--bs-secondary-bg); border-bottom: 2px solid #0dcaf0;">
+                        <span class="fw-bold text-body-emphasis" style="letter-spacing: 1px; font-size: 0.85rem;">${nombreMostrado}</span>
+                    </td>
+                `;
+                tablaProductos.appendChild(trHeader);
+            }
+
             const tr = document.createElement("tr");
-            let icono = iconos[p.categoria] || "📦";
+            let icono = iconos[catLimpia] || "📦";
             
+            // FILA CORREGIDA: text-end para alinear, y d-flex gap-2 para los botones
             tr.innerHTML = `
-                <td class="text-center ps-4 fs-4">${icono}</td>
-                <td class="fw-bold text-dark">${p.nombre}</td>
-                <td class="fw-bold text-success">S/ ${parseFloat(p.precio).toFixed(2)}</td>
-                <td class="text-end pe-4">
-                    <button class="btn btn-sm btn-outline-primary rounded-1 me-1 shadow-sm" onclick="window.editarProducto('${p.id}', '${p.nombre.replace(/'/g, "\\'")}', ${p.precio}, '${p.categoria}')" title="Editar"><i class="bi bi-pencil-square"></i></button>
-                    <button class="btn btn-sm btn-outline-danger rounded-1 shadow-sm" onclick="window.eliminarProducto('${p.id}', '${p.nombre.replace(/'/g, "\\'")}')" title="Eliminar"><i class="bi bi-trash3"></i></button>
+                <td class="text-center ps-4 fs-4 align-middle">${icono}</td>
+                <td class="fw-bold text-body-emphasis align-middle">${p.nombre}</td>
+                <td class="fw-bold text-success text-end pe-4 align-middle text-nowrap">S/ ${parseFloat(p.precio).toFixed(2)}</td>
+                <td class="text-end pe-4 align-middle">
+                    <div class="d-flex justify-content-end gap-2">
+                        <button class="btn btn-sm btn-outline-primary rounded-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;" onclick="window.editarProducto('${p.id}', '${p.nombre.replace(/'/g, "\\'")}', ${p.precio}, '${p.categoria}')" title="Editar"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-outline-danger rounded-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;" onclick="window.eliminarProducto('${p.id}', '${p.nombre.replace(/'/g, "\\'")}')" title="Eliminar"><i class="bi bi-trash3"></i></button>
+                    </div>
                 </td>
             `;
             tablaProductos.appendChild(tr);
         });
     }
 
-    // AÑADIR PRODUCTO CON VENTANA ANIMADA
+    // TUS VENTANAS ORIGINALES DE SWEET ALERT
     if (btnAgregarModal) {
         btnAgregarModal.onclick = async () => {
             const { value: formValues } = await Swal.fire({
@@ -173,7 +199,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // ELIMINAR PRODUCTO (ALERTA DE CONFIRMACIÓN)
     window.eliminarProducto = (id, nombre) => {
         Swal.fire({
             title: '¿Eliminar producto?',
@@ -196,7 +221,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // EDITAR PRODUCTO (VENTANA ANIMADA PRE-LLENADA)
     window.editarProducto = async (id, nombreViejo, precioViejo, catVieja) => {
         const { value: formValues } = await Swal.fire({
             title: 'Editar Producto',

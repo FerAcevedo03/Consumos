@@ -16,7 +16,7 @@
   <script src="js/darkmode.js"></script>
   <script type="module" src="js/auth.js"></script>
 </head>
-<body class="bg-light">
+<body class="bg-body-tertiary">
 
   <nav id="main-navbar" class="navbar navbar-dark py-2 px-1 px-md-0 shadow-sm" style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
     <div class="container-fluid container-md d-flex justify-content-between align-items-center">
@@ -55,16 +55,16 @@
 
   <div class="container py-4">
     <div class="text-center mb-5">
-      <h2 class="text-dark fw-bold" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.05);">
+      <h2 class="text-body-emphasis fw-bold" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.05);">
         <i class="bi bi-box-seam-fill text-info me-2"></i> Inventario de Productos
       </h2>
     </div>
 
     <div class="row mb-4 justify-content-between align-items-center g-3">
       <div class="col-12 col-md-8">
-        <div class="input-group input-group-lg rounded-pill shadow-sm border overflow-hidden" style="background-color: var(--bs-body-bg);">
+        <div class="input-group input-group-lg rounded-pill shadow-sm border overflow-hidden" style="background-color: var(--bs-card-bg); border-color: rgba(255,255,255,0.05) !important;">
           <span class="input-group-text bg-transparent border-0 text-muted ps-4"><i class="bi bi-search"></i></span>
-          <input type="text" id="buscadorProductos" class="form-control border-0 bg-transparent shadow-none fw-bold" placeholder="Buscar por nombre de producto...">
+          <input type="text" id="buscadorProductos" class="form-control border-0 bg-transparent shadow-none fw-bold text-body-emphasis" placeholder="Buscar por nombre de producto...">
         </div>
       </div>
       <div class="col-12 col-md-4 text-md-end text-center">
@@ -82,78 +82,14 @@
               <tr>
                 <th scope="col" class="text-center ps-4" style="width: 90px;">Tipo</th>
                 <th scope="col">Nombre</th>
-                <th scope="col" class="text-center">Precio (S/)</th>
-                <th scope="col" class="text-end pe-4">Acciones</th>
+                <th scope="col" class="text-end pe-4" style="width: 140px;">Precio (S/)</th>
+                <th scope="col" class="text-end pe-4" style="width: 120px;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tablaProductos">
               <tr><td colspan="4" class="text-center text-muted py-5"><div class="spinner-border text-info mb-2" role="status"></div><br>Cargando inventario de la nube...</td></tr>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal fade" id="modalProducto" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content rounded-4 shadow border-0" style="background-color: var(--bs-card-bg);">
-        <div class="modal-header bg-info border-0 rounded-top-4">
-          <h5 class="modal-title fw-bold text-dark" id="modalLabel"><i class="bi bi-tag-fill me-2"></i>Registrar Producto</h5>
-          <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body p-4">
-          <form id="formProducto">
-            <div class="mb-3">
-              <label class="form-label text-muted small fw-bold">NOMBRE DEL PRODUCTO</label>
-              <div class="input-group input-group-lg shadow-sm rounded-3">
-                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-box-seam text-info"></i></span>
-                <input type="text" id="nombreProducto" class="form-control border-start-0 ps-0 fw-bold" placeholder="Ej: Pan con Pollo" required>
-              </div>
-            </div>
-            
-            <div class="mb-4">
-              <label class="form-label text-muted small fw-bold">PRECIO (S/)</label>
-              <div class="input-group input-group-lg shadow-sm rounded-3">
-                <span class="input-group-text bg-transparent border-end-0 fw-bold text-success">S/</span>
-                <input type="number" id="precioProducto" class="form-control border-start-0 ps-0 fw-bold text-success" placeholder="0.00" step="0.10" min="0.10" required>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <label class="form-label text-muted small fw-bold mb-3">CATEGORÍA VISUAL</label>
-              <div class="row g-2">
-                  <div class="col-6">
-                      <input type="radio" class="btn-check" name="catProducto" id="catMenu" value="menu" checked>
-                      <label class="btn btn-outline-warning w-100 p-2 d-flex flex-column align-items-center shadow-sm rounded-3 border-2" for="catMenu">
-                          <span class="fs-3 mb-1 lh-1">🍛</span><span class="fw-bold" style="font-size: 0.8rem;">Menú/Comida</span>
-                      </label>
-                  </div>
-                  <div class="col-6">
-                      <input type="radio" class="btn-check" name="catProducto" id="catBebida" value="bebida">
-                      <label class="btn btn-outline-info w-100 p-2 d-flex flex-column align-items-center shadow-sm rounded-3 border-2" for="catBebida">
-                          <span class="fs-3 mb-1 lh-1">🥤</span><span class="fw-bold" style="font-size: 0.8rem;">Bebida</span>
-                      </label>
-                  </div>
-                  <div class="col-6">
-                      <input type="radio" class="btn-check" name="catProducto" id="catSnack" value="snack">
-                      <label class="btn btn-outline-success w-100 p-2 d-flex flex-column align-items-center shadow-sm rounded-3 border-2" for="catSnack">
-                          <span class="fs-3 mb-1 lh-1">🥐</span><span class="fw-bold" style="font-size: 0.8rem;">Snack/Salado</span>
-                      </label>
-                  </div>
-                  <div class="col-6">
-                      <input type="radio" class="btn-check" name="catProducto" id="catDulce" value="dulce">
-                      <label class="btn btn-outline-danger w-100 p-2 d-flex flex-column align-items-center shadow-sm rounded-3 border-2" for="catDulce">
-                          <span class="fs-3 mb-1 lh-1">🍬</span><span class="fw-bold" style="font-size: 0.8rem;">Dulce/Galleta</span>
-                      </label>
-                  </div>
-              </div>
-            </div>
-
-            <button type="submit" id="btnGuardar" class="btn btn-info w-100 fw-bold py-3 fs-5 shadow-sm rounded-pill text-dark mt-2">
-              <i class="bi bi-floppy-fill me-2"></i>Guardar Producto
-            </button>
-          </form>
         </div>
       </div>
     </div>
