@@ -19,7 +19,6 @@ function obtenerSemanaDelMes(fechaObj) {
     return Math.ceil((fechaObj.getDate() + ajuste) / 7);
 }
 
-// Diccionario Ampliado y Cerebro Lector para la búsqueda en Consumos
 const categoriasVisuales = {
     'comida': { emoji: '🍛', color: 'text-warning', bg: 'bg-warning' },
     'bebida': { emoji: '🥤', color: 'text-info', bg: 'bg-info' },
@@ -155,7 +154,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mesFiltro) {
         mesFiltro.addEventListener("change", () => {
-            if (textoMesVisual) textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
+            if (textoMesVisual) {
+                textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
+            }
             renderizarConsumos();
             recalcularSaldoGlobal();
             renderizarListaPagos(); 
@@ -178,11 +179,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const fechaHoy = new Date();
     if (mesFiltro) {
         mesFiltro.value = fechaHoy.getMonth().toString();
-        if (textoMesVisual) textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
+        if (textoMesVisual) {
+            textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
+        }
     }
 
     if (inputBusquedaTabla) {
-        inputBusquedaTabla.addEventListener("input", () => { renderizarConsumos(); });
+        inputBusquedaTabla.addEventListener("input", () => {
+            renderizarConsumos();
+        });
     }
 
     let indiceSeleccionado = -1;
@@ -200,17 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     listaSugerencias.classList.add("show");
                     f.forEach(p => {
                         const li = document.createElement("li");
-                        let visual = obtenerVisual(p.categoria, p.nombre);
-
-                        li.innerHTML = `
-                            <a class="dropdown-item d-flex justify-content-between align-items-center py-2 px-3" href="#" style="transition: all 0.2s ease;">
-                                <div class="d-flex align-items-center">
-                                    <span class="fs-4 me-2 lh-1">${visual.emoji}</span>
-                                    <span class="fw-bold text-body-emphasis">${p.nombre}</span>
-                                </div>
-                                <span class="badge bg-light border text-dark fs-6 ms-3">S/ ${parseFloat(p.precio).toFixed(2)}</span>
-                            </a>
-                        `;
+                        li.innerHTML = `<a class="dropdown-item d-flex justify-content-between" href="#"><span>${p.nombre}</span><small>S/ ${parseFloat(p.precio).toFixed(2)}</small></a>`;
                         li.onmousedown = (e) => { e.preventDefault(); seleccionar(p.nombre); };
                         listaSugerencias.appendChild(li);
                     });
@@ -227,25 +222,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault(); indiceSeleccionado--; if (indiceSeleccionado < 0) indiceSeleccionado = items.length - 1; actSel(items);
             } else if (e.key === "Enter") {
                 e.preventDefault();
-                if (indiceSeleccionado > -1) seleccionar(items[indiceSeleccionado].querySelector(".text-body-emphasis").textContent);
-                else if (items.length > 0) seleccionar(items[0].querySelector(".text-body-emphasis").textContent);
+                if (indiceSeleccionado > -1) seleccionar(items[indiceSeleccionado].querySelector("span").textContent);
+                else if (items.length > 0) seleccionar(items[0].querySelector("span").textContent);
             }
         });
 
         function actSel(items) {
             items.forEach((item, i) => {
-                if (i === indiceSeleccionado) { 
-                    item.classList.add("active"); 
-                    item.style.backgroundColor = "#0d6efd"; 
-                    item.querySelector('.text-body-emphasis').style.color = "white";
-                    item.querySelector('.badge').classList.replace('text-dark', 'text-primary');
-                    item.scrollIntoView({ block: "nearest" }); 
-                } else { 
-                    item.classList.remove("active"); 
-                    item.style.backgroundColor = ""; 
-                    item.querySelector('.text-body-emphasis').style.color = "";
-                    item.querySelector('.badge').classList.replace('text-primary', 'text-dark');
-                }
+                if (i === indiceSeleccionado) { item.classList.add("active"); item.style.backgroundColor = "#0d6efd"; item.style.color = "white"; item.scrollIntoView({ block: "nearest" }); }
+                else { item.classList.remove("active"); item.style.backgroundColor = ""; item.style.color = ""; }
             });
         }
         function seleccionar(n) {
@@ -342,10 +327,12 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
 
+        const inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
         if(totalAcumulado && (!inputBusquedaTabla || inputBusquedaTabla.value.trim() === "")) {
             totalAcumulado.textContent = `S/ ${deudaActiva.toFixed(2)}`;
         }
 
+        // Lógica del botón de Desmarcar Mes
         if (btnMarcarMesPagado && mesSeleccionado !== "todos") {
             const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
             let todosSemanasPagadas = false;
@@ -356,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     let nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
                     let numSemana = obtenerSemanaDelMes(fechaObj);
                     let idGrupo = `${nombreMesConsumo}_${numSemana}`;
-                    return semanasPagadas.some(s => s.idGrupo === idGrupo);
+                    return r.pagado === true || semanasPagadas.some(s => s.idGrupo === idGrupo);
                 });
             }
 
@@ -408,6 +395,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                     const docRef = doc(db, "semanas_pagadas", docId);
                                     batch.delete(docRef); 
                                 });
+                                
+                                // También quitar los "pagado: true" individuales
+                                consumosDelMes.forEach(r => {
+                                    if(r.pagado) batch.update(doc(db, "consumos", r.id), { pagado: false });
+                                });
+
                                 await batch.commit();
                                 Swal.fire('Revertido', `El mes de ${nombreMes} vuelve a estar pendiente.`, 'info');
                             } catch (e) {
@@ -432,16 +425,21 @@ document.addEventListener("DOMContentLoaded", () => {
             let deudaFaltante = totalConsumoMes - totalPagosMes;
 
             if (deudaFaltante > 0.01) {
+                // AQUI PREGUNTA METODO Y GENERA PAGO DEL MES
                 Swal.fire({
-                    title: '¿Cerrar Mes?',
-                    html: `Se marcarán las semanas de <b>${nombreMes}</b> como cerradas y te llevaremos al formulario inferior para registrar el pago faltante de <b>S/ ${deudaFaltante.toFixed(2)}</b>.`,
+                    title: '¿Cerrar y Cobrar Mes?',
+                    html: `Se marcarán todas las semanas de <b>${nombreMes}</b> como cerradas y se registrará un abono de <b>S/ ${deudaFaltante.toFixed(2)}</b>.<br><br>¿Cómo te pagaron?`,
                     icon: 'info',
                     showCancelButton: true,
-                    confirmButtonText: 'Sí, cerrar y pagar',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#198754'
+                    showDenyButton: true,
+                    confirmButtonColor: '#198754',
+                    denyButtonColor: '#742384',
+                    confirmButtonText: '<i class="bi bi-cash"></i> Efectivo',
+                    denyButtonText: '<i class="bi bi-qr-code"></i> Yape',
+                    cancelButtonText: 'Cancelar'
                 }).then(async (result) => {
-                    if (result.isConfirmed) {
+                    if (result.isConfirmed || result.isDenied) {
+                        const metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
                         const gruposSemanas = [...new Set(consumosDelMes.map(r => {
                             let f = new Date(r.fecha + 'T00:00:00');
                             return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
@@ -450,6 +448,18 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (gruposSemanas.length > 0) {
                             try {
                                 btnMarcarMesPagado.disabled = true;
+
+                                // Guardamos el pago del mes
+                                await addDoc(collection(db, "pagos"), {
+                                    nombreUsuario: nombreUsuario,
+                                    monto: deudaFaltante,
+                                    fecha: new Date().toISOString().split('T')[0],
+                                    metodo: metodoPago,
+                                    pagador: `Cierre de Mes: ${nombreMes}`,
+                                    mesAplicado: mesSeleccionado,
+                                    timestamp: Date.now()
+                                });
+
                                 const batch = writeBatch(db);
                                 gruposSemanas.forEach(idGrupo => {
                                     const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
@@ -461,6 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     });
                                 });
                                 await batch.commit();
+                                Swal.fire('¡Cobrado!', 'El mes ha sido pagado y cerrado exitosamente.', 'success');
                             } catch (e) {
                                 Swal.fire('Error', e.message, 'error');
                                 btnMarcarMesPagado.disabled = false;
@@ -469,7 +480,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 btnMarcarMesPagado.disabled = false;
                             }
                         }
-                        window.abonoRapidoSemana(deudaFaltante, `Mes de ${nombreMes}`);
                     }
                 });
             } else {
@@ -507,9 +517,10 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // =========================================================================
-    // LÓGICA DE PAGO EN 1 SOLO CLIC (COBRAR Y TACHAR AUTOMÁTICAMENTE)
-    // =========================================================================
+    // =======================================================
+    // MAGIA: COBRAR SEMANA Y COBRAR DÍA INDIVIDUAL
+    // =======================================================
+
     window.pagarYMarcarSemana = (idGrupo, deudaSemana, textoCabecera) => {
         Swal.fire({
             title: 'Cobrar Semana',
@@ -529,7 +540,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const docIdSemana = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
 
                 try {
-                    // 1. Guardar el Pago
                     await addDoc(collection(db, "pagos"), {
                         nombreUsuario: nombreUsuario,
                         monto: deudaSemana,
@@ -540,7 +550,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         timestamp: Date.now()
                     });
 
-                    // 2. Marcar y Tachar la semana
                     await setDoc(doc(db, "semanas_pagadas", docIdSemana), {
                         nombreUsuario: nombreUsuario,
                         idGrupo: idGrupo,
@@ -571,6 +580,66 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     };
+
+    window.pagarYMarcarDia = (idConsumo, monto, productoNombre) => {
+        Swal.fire({
+            title: 'Cobrar Día Individual',
+            html: `Vas a cobrar <b>S/ ${monto.toFixed(2)}</b> por: <b>${productoNombre}</b>.<br><br>¿Cómo te pagaron?`,
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: '#198754',
+            denyButtonColor: '#742384',
+            confirmButtonText: '<i class="bi bi-cash"></i> Efectivo',
+            denyButtonText: '<i class="bi bi-qr-code"></i> Yape',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed || result.isDenied) {
+                const metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
+                const mesDestino = mesFiltro.value === "todos" ? new Date().getMonth().toString() : mesFiltro.value;
+
+                try {
+                    await addDoc(collection(db, "pagos"), {
+                        nombreUsuario: nombreUsuario,
+                        monto: monto,
+                        fecha: new Date().toISOString().split('T')[0],
+                        metodo: metodoPago,
+                        pagador: `Día cobrado: ${productoNombre}`,
+                        mesAplicado: mesDestino,
+                        timestamp: Date.now()
+                    });
+
+                    await updateDoc(doc(db, "consumos", idConsumo), {
+                        pagado: true
+                    });
+
+                    Swal.fire('¡Día Cobrado!', 'El registro fue pagado y tachado.', 'success');
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        });
+    };
+
+    window.desmarcarDia = (idConsumo) => {
+        Swal.fire({
+            title: '¿Deshacer tachado individual?',
+            text: 'Este consumo volverá a mostrarse pendiente (Recuerda borrar el pago de la lista de abajo).',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Sí, desmarcar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await updateDoc(doc(db, "consumos", idConsumo), { pagado: false });
+            }
+        });
+    };
+
+    // =======================================================
+    // FIN MAGIA
+    // =======================================================
 
     function renderizarConsumos() {
         if (!tablaConsumos) return;
@@ -612,23 +681,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
 
             let semanaDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
-            let itemPagado = false;
-            if (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp)) {
-                itemPagado = true;
-            }
+            
+            // LÓGICA DE TACHADO VIRTUAL: Está tachado si r.pagado es true, O si la semana entera está pagada
+            let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
 
             if (identificadorGrupo !== grupoActual) {
                 grupoActual = identificadorGrupo;
                 
                 let todosPagados = consumosPorGrupo[identificadorGrupo].every(item => {
                     let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
-                    return sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp);
+                    return item.pagado === true || (sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp));
                 });
 
                 let deudaSemana = consumosPorGrupo[identificadorGrupo]
                     .filter(item => {
                         let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
-                        return !(sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp));
+                        return !(item.pagado === true || (sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp)));
                     })
                     .reduce((acc, curr) => acc + curr.precio, 0);
 
@@ -640,7 +708,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let badgeTotal = todosPagados ? '' : `<span class="badge bg-danger rounded-pill shadow-sm px-2 ms-2" style="font-size: 0.75rem;">S/ ${deudaSemana.toFixed(2)}</span>`;
 
-                // BOTÓN UNIFICADO MÁGICO DE 1 SOLO CLIC, SIN MOSTRAR MONTO REPETIDO
                 let botonAccion = todosPagados 
                     ? `<button class="btn btn-sm btn-success rounded-pill fw-bold py-1 px-3 shadow-sm border-0" onclick="window.desmarcarSemana('${identificadorGrupo}')"><i class="bi bi-check-circle-fill me-1"></i>Pagado</button>`
                     : `<button class="btn btn-sm btn-warning text-dark rounded-pill fw-bold py-1 px-3 shadow-sm border-0" onclick="window.pagarYMarcarSemana('${identificadorGrupo}', ${deudaSemana}, '${textoCabecera}')"><i class="bi bi-cash-coin me-1"></i>Pagar y Tachar</button>`;
@@ -670,21 +737,30 @@ document.addEventListener("DOMContentLoaded", () => {
             const tr = document.createElement("tr");
             const nombreSeguro = r.productoNombre.replace(/'/g, "\\'");
             
-            // EL SUBRAYADO CON CLASES DE BOOTSTRAP PURAS
-            const tachadoClase = itemPagado ? "text-decoration-line-through text-opacity-50" : "";
+            const tachadoClase = itemPagado ? "text-decoration: line-through; opacity: 0.6;" : "";
             const colorLetra = itemPagado ? "text-muted" : "text-dark";
 
+            let btnCobroIndividual = "";
+            if (!itemPagado) {
+                btnCobroIndividual = `<button class="btn btn-sm btn-outline-success rounded-1 me-1 shadow-sm px-2" onclick="window.pagarYMarcarDia('${r.id}', ${r.precio}, '${nombreSeguro}')" title="Cobrar solo este día"><i class="bi bi-cash-coin"></i></button>`;
+            } else if (r.pagado === true) {
+                btnCobroIndividual = `<button class="btn btn-sm btn-outline-secondary rounded-1 me-1 shadow-sm px-2 border-0" onclick="window.desmarcarDia('${r.id}')" title="Deshacer tachado individual"><i class="bi bi-arrow-counterclockwise"></i></button>`;
+            }
+
             tr.innerHTML = `
-                <td class="ps-4 text-muted small ${tachadoClase}">${f.charAt(0).toUpperCase() + f.slice(1)}</td>
-                <td class="fw-bold ${colorLetra} ${tachadoClase}">${r.productoNombre}</td>
-                <td class="text-center fw-bold ${colorLetra} ${tachadoClase}">S/ ${r.precio.toFixed(2)}</td>
+                <td class="ps-4 text-muted small" style="${tachadoClase}">${f.charAt(0).toUpperCase() + f.slice(1)}</td>
+                <td class="fw-bold ${colorLetra}" style="${tachadoClase}">${r.productoNombre}</td>
+                <td class="text-center fw-bold ${colorLetra}" style="${tachadoClase}">S/ ${r.precio.toFixed(2)}</td>
                 <td class="text-center" style="white-space: nowrap;">
-                    <button class="btn btn-sm btn-outline-primary rounded-1 me-1" onclick="window.editarRegistro('${r.id}', '${nombreSeguro}', ${r.precio}, '${r.fecha}')" title="Editar consumo">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger rounded-1" onclick="eliminarRegistro('${r.id}')" title="Eliminar registro">
-                        <i class="bi bi-x"></i>
-                    </button>
+                    <div class="d-flex justify-content-end align-items-center me-2">
+                        ${btnCobroIndividual}
+                        <button class="btn btn-sm btn-outline-primary rounded-1 me-1 px-2" onclick="window.editarRegistro('${r.id}', '${nombreSeguro}', ${r.precio}, '${r.fecha}')" title="Editar consumo">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger rounded-1 px-2" onclick="eliminarRegistro('${r.id}')" title="Eliminar registro">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             tablaConsumos.appendChild(tr);
@@ -806,47 +882,27 @@ document.addEventListener("DOMContentLoaded", () => {
         pagosFiltrados.forEach((pago) => {
             const [y, m, d] = pago.fecha.split('-');
             
-            // Colores vibrantes estilo App Bancaria
             const metodo = pago.metodo || "Efectivo";
-            const esYape = metodo === "Yape";
+            const colorMetodo = metodo === "Yape" ? "#742384" : "#198754";
+            const iconoMetodo = metodo === "Yape" ? "bi-qr-code" : "bi-cash-stack";
             
-            const colorFondoIcono = esYape ? "#742384" : "#198754";
-            const iconoMetodo = esYape ? "bi-qr-code-scan" : "bi-cash-stack";
-
-            const colorBadgeTexto = esYape ? "#d8b4fe" : "#86efac"; 
-            const colorBadgeFondo = esYape ? "rgba(116, 35, 132, 0.2)" : "rgba(25, 135, 84, 0.2)";
-
-            const textoPagador = pago.pagador 
-                ? `<div class="mt-1 text-truncate"><small style="color: #94a3b8; font-size: 0.75rem;"><i class="bi bi-chat-right-text me-1 opacity-75"></i>${pago.pagador}</small></div>` 
-                : "";
+            const textoPagador = pago.pagador ? `<br><small class="text-secondary fw-bold"><i class="bi bi-chat-left-text me-1"></i>${pago.pagador}</small>` : "";
 
             const li = document.createElement("li");
-            li.className = "list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-0 border-bottom bg-transparent";
-            li.style.transition = "background-color 0.2s ease";
-            li.onmouseover = () => li.style.backgroundColor = "rgba(255,255,255,0.03)";
-            li.onmouseout = () => li.style.backgroundColor = "transparent";
-
+            li.className = "list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-bottom";
             li.innerHTML = `
-                <div class="d-flex align-items-center overflow-hidden pe-2" style="max-width: 75%;">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm flex-shrink-0" style="width: 45px; height: 45px; background-color: ${colorFondoIcono}; color: #ffffff;">
-                        <i class="bi ${iconoMetodo} fs-5"></i>
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm flex-shrink-0" style="width: 35px; height: 35px; background-color: ${colorMetodo}; color: white;">
+                        <i class="bi ${iconoMetodo}" style="font-size: 1rem;"></i>
                     </div>
-                    <div class="text-truncate">
-                        <div class="d-flex align-items-center mb-0">
-                            <span class="fw-bolder text-body-emphasis me-2" style="font-size: 1.1rem; letter-spacing: -0.5px;">S/ ${pago.monto.toFixed(2)}</span>
-                            <span class="badge rounded-pill fw-bold" style="background-color: ${colorBadgeFondo}; color: ${colorBadgeTexto}; font-size: 0.65rem; padding: 0.35em 0.6em; border: 1px solid ${colorBadgeFondo};">${metodo}</span>
-                        </div>
-                        <small class="text-muted d-block text-truncate mt-1" style="font-size: 0.75rem;"><i class="bi bi-calendar3 me-1 opacity-50"></i>${d}/${m}/${y}</small>
-                        ${textoPagador}
+                    <div>
+                        <span class="d-block text-dark fw-bold" style="font-size: 0.95rem;">S/ ${pago.monto.toFixed(2)} <span class="badge ms-1" style="background-color: ${colorMetodo}; font-size: 0.65rem; padding: 0.25em 0.5em;">${metodo}</span></span>
+                        <small class="text-muted" style="font-size: 0.8rem;">Pagado el ${d}-${m}-${y}</small>${textoPagador}
                     </div>
                 </div>
-                <div class="d-flex gap-2 flex-shrink-0">
-                    <button class="btn btn-sm d-flex align-items-center justify-content-center rounded-circle border-0 shadow-none text-primary" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1);" onclick="window.editarPago('${pago.id}', ${pago.monto}, '${pago.fecha}', '${metodo}', '${pago.pagador || ''}')" title="Editar">
-                        <i class="bi bi-pencil-fill"></i>
-                    </button>
-                    <button class="btn btn-sm d-flex align-items-center justify-content-center rounded-circle border-0 shadow-none text-danger" style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.1);" onclick="window.eliminarPago('${pago.id}')" title="Eliminar">
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
+                <div>
+                    <button class="btn btn-sm text-primary p-0 me-3" onclick="window.editarPago('${pago.id}', ${pago.monto}, '${pago.fecha}', '${metodo}', '${pago.pagador || ''}')"><i class="bi bi-pencil-square fs-5"></i></button>
+                    <button class="btn btn-sm text-danger p-0" onclick="window.eliminarPago('${pago.id}')"><i class="bi bi-x-lg fs-5"></i></button>
                 </div>
             `;
             listaPagosVisual.appendChild(li);
@@ -1040,7 +1096,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnAbonoYape) btnAbonoYape.addEventListener("click", () => guardarAbono("Yape"));
     if (btnAbonoEfectivo) btnAbonoEfectivo.addEventListener("click", () => guardarAbono("Efectivo"));
 
-    // LAS 2 FUNCIONES PARA ELIMINAR REGISTROS Y PAGOS CON CONFIRMACIÓN
     window.eliminarRegistro = (id) => { 
         Swal.fire({
             title: '¿Borrar este consumo?',
@@ -1181,10 +1236,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const idGrupo = `${nombreMesR}_${numSem}`;
                 
                 let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
-                let itemPagado = false;
-                if (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp)) {
-                    itemPagado = true;
-                }
+                let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
                 
                 if (!itemPagado) sumaTotalPDF_Test += r.precio;
             });
@@ -1219,10 +1271,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const idGrupo = `${nombreMesR}_${numSem}`;
 
                 let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
-                let itemPagado = false;
-                if (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp)) {
-                    itemPagado = true;
-                }
+                let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
 
                 if (idGrupo !== grupoActualPDF) {
                     grupoActualPDF = idGrupo;
@@ -1234,7 +1283,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     let todosPagadosPDF = itemsGrupo.every(x => {
                         let s = semanasPagadas.find(sw => sw.idGrupo === idGrupo);
-                        return s && (!x.timestamp || x.timestamp <= s.timestamp);
+                        return x.pagado === true || (s && (!x.timestamp || x.timestamp <= s.timestamp));
                     });
 
                     const badgePDF = todosPagadosPDF 
@@ -1351,106 +1400,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("ERROR PDF:", error);
                 btnExportarPDF.disabled = false;
             });
-        });
-    }
-
-    const btnEstadisticas = document.getElementById("btnEstadisticas");
-    if (btnEstadisticas) {
-        btnEstadisticas.addEventListener("click", () => {
-            const mesSeleccionado = mesFiltro.value;
-            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
-            const consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-
-            if (consumosDelMes.length === 0) {
-                Swal.fire('Sin datos', 'No hay consumos registrados para generar un gráfico.', 'info');
-                return;
-            }
-
-            const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            let gastosPorDia = { 'Lunes': 0, 'Martes': 0, 'Miércoles': 0, 'Jueves': 0, 'Viernes': 0, 'Sábado': 0 };
-
-            consumosDelMes.forEach(r => {
-                const f = new Date(r.fecha + 'T00:00:00');
-                const nombreDia = dias[f.getDay()];
-                if(gastosPorDia[nombreDia] !== undefined) {
-                    gastosPorDia[nombreDia] += r.precio;
-                }
-            });
-
-            const labels = Object.keys(gastosPorDia);
-            const data = Object.values(gastosPorDia);
-
-            const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-
-            Swal.fire({
-                title: `Gastos de ${nombreMes}`,
-                html: '<canvas id="miGrafico" style="width:100%; max-height:300px;"></canvas>',
-                width: 600,
-                background: isDark ? '#1e1e1e' : '#ffffff', 
-                color: isDark ? '#f8f9fa' : '#212529', 
-                showConfirmButton: true,
-                confirmButtonText: '<i class="bi bi-check-lg"></i> Entendido',
-                confirmButtonColor: '#0d6efd',
-                didOpen: () => {
-                    const ctx = document.getElementById('miGrafico').getContext('2d');
-                    const textColor = isDark ? '#e0e0e0' : '#6c757d';
-
-                    new Chart(ctx, {
-                        type: 'bar', 
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Total Gastado (S/)',
-                                data: data,
-                                backgroundColor: [
-                                    'rgba(255, 99, 132, 0.7)',
-                                    'rgba(54, 162, 235, 0.7)',
-                                    'rgba(255, 206, 86, 0.7)',
-                                    'rgba(75, 192, 192, 0.7)',
-                                    'rgba(153, 102, 255, 0.7)',
-                                    'rgba(255, 159, 64, 0.7)'
-                                ],
-                                borderColor: [
-                                    'rgba(255, 99, 132, 1)',
-                                    'rgba(54, 162, 235, 1)',
-                                    'rgba(255, 206, 86, 1)',
-                                    'rgba(75, 192, 192, 1)',
-                                    'rgba(153, 102, 255, 1)',
-                                    'rgba(255, 159, 64, 1)'
-                                ],
-                                borderWidth: 1,
-                                borderRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { labels: { color: textColor } }
-                            },
-                            scales: { 
-                                y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: isDark ? '#333' : '#e9ecef' } },
-                                x: { ticks: { color: textColor }, grid: { display: false } }
-                            }
-                        }
-                    });
-                }
-            });
-        });
-    }
-
-    const navbar = document.getElementById("main-navbar");
-    let ultimoScroll = window.pageYOffset || document.documentElement.scrollTop;
-
-    if (navbar) {
-        window.addEventListener("scroll", () => {
-            let scrollActual = window.pageYOffset || document.documentElement.scrollTop;
-            if (scrollActual > ultimoScroll && scrollActual > 60) {
-                navbar.style.top = `-${navbar.offsetHeight}px`; 
-            }
-            else {
-                navbar.style.top = "0"; 
-            }
-            ultimoScroll = scrollActual <= 0 ? 0 : scrollActual; 
         });
     }
 });

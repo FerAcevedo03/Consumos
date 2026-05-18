@@ -42,21 +42,28 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // BUSCADOR EN TIEMPO REAL
+    let filtroBoveda = "";
+    const buscadorBoveda = document.getElementById("buscadorBoveda");
+    if (buscadorBoveda) {
+        buscadorBoveda.addEventListener("input", (e) => {
+            filtroBoveda = e.target.value.toLowerCase().trim();
+            procesarFinanzas(); // Recargar las listas visualmente
+        });
+    }
+
+    // DICCIONARIO DE ROLES
     let usuariosPorColeccion = { alumnos: {}, profesores: {}, administrativos: {} };
     let diccionarioUsuarios = {};
     
-    const colecciones = [
-        { id: 'alumnos' },
-        { id: 'profesores' },
-        { id: 'administrativos' }
-    ];
+    const colecciones = ['alumnos', 'profesores', 'administrativos'];
 
     colecciones.forEach(col => {
-        onSnapshot(collection(db, col.id), (snap) => {
-            usuariosPorColeccion[col.id] = {}; 
+        onSnapshot(collection(db, col), (snap) => {
+            usuariosPorColeccion[col] = {}; 
             snap.forEach(doc => {
                 if(doc.data().nombre) {
-                    usuariosPorColeccion[col.id][doc.data().nombre] = col.id;
+                    usuariosPorColeccion[col][doc.data().nombre] = col;
                 }
             });
             diccionarioUsuarios = { ...usuariosPorColeccion.alumnos, ...usuariosPorColeccion.profesores, ...usuariosPorColeccion.administrativos };
@@ -71,17 +78,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const listaProfesores = document.getElementById("listaDeudoresProfesores");
     const listaPersonal = document.getElementById("listaDeudoresPersonal");
 
-    // Etiquetas de subtotales
     const subtotalAlumnos = document.getElementById("subtotalAlumnos");
     const subtotalProfesores = document.getElementById("subtotalProfesores");
     const subtotalPersonal = document.getElementById("subtotalPersonal");
     
     let logsConsumo = [];
     let logsPago = [];
-    let logsSemanas = [];
     let miGrafico = null;
 
-    onSnapshot(collection(db, "semanas_pagadas"), (snap) => { logsSemanas = snap.docs.map(d => d.data()); procesarFinanzas(); });
     onSnapshot(collection(db, "consumos"), (snap) => { logsConsumo = snap.docs.map(d => d.data()); procesarFinanzas(); });
     onSnapshot(collection(db, "pagos"), (snap) => { logsPago = snap.docs.map(d => d.data()); procesarFinanzas(); });
 
@@ -89,123 +93,160 @@ document.addEventListener("DOMContentLoaded", () => {
         const hoy = new Date();
         const mesAct = hoy.getMonth();
         const anioAct = hoy.getFullYear();
+
+        // LISTA NEGRA
+        const usuariosFantasmas = ["franco", "franco vasquez"]; 
+
+        const consumosValidos = logsConsumo.filter(c => {
+            const nom = (c.nombreUsuario || "").toLowerCase().trim();
+            return !usuariosFantasmas.includes(nom);
+        });
+
+        const pagosValidos = logsPago.filter(p => {
+            const nom = (p.nombreUsuario || "").toLowerCase().trim();
+            return !usuariosFantasmas.includes(nom);
+        });
         
-        const recaudado = logsPago.filter(p => {
-            const f = p.mesAplicado !== undefined ? parseInt(p.mesAplicado) : new Date(p.fecha + 'T00:00:00').getMonth();
-            return f === mesAct;
+        // 1. Ingresos Mensuales
+        const recaudado = pagosValidos.filter(p => {
+            const f = p.mesAplicado !== undefined && p.mesAplicado !== "todos" ? parseInt(p.mesAplicado) : new Date(p.fecha + 'T00:00:00').getMonth();
+            return f === mesAct && new Date(p.fecha + 'T00:00:00').getFullYear() === anioAct;
         }).reduce((acc, curr) => acc + curr.monto, 0);
         
         if (elDineroMes) elDineroMes.textContent = modoPrivado ? "S/ ***.**" : `S/ ${recaudado.toFixed(2)}`;
 
-        let deudaTotalGlobal = 0;
+        // 2. MATEMÁTICA CONTABLE
         let deudaPorUsuario = {};
 
-        logsConsumo.forEach(r => {
-            const f = new Date(r.fecha + 'T00:00:00');
-            const numSem = Math.ceil((f.getDate() + (new Date(f.getFullYear(), f.getMonth(), 1).getDay() === 0 ? 6 : new Date(f.getFullYear(), f.getMonth(), 1).getDay() - 1)) / 7);
-            const idG = `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${numSem}`;
-            const sDoc = logsSemanas.find(s => s.idGrupo === idG && s.nombreUsuario === r.nombreUsuario);
-            
-            if (!(sDoc && (!r.timestamp || r.timestamp <= sDoc.timestamp))) {
-                if (diccionarioUsuarios[r.nombreUsuario]) {
-                    deudaTotalGlobal += r.precio;
-                    if (!deudaPorUsuario[r.nombreUsuario]) deudaPorUsuario[r.nombreUsuario] = 0;
-                    deudaPorUsuario[r.nombreUsuario] += r.precio;
-                }
+        consumosValidos.forEach(r => {
+            if (!deudaPorUsuario[r.nombreUsuario]) deudaPorUsuario[r.nombreUsuario] = 0;
+            deudaPorUsuario[r.nombreUsuario] += r.precio;
+        });
+
+        pagosValidos.forEach(p => {
+            if (!deudaPorUsuario[p.nombreUsuario]) deudaPorUsuario[p.nombreUsuario] = 0;
+            deudaPorUsuario[p.nombreUsuario] -= p.monto;
+        });
+
+        let deudaTotalReal = 0;
+        Object.values(deudaPorUsuario).forEach(deuda => {
+            if (deuda > 0.01) {
+                deudaTotalReal += deuda;
             }
         });
 
-        logsPago.forEach(p => {
-            if (deudaPorUsuario[p.nombreUsuario] !== undefined) {
-                deudaPorUsuario[p.nombreUsuario] -= p.monto;
-                deudaTotalGlobal -= p.monto;
-            }
-        });
+        if (elDeudaGlobal) elDeudaGlobal.textContent = modoPrivado ? "S/ ***.**" : `S/ ${deudaTotalReal.toFixed(2)}`;
 
-        if (elDeudaGlobal) elDeudaGlobal.textContent = modoPrivado ? "S/ ***.**" : `S/ ${(deudaTotalGlobal < 0 ? 0 : deudaTotalGlobal).toFixed(2)}`;
-
+        // 3. RENDERIZAR LISTAS
         if (listaAlumnos && listaProfesores && listaPersonal) {
             
-            let todosLosDeudores = Object.keys(deudaPorUsuario).map(nombre => {
-                let rolReal = diccionarioUsuarios[nombre];
-                if (!rolReal) return null; 
-                return { nombre: nombre, deuda: deudaPorUsuario[nombre], rol: rolReal };
-            }).filter(user => user !== null && user.deuda > 0.01); 
+            let todosLosNombres = new Set([
+                ...Object.keys(diccionarioUsuarios),
+                ...Object.keys(deudaPorUsuario)
+            ]);
 
-            // Función para renderizar lista Y calcular el subtotal
-            const renderizarLista = (arreglo, elementoHTML, elementoSubtotal, colorFondo) => {
+            let todosLosDeudores = Array.from(todosLosNombres).map(nombre => {
+                let rolReal = diccionarioUsuarios[nombre] || 'alumnos'; 
+                let saldoReal = deudaPorUsuario[nombre] || 0;
+                return { nombre: nombre, deuda: saldoReal, rol: rolReal };
+            }).filter(user => !usuariosFantasmas.includes(user.nombre.toLowerCase().trim()));
+
+            // A) Calcular subtotales ANTES de aplicar el filtro del buscador
+            const totalAlumnos = todosLosDeudores.filter(u => u.rol === 'alumnos').reduce((acc, u) => acc + (u.deuda > 0.01 ? u.deuda : 0), 0);
+            const totalProfesores = todosLosDeudores.filter(u => u.rol === 'profesores').reduce((acc, u) => acc + (u.deuda > 0.01 ? u.deuda : 0), 0);
+            const totalPersonal = todosLosDeudores.filter(u => u.rol === 'administrativos').reduce((acc, u) => acc + (u.deuda > 0.01 ? u.deuda : 0), 0);
+
+            if (subtotalAlumnos) subtotalAlumnos.textContent = modoPrivado ? 'S/ ***.**' : `S/ ${totalAlumnos.toFixed(2)}`;
+            if (subtotalProfesores) subtotalProfesores.textContent = modoPrivado ? 'S/ ***.**' : `S/ ${totalProfesores.toFixed(2)}`;
+            if (subtotalPersonal) subtotalPersonal.textContent = modoPrivado ? 'S/ ***.**' : `S/ ${totalPersonal.toFixed(2)}`;
+
+            // B) Aplicar el Filtro de Búsqueda si se está escribiendo
+            let deudoresParaMostrar = todosLosDeudores;
+            if (filtroBoveda !== "") {
+                deudoresParaMostrar = deudoresParaMostrar.filter(u => u.nombre.toLowerCase().includes(filtroBoveda));
+            }
+
+            const renderizarLista = (arreglo, elementoHTML) => {
                 elementoHTML.innerHTML = "";
                 
-                // Calculamos el subtotal de este grupo
-                const subtotalDinero = arreglo.reduce((acc, u) => acc + u.deuda, 0);
-                if (elementoSubtotal) {
-                    elementoSubtotal.textContent = modoPrivado ? 'S/ ***.**' : `S/ ${subtotalDinero.toFixed(2)}`;
-                }
-
                 if (arreglo.length === 0) {
                     elementoHTML.innerHTML = `
                     <li class="list-group-item text-center py-4 text-muted bg-transparent border-0 d-flex flex-column align-items-center">
-                        <div class="rounded-circle d-flex justify-content-center align-items-center mb-2" style="width: 45px; height: 45px; background-color: ${colorFondo};">
-                            <i class="bi bi-check2 text-success fs-3"></i>
-                        </div>
-                        <span class="small fw-medium">Sin deudas aquí</span>
+                        <i class="bi bi-search text-muted fs-3 mb-2 opacity-50"></i>
+                        <span class="small fw-medium">No se encontraron resultados</span>
                     </li>`;
                     return;
                 }
 
-                arreglo.sort((a, b) => b.deuda - a.deuda);
+                arreglo.sort((a, b) => {
+                    if (a.deuda > 0.01 && b.deuda > 0.01) return b.deuda - a.deuda;
+                    if (a.deuda > 0.01) return -1;
+                    if (b.deuda > 0.01) return 1;
+                    return a.nombre.localeCompare(b.nombre, 'es');
+                });
 
                 arreglo.forEach((user) => {
-                    const montoVisual = modoPrivado ? '***.**' : user.deuda.toFixed(2);
-                    // Ahora la fila entera es clickeable para ir a cobrar (Cursor Pointer y Onclick)
+                    const tieneDeuda = user.deuda > 0.01;
+                    const montoVisual = modoPrivado ? '***.**' : Math.abs(user.deuda).toFixed(2);
+                    
+                    let etiquetaFinanciera = "";
+                    if (tieneDeuda) {
+                        etiquetaFinanciera = `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill shadow-sm px-2 py-1 flex-shrink-0" style="font-size: 0.75rem;">S/ ${montoVisual}</span>`;
+                    } else if (user.deuda < -0.01) {
+                        etiquetaFinanciera = `<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill shadow-sm px-2 py-1 flex-shrink-0" style="font-size: 0.75rem;">Favor: S/ ${montoVisual}</span>`;
+                    } else {
+                        etiquetaFinanciera = `<span class="badge bg-light text-muted border rounded-pill shadow-sm px-2 py-1 flex-shrink-0" style="font-size: 0.70rem;">Al día</span>`;
+                    }
+
+                    // AHORA TIENE px-3 y py-2 PARA HACER LA FILA MÁS COMPACTA Y SIN SCROLL EXCESIVO
                     elementoHTML.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 border-bottom bg-transparent" 
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-transparent" 
                         style="transition: background-color 0.2s; cursor: pointer;" 
                         onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" 
                         onmouseout="this.style.backgroundColor='transparent'"
                         onclick="window.location.href='consumo.html?nombre=${encodeURIComponent(user.nombre)}&rol=${user.rol}'"
                         title="Ir a la cuenta de ${user.nombre}">
                         <div class="d-flex align-items-center overflow-hidden">
-                            <span class="fw-bold text-body-emphasis text-truncate me-2" style="font-size: 0.95rem;">${user.nombre}</span>
+                            <span class="fw-bold text-body-emphasis text-truncate me-2" style="font-size: 0.85rem; opacity: ${tieneDeuda ? '1' : '0.6'};">${user.nombre}</span>
                         </div>
-                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill shadow-sm px-2 py-1 flex-shrink-0">
-                            S/ ${montoVisual}
-                        </span>
+                        ${etiquetaFinanciera}
                     </li>`;
                 });
             };
 
-            const alumnos = todosLosDeudores.filter(u => u.rol === 'alumnos');
-            const profes = todosLosDeudores.filter(u => u.rol === 'profesores');
-            const personal = todosLosDeudores.filter(u => u.rol === 'administrativos');
+            const alumnos = deudoresParaMostrar.filter(u => u.rol === 'alumnos');
+            const profes = deudoresParaMostrar.filter(u => u.rol === 'profesores');
+            const personal = deudoresParaMostrar.filter(u => u.rol === 'administrativos');
 
-            renderizarLista(alumnos, listaAlumnos, subtotalAlumnos, 'rgba(25, 135, 84, 0.1)');
-            renderizarLista(profes, listaProfesores, subtotalProfesores, 'rgba(25, 135, 84, 0.1)');
-            renderizarLista(personal, listaPersonal, subtotalPersonal, 'rgba(25, 135, 84, 0.1)');
+            renderizarLista(alumnos, listaAlumnos);
+            renderizarLista(profes, listaProfesores);
+            renderizarLista(personal, listaPersonal);
         }
 
+        // 4. Gráfico Anual
         const ctxElement = document.getElementById('graficoDashboard');
         if (ctxElement) {
             const ctx = ctxElement.getContext('2d');
             const labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
             const dataIngresos = new Array(12).fill(0);
 
-            logsPago.forEach(p => {
+            pagosValidos.forEach(p => {
                 const f = new Date(p.fecha + 'T00:00:00');
-                let mesDelPago = (p.mesAplicado !== undefined && p.mesAplicado !== "todos") ? parseInt(p.mesAplicado) : f.getMonth();
+                let mesDelPago = p.mesAplicado !== undefined && p.mesAplicado !== "todos" ? parseInt(p.mesAplicado) : f.getMonth();
                 if (f.getFullYear() === anioAct) dataIngresos[mesDelPago] += p.monto;
             });
 
             const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
             const textColor = isDark ? '#e0e0e0' : '#6c757d';
             
-            if (miGrafico) miGrafico.destroy();
+            if (miGrafico) { miGrafico.destroy(); }
+            
             miGrafico = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Ingresos',
+                        label: 'Ingresos S/',
                         data: dataIngresos,
                         backgroundColor: '#198754',
                         borderRadius: 6,
