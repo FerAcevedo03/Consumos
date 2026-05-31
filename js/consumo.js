@@ -19,40 +19,25 @@ function obtenerSemanaDelMes(fechaObj) {
     return Math.ceil((fechaObj.getDate() + ajuste) / 7);
 }
 
-const categoriasVisuales = {
-    'comida': { emoji: '🍛', color: 'text-warning', bg: 'bg-warning' },
-    'bebida': { emoji: '🥤', color: 'text-info', bg: 'bg-info' },
-    'snack': { emoji: '🥐', color: 'text-success', bg: 'bg-success' },
-    'galleta': { emoji: '🍪', color: 'text-secondary', bg: 'bg-secondary' },
-    'dulce': { emoji: '🍬', color: 'text-danger', bg: 'bg-danger' },
-    'helado': { emoji: '🍦', color: 'text-primary', bg: 'bg-primary' },
-    'libreria': { emoji: '✏️', color: 'text-dark', bg: 'bg-dark' },
-    'otro': { emoji: '📦', color: 'text-secondary', bg: 'bg-secondary' }
+const iconosVisuales = {
+    "comida": "🍛", "bebida": "🥤", "pan": "🥖", "galleta": "🍪", "keke": "🧁", 
+    "postre": "🍮", "dulce": "🍬", "snack": "🍟", "utiles": "✏️", "otro": "📦"
 };
 
 function obtenerVisual(catReal, nombreProd) {
     let c = catReal ? catReal.toLowerCase() : 'otro';
     
-    if(c.includes('comida') || c.includes('menú') || c.includes('menu')) c = 'comida';
-    else if(c.includes('bebida') || c.includes('gaseosa') || c.includes('jugo')) c = 'bebida';
-    else if(c.includes('snack') || c.includes('salado')) c = 'snack';
-    else if(c.includes('galleta')) c = 'galleta';
-    else if(c.includes('dulce') || c.includes('golosina')) c = 'dulce';
-    else if(c.includes('helado') || c.includes('marciano')) c = 'helado';
-    else if(c.includes('libreria') || c.includes('utiles')) c = 'libreria';
-    
-    if (c === 'otro') {
+    if (!iconosVisuales[c]) {
+        c = 'otro';
         const n = nombreProd.toLowerCase();
-        if (n.includes('aji') || n.includes('arroz') || n.includes('pollo') || n.includes('pan') || n.includes('papa') || n.includes('empanada') || n.includes('torta') || n.includes('tallarin') || n.includes('causa')) c = 'comida';
-        else if (n.includes('agua') || n.includes('frugos') || n.includes('sporade') || n.includes('coca') || n.includes('inka') || n.includes('chicha')) c = 'bebida';
-        else if (n.includes('picaras') || n.includes('margarita') || n.includes('casino') || n.includes('morochas') || n.includes('tentacion')) c = 'galleta';
-        else if (n.includes('chifle') || n.includes('doritos') || n.includes('lays') || n.includes('cuates') || n.includes('habas')) c = 'snack';
-        else if (n.includes('chupetin') || n.includes('bonobom') || n.includes('sublime') || n.includes('caramelo') || n.includes('acuña') || n.includes('bombom') || n.includes('bonbo')) c = 'dulce';
-        else if (n.includes('marciano') || n.includes('helado') || n.includes('chupete')) c = 'helado';
-        else if (n.includes('cuaderno') || n.includes('lapiz') || n.includes('copia')) c = 'libreria';
+        if (n.includes('arroz') || n.includes('pollo') || n.includes('tallarin') || n.includes('aji')) c = 'comida';
+        else if (n.includes('agua') || n.includes('jugo') || n.includes('frugos')) c = 'bebida';
+        else if (n.includes('pan') || n.includes('empanada')) c = 'pan';
+        else if (n.includes('galleta') || n.includes('morochas') || n.includes('picaras')) c = 'galleta';
+        else if (n.includes('chupetin') || n.includes('caramelo') || n.includes('sublime')) c = 'dulce';
     }
 
-    return { id: c, ...categoriasVisuales[c] || categoriasVisuales['otro'] };
+    return { emoji: iconosVisuales[c] || "📦" };
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -205,7 +190,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     listaSugerencias.classList.add("show");
                     f.forEach(p => {
                         const li = document.createElement("li");
-                        li.innerHTML = `<a class="dropdown-item d-flex justify-content-between" href="#"><span>${p.nombre}</span><small>S/ ${parseFloat(p.precio).toFixed(2)}</small></a>`;
+                        let visual = obtenerVisual(p.categoria, p.nombre);
+
+                        li.innerHTML = `
+                            <a class="dropdown-item d-flex justify-content-between align-items-center py-2 px-3" href="#" style="transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center">
+                                    <span class="fs-4 me-2 lh-1">${visual.emoji}</span>
+                                    <span class="fw-bold text-body-emphasis">${p.nombre}</span>
+                                </div>
+                                <span class="badge bg-light border text-dark fs-6 ms-3">S/ ${parseFloat(p.precio).toFixed(2)}</span>
+                            </a>
+                        `;
                         li.onmousedown = (e) => { e.preventDefault(); seleccionar(p.nombre); };
                         listaSugerencias.appendChild(li);
                     });
@@ -222,15 +217,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault(); indiceSeleccionado--; if (indiceSeleccionado < 0) indiceSeleccionado = items.length - 1; actSel(items);
             } else if (e.key === "Enter") {
                 e.preventDefault();
-                if (indiceSeleccionado > -1) seleccionar(items[indiceSeleccionado].querySelector("span").textContent);
-                else if (items.length > 0) seleccionar(items[0].querySelector("span").textContent);
+                if (indiceSeleccionado > -1) seleccionar(items[indiceSeleccionado].querySelector(".text-body-emphasis").textContent);
+                else if (items.length > 0) seleccionar(items[0].querySelector(".text-body-emphasis").textContent);
             }
         });
 
         function actSel(items) {
             items.forEach((item, i) => {
-                if (i === indiceSeleccionado) { item.classList.add("active"); item.style.backgroundColor = "#0d6efd"; item.style.color = "white"; item.scrollIntoView({ block: "nearest" }); }
-                else { item.classList.remove("active"); item.style.backgroundColor = ""; item.style.color = ""; }
+                if (i === indiceSeleccionado) { 
+                    item.classList.add("active"); 
+                    item.style.backgroundColor = "#0d6efd"; 
+                    item.querySelector('.text-body-emphasis').style.color = "white";
+                    item.querySelector('.badge').classList.replace('text-dark', 'text-primary');
+                    item.scrollIntoView({ block: "nearest" }); 
+                } else { 
+                    item.classList.remove("active"); 
+                    item.style.backgroundColor = ""; 
+                    item.querySelector('.text-body-emphasis').style.color = "";
+                    item.querySelector('.badge').classList.replace('text-primary', 'text-dark');
+                }
             });
         }
         function seleccionar(n) {
@@ -380,34 +385,31 @@ document.addEventListener("DOMContentLoaded", () => {
                     cancelButtonText: 'Cancelar'
                 }).then(async (result) => {
                     if (result.isConfirmed) {
-                        const gruposSemanas = [...new Set(consumosDelMes.map(r => {
-                            let f = new Date(r.fecha + 'T00:00:00');
-                            return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
-                        }))];
+                        try {
+                            btnMarcarMesPagado.disabled = true;
+                            const batch = writeBatch(db);
+                            
+                            const gruposSemanas = [...new Set(consumosDelMes.map(r => {
+                                let f = new Date(r.fecha + 'T00:00:00');
+                                return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
+                            }))];
 
-                        if (gruposSemanas.length > 0) {
-                            try {
-                                btnMarcarMesPagado.disabled = true;
-                                const batch = writeBatch(db);
-                                
-                                gruposSemanas.forEach(idGrupo => {
-                                    const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
-                                    const docRef = doc(db, "semanas_pagadas", docId);
-                                    batch.delete(docRef); 
-                                });
-                                
-                                // También quitar los "pagado: true" individuales
-                                consumosDelMes.forEach(r => {
-                                    if(r.pagado) batch.update(doc(db, "consumos", r.id), { pagado: false });
-                                });
+                            gruposSemanas.forEach(idGrupo => {
+                                const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+                                batch.delete(doc(db, "semanas_pagadas", docId)); 
+                            });
+                            
+                            // También quitar los "pagado: true" individuales
+                            consumosDelMes.forEach(r => {
+                                if(r.pagado) batch.update(doc(db, "consumos", r.id), { pagado: false });
+                            });
 
-                                await batch.commit();
-                                Swal.fire('Revertido', `El mes de ${nombreMes} vuelve a estar pendiente.`, 'info');
-                            } catch (e) {
-                                Swal.fire('Error', e.message, 'error');
-                            } finally {
-                                btnMarcarMesPagado.disabled = false;
-                            }
+                            await batch.commit();
+                            Swal.fire('Revertido', `El mes de ${nombreMes} vuelve a estar pendiente.`, 'info');
+                        } catch (e) {
+                            Swal.fire('Error', e.message, 'error');
+                        } finally {
+                            btnMarcarMesPagado.disabled = false;
                         }
                     }
                 });
@@ -449,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             try {
                                 btnMarcarMesPagado.disabled = true;
 
-                                // Guardamos el pago del mes
+                                // Guarda el pago del mes
                                 await addDoc(collection(db, "pagos"), {
                                     nombreUsuario: nombreUsuario,
                                     monto: deudaFaltante,
@@ -517,10 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // =======================================================
-    // MAGIA: COBRAR SEMANA Y COBRAR DÍA INDIVIDUAL
-    // =======================================================
-
+    // COBRAR POR SEMANA Y COBRAR DÍA INDIVIDUAL
     window.pagarYMarcarSemana = (idGrupo, deudaSemana, textoCabecera) => {
         Swal.fire({
             title: 'Cobrar Semana',
@@ -584,7 +583,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.pagarYMarcarDia = (idConsumo, monto, productoNombre) => {
         Swal.fire({
             title: 'Cobrar Día Individual',
-            html: `Vas a cobrar <b>S/ ${monto.toFixed(2)}</b> por: <b>${productoNombre}</b>.<br><br>¿Cómo te pagaron?`,
+            html: `Vas a cobrar <b>S/ ${monto.toFixed(2)}</b> por el consumo de: <br><i>${productoNombre}</i><br><br>¿Cómo te pagaron?`,
             icon: 'question',
             showCancelButton: true,
             showDenyButton: true,
@@ -604,7 +603,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         monto: monto,
                         fecha: new Date().toISOString().split('T')[0],
                         metodo: metodoPago,
-                        pagador: `Día cobrado: ${productoNombre}`,
+                        pagador: `Día Individual: ${productoNombre}`,
                         mesAplicado: mesDestino,
                         timestamp: Date.now()
                     });
@@ -613,7 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         pagado: true
                     });
 
-                    Swal.fire('¡Día Cobrado!', 'El registro fue pagado y tachado.', 'success');
+                    Swal.fire('¡Día Cobrado!', 'El registro individual fue pagado y tachado.', 'success');
                 } catch (e) {
                     Swal.fire('Error', e.message, 'error');
                 }
@@ -621,25 +620,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    window.desmarcarDia = (idConsumo) => {
-        Swal.fire({
-            title: '¿Deshacer tachado individual?',
-            text: 'Este consumo volverá a mostrarse pendiente (Recuerda borrar el pago de la lista de abajo).',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonText: 'Cancelar',
-            confirmButtonText: 'Sí, desmarcar'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                await updateDoc(doc(db, "consumos", idConsumo), { pagado: false });
-            }
-        });
+    window.desmarcarDia = async (idConsumo) => {
+        await updateDoc(doc(db, "consumos", idConsumo), { pagado: false });
     };
-
-    // =======================================================
-    // FIN MAGIA
-    // =======================================================
 
     function renderizarConsumos() {
         if (!tablaConsumos) return;
@@ -682,7 +665,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let semanaDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
             
-            // LÓGICA DE TACHADO VIRTUAL: Está tachado si r.pagado es true, O si la semana entera está pagada
             let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
 
             if (identificadorGrupo !== grupoActual) {
@@ -1196,13 +1178,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     text: `Mes seleccionado: ${nombreMesHeader}`,
                     input: 'select',
                     inputOptions: {
-                        '5': 'Todo el mes',
+                        'todo': 'Todo el mes',
                         '1': 'Solo Semana 01',
                         '2': 'Solo Semana 02',
                         '3': 'Solo Semana 03',
-                        '4': 'Solo Semana 04'
+                        '4': 'Solo Semana 04',
+                        '5': 'Solo Semana 05'
                     },
-                    inputValue: '5',
+                    inputValue: 'todo',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     confirmButtonText: '<i class="bi bi-file-pdf"></i> Generar PDF',
@@ -1213,7 +1196,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
-                if (seleccion !== "5") {
+                if (seleccion !== "todo") {
                     consumosDelMes = consumosDelMes.filter(r => obtenerSemanaDelMes(new Date(r.fecha + 'T00:00:00')) == seleccion);
                     tituloPeriodo = `SEMANA 0${seleccion} - ${nombreMesHeader}`;
                 } else {
