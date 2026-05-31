@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, where, doc, updateDoc, deleteDoc, onSnapshot, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-const firebaseConfig = {
+let firebaseConfig = {
     apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
     authDomain: "quiosco-nobel-school.firebaseapp.com",
     projectId: "quiosco-nobel-school",
@@ -10,16 +10,16 @@ const firebaseConfig = {
     appId: "1:448413136914:web:426e8fc48a8e24ea96c0cb"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+let app = initializeApp(firebaseConfig);
+let db = getFirestore(app);
 
 function obtenerSemanaDelMes(fechaObj) {
-    const primerDia = new Date(fechaObj.getFullYear(), fechaObj.getMonth(), 1);
+    let primerDia = new Date(fechaObj.getFullYear(), fechaObj.getMonth(), 1);
     let ajuste = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1; 
     return Math.ceil((fechaObj.getDate() + ajuste) / 7);
 }
 
-const iconosVisuales = {
+let iconosVisuales = {
     "comida": "🍛", "bebida": "🥤", "pan": "🥖", "galleta": "🍪", "keke": "🧁", 
     "postre": "🍮", "dulce": "🍬", "snack": "🍟", "utiles": "✏️", "otro": "📦"
 };
@@ -29,7 +29,7 @@ function obtenerVisual(catReal, nombreProd) {
     
     if (!iconosVisuales[c]) {
         c = 'otro';
-        const n = nombreProd.toLowerCase();
+        let n = nombreProd.toLowerCase();
         if (n.includes('arroz') || n.includes('pollo') || n.includes('tallarin') || n.includes('aji')) c = 'comida';
         else if (n.includes('agua') || n.includes('jugo') || n.includes('frugos')) c = 'bebida';
         else if (n.includes('pan') || n.includes('empanada')) c = 'pan';
@@ -41,13 +41,13 @@ function obtenerVisual(catReal, nombreProd) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const nombreUsuario = params.get("nombre") || "Usuario Desconocido";
-    const rolUsuario = params.get("rol") || "index";
+    let params = new URLSearchParams(window.location.search);
+    let nombreUsuario = params.get("nombre") || "Usuario Desconocido";
+    let rolUsuario = params.get("rol") || "index";
 
-    const nombrePersonaEl = document.getElementById("nombrePersona");
-    const etiquetaRolEl = document.getElementById("etiquetaRol");
-    const avatarFondoEl = document.getElementById("avatarFondo");
+    let nombrePersonaEl = document.getElementById("nombrePersona");
+    let etiquetaRolEl = document.getElementById("etiquetaRol");
+    let avatarFondoEl = document.getElementById("avatarFondo");
 
     if (rolUsuario === "profesores") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Profesor"; }
     else if (rolUsuario === "alumnos") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Alumno"; }
@@ -57,47 +57,47 @@ document.addEventListener("DOMContentLoaded", () => {
     if (nombrePersonaEl) nombrePersonaEl.textContent = nombreUsuario;
 
     if (avatarFondoEl) {
-        const coloresAvatar = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#0097a7', '#00897b', '#43a047', '#689f38', '#ef6c00', '#e65100', '#f4511e'];
+        let coloresAvatar = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#0097a7', '#00897b', '#43a047', '#689f38', '#ef6c00', '#e65100', '#f4511e'];
         let sumaLetras = 0;
         for (let i = 0; i < nombreUsuario.length; i++) {
             sumaLetras += nombreUsuario.charCodeAt(i);
         }
-        const colorAsignado = coloresAvatar[sumaLetras % coloresAvatar.length];
-        const inicial = nombreUsuario.charAt(0).toUpperCase();
+        let colorAsignado = coloresAvatar[sumaLetras % coloresAvatar.length];
+        let inicial = nombreUsuario.charAt(0).toUpperCase();
 
         avatarFondoEl.style.backgroundColor = colorAsignado;
         avatarFondoEl.innerHTML = `<span class="fw-bold text-white shadow-sm" style="font-size: 1.1rem; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${inicial}</span>`;
     }
 
-    const btnVolver = document.getElementById("btnVolver");
+    let btnVolver = document.getElementById("btnVolver");
     if (btnVolver) btnVolver.onclick = () => window.location.href = `${rolUsuario}.html`;
 
-    const inputProducto = document.getElementById("inputProducto");
-    const inputCantidad = document.getElementById("inputCantidad");
-    const listaSugerencias = document.getElementById("listaSugerencias");
-    const fechaConsumo = document.getElementById("fechaConsumo");
-    const formConsumo = document.getElementById("formConsumo");
-    const tablaConsumos = document.getElementById("tablaConsumos");
-    const totalAcumulado = document.getElementById("totalAcumulado");
+    let inputProducto = document.getElementById("inputProducto");
+    let inputCantidad = document.getElementById("inputCantidad");
+    let listaSugerencias = document.getElementById("listaSugerencias");
+    let fechaConsumo = document.getElementById("fechaConsumo");
+    let formConsumo = document.getElementById("formConsumo");
+    let tablaConsumos = document.getElementById("tablaConsumos");
+    let totalAcumulado = document.getElementById("totalAcumulado");
     
-    const mesFiltro = document.getElementById("mesFiltro");
-    const textoMesVisual = document.getElementById("textoMesVisual");
-    const listaMesesUI = document.getElementById("listaMesesUI");
+    let mesFiltro = document.getElementById("mesFiltro");
+    let textoMesVisual = document.getElementById("textoMesVisual");
+    let listaMesesUI = document.getElementById("listaMesesUI");
 
-    const inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
+    let inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
 
-    const tituloEstadoMes = document.getElementById("tituloEstadoMes");
-    const estadoCuentaMesVisual = document.getElementById("estadoCuentaMesVisual");
-    const btnMarcarMesPagado = document.getElementById("btnMarcarMesPagado");
+    let tituloEstadoMes = document.getElementById("tituloEstadoMes");
+    let estadoCuentaMesVisual = document.getElementById("estadoCuentaMesVisual");
+    let btnMarcarMesPagado = document.getElementById("btnMarcarMesPagado");
     
-    const montoAbono = document.getElementById("montoAbono");
-    const fechaAbono = document.getElementById("fechaAbono");
-    const inputPagador = document.getElementById("inputPagador"); 
-    const btnAbonoYape = document.getElementById("btnAbonoYape");
-    const btnAbonoEfectivo = document.getElementById("btnAbonoEfectivo");
+    let montoAbono = document.getElementById("montoAbono");
+    let fechaAbono = document.getElementById("fechaAbono");
+    let inputPagador = document.getElementById("inputPagador"); 
+    let btnAbonoYape = document.getElementById("btnAbonoYape");
+    let btnAbonoEfectivo = document.getElementById("btnAbonoEfectivo");
 
-    const contenedorHistorialPagos = document.getElementById("contenedorHistorialPagos");
-    const listaPagosVisual = document.getElementById("listaPagosVisual");
+    let contenedorHistorialPagos = document.getElementById("contenedorHistorialPagos");
+    let listaPagosVisual = document.getElementById("listaPagosVisual");
 
     let historialConsumos = [];
     let historialPagos = [];
@@ -126,10 +126,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (listaMesesUI) {
         listaMesesUI.addEventListener("click", (e) => {
-            const item = e.target.closest(".dropdown-item");
+            let item = e.target.closest(".dropdown-item");
             if (!item) return;
             e.preventDefault();
-            const valor = item.getAttribute("data-val");
+            let valor = item.getAttribute("data-val");
             if (mesFiltro.value !== valor) {
                 mesFiltro.value = valor;
                 mesFiltro.dispatchEvent(new Event('change'));
@@ -151,8 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (fechaConsumo && mesFiltro) {
         fechaConsumo.addEventListener("change", () => {
             if (!fechaConsumo.value) return; 
-            const fechaSeleccionada = new Date(fechaConsumo.value + 'T00:00:00');
-            const mesDeLaFecha = fechaSeleccionada.getMonth().toString();
+            let fechaSeleccionada = new Date(fechaConsumo.value + 'T00:00:00');
+            let mesDeLaFecha = fechaSeleccionada.getMonth().toString();
 
             if (mesFiltro.value !== mesDeLaFecha) {
                 mesFiltro.value = mesDeLaFecha;
@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
     
-    const fechaHoy = new Date();
+    let fechaHoy = new Date();
     if (mesFiltro) {
         mesFiltro.value = fechaHoy.getMonth().toString();
         if (textoMesVisual) {
@@ -178,18 +178,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let indiceSeleccionado = -1;
     if (inputProducto) {
         inputProducto.addEventListener("input", () => {
-            const val = inputProducto.value.toLowerCase();
-            const partes = val.split("+");
-            const ult = partes[partes.length - 1].trim();
+            let val = inputProducto.value.toLowerCase();
+            let partes = val.split("+");
+            let ult = partes[partes.length - 1].trim();
             listaSugerencias.innerHTML = "";
             indiceSeleccionado = -1;
 
             if (ult.length > 0) {
-                const f = productosDB.filter(p => p.nombre.toLowerCase().includes(ult));
+                let f = productosDB.filter(p => p.nombre.toLowerCase().includes(ult));
                 if (f.length > 0) {
                     listaSugerencias.classList.add("show");
                     f.forEach(p => {
-                        const li = document.createElement("li");
+                        let li = document.createElement("li");
                         let visual = obtenerVisual(p.categoria, p.nombre);
 
                         li.innerHTML = `
@@ -209,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         inputProducto.addEventListener("keydown", (e) => {
-            const items = listaSugerencias.querySelectorAll("a.dropdown-item");
+            let items = listaSugerencias.querySelectorAll("a.dropdown-item");
             if (!listaSugerencias.classList.contains("show") || items.length === 0) return;
             if (e.key === "ArrowDown") {
                 e.preventDefault(); indiceSeleccionado++; if (indiceSeleccionado >= items.length) indiceSeleccionado = 0; actSel(items);
@@ -239,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
         function seleccionar(n) {
-            const p = inputProducto.value.split("+");
+            let p = inputProducto.value.split("+");
             p[p.length - 1] = ` ${n} `;
             inputProducto.value = p.join("+").trim() + " + ";
             listaSugerencias.classList.remove("show");
@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function recalcularSaldoGlobal() {
         if (!estadoCuentaMesVisual) return;
 
-        const mesSeleccionado = mesFiltro.value;
+        let mesSeleccionado = mesFiltro.value;
 
         let totalConsumoBruto = 0;
         let totalPagosBruto = 0;
@@ -285,12 +285,12 @@ document.addEventListener("DOMContentLoaded", () => {
             totalConsumoBruto = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
             totalPagosBruto = historialPagos.reduce((acc, p) => acc + p.monto, 0);
         } else {
-            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
+            let nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
             tituloEstadoMes.innerHTML = `ESTADO DE GESTIÓN: ${nombreMes}`;
             if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "inline-block";
 
-            const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-            const pagosDelMes = historialPagos.filter(p => {
+            let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            let pagosDelMes = historialPagos.filter(p => {
                 let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : new Date(p.fecha + 'T00:00:00').getMonth().toString();
                 return mesDelPago === mesSeleccionado;
             });
@@ -305,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let saldoAFavor = totalPagosBruto - totalConsumoBruto;
         if (saldoAFavor < 0) saldoAFavor = 0;
 
-        const saldoFinal = saldoAFavor - deudaActiva;
+        let saldoFinal = saldoAFavor - deudaActiva;
 
         let badgeHTML = "";
         if (saldoFinal < -0.01) {
@@ -332,14 +332,13 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         `;
 
-        const inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
+        let inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
         if(totalAcumulado && (!inputBusquedaTabla || inputBusquedaTabla.value.trim() === "")) {
             totalAcumulado.textContent = `S/ ${deudaActiva.toFixed(2)}`;
         }
 
-        // Lógica del botón de Desmarcar Mes
         if (btnMarcarMesPagado && mesSeleccionado !== "todos") {
-            const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
             let todosSemanasPagadas = false;
             
             if (consumosDelMes.length > 0) {
@@ -366,12 +365,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (btnMarcarMesPagado) {
         btnMarcarMesPagado.onclick = async () => {
-            const mesSeleccionado = mesFiltro.value;
+            let mesSeleccionado = mesFiltro.value;
             if (mesSeleccionado === "todos") return;
             
-            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
-            const consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
-            const estado = btnMarcarMesPagado.getAttribute("data-estado");
+            let nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text.toUpperCase();
+            let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            let estado = btnMarcarMesPagado.getAttribute("data-estado");
 
             if (estado === "pagado") {
                 Swal.fire({
@@ -387,19 +386,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (result.isConfirmed) {
                         try {
                             btnMarcarMesPagado.disabled = true;
-                            const batch = writeBatch(db);
+                            let batch = writeBatch(db);
                             
-                            const gruposSemanas = [...new Set(consumosDelMes.map(r => {
+                            let gruposSemanas = [...new Set(consumosDelMes.map(r => {
                                 let f = new Date(r.fecha + 'T00:00:00');
                                 return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
                             }))];
 
                             gruposSemanas.forEach(idGrupo => {
-                                const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+                                let docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
                                 batch.delete(doc(db, "semanas_pagadas", docId)); 
                             });
                             
-                            // También quitar los "pagado: true" individuales
                             consumosDelMes.forEach(r => {
                                 if(r.pagado) batch.update(doc(db, "consumos", r.id), { pagado: false });
                             });
@@ -416,7 +414,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return; 
             }
 
-            const pagosDelMes = historialPagos.filter(p => {
+            let pagosDelMes = historialPagos.filter(p => {
                 let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : new Date(p.fecha + 'T00:00:00').getMonth().toString();
                 return mesDelPago === mesSeleccionado;
             });
@@ -427,7 +425,6 @@ document.addEventListener("DOMContentLoaded", () => {
             let deudaFaltante = totalConsumoMes - totalPagosMes;
 
             if (deudaFaltante > 0.01) {
-                // AQUI PREGUNTA METODO Y GENERA PAGO DEL MES
                 Swal.fire({
                     title: '¿Cerrar y Cobrar Mes?',
                     html: `Se marcarán todas las semanas de <b>${nombreMes}</b> como cerradas y se registrará un abono de <b>S/ ${deudaFaltante.toFixed(2)}</b>.<br><br>¿Cómo te pagaron?`,
@@ -441,8 +438,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     cancelButtonText: 'Cancelar'
                 }).then(async (result) => {
                     if (result.isConfirmed || result.isDenied) {
-                        const metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
-                        const gruposSemanas = [...new Set(consumosDelMes.map(r => {
+                        let metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
+                        let gruposSemanas = [...new Set(consumosDelMes.map(r => {
                             let f = new Date(r.fecha + 'T00:00:00');
                             return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
                         }))];
@@ -451,7 +448,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             try {
                                 btnMarcarMesPagado.disabled = true;
 
-                                // Guarda el pago del mes
                                 await addDoc(collection(db, "pagos"), {
                                     nombreUsuario: nombreUsuario,
                                     monto: deudaFaltante,
@@ -462,10 +458,10 @@ document.addEventListener("DOMContentLoaded", () => {
                                     timestamp: Date.now()
                                 });
 
-                                const batch = writeBatch(db);
+                                let batch = writeBatch(db);
                                 gruposSemanas.forEach(idGrupo => {
-                                    const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
-                                    const docRef = doc(db, "semanas_pagadas", docId);
+                                    let docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+                                    let docRef = doc(db, "semanas_pagadas", docId);
                                     batch.set(docRef, {
                                         nombreUsuario: nombreUsuario,
                                         idGrupo: idGrupo,
@@ -496,15 +492,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     cancelButtonText: 'Cancelar'
                 }).then(async (result) => {
                     if (result.isConfirmed) {
-                        const gruposSemanas = [...new Set(consumosDelMes.map(r => {
+                        let gruposSemanas = [...new Set(consumosDelMes.map(r => {
                             let f = new Date(r.fecha + 'T00:00:00');
                             return `${f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(f)}`;
                         }))];
 
-                        const batch = writeBatch(db);
+                        let batch = writeBatch(db);
                         gruposSemanas.forEach(idGrupo => {
-                            const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
-                            const docRef = doc(db, "semanas_pagadas", docId);
+                            let docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+                            let docRef = doc(db, "semanas_pagadas", docId);
                             batch.set(docRef, {
                                 nombreUsuario: nombreUsuario,
                                 idGrupo: idGrupo,
@@ -519,7 +515,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // COBRAR POR SEMANA Y COBRAR DÍA INDIVIDUAL
     window.pagarYMarcarSemana = (idGrupo, deudaSemana, textoCabecera) => {
         Swal.fire({
             title: 'Cobrar Semana',
@@ -534,9 +529,9 @@ document.addEventListener("DOMContentLoaded", () => {
             cancelButtonText: 'Cancelar'
         }).then(async (result) => {
             if (result.isConfirmed || result.isDenied) {
-                const metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
-                const mesDestino = mesFiltro.value === "todos" ? new Date().getMonth().toString() : mesFiltro.value;
-                const docIdSemana = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+                let metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
+                let mesDestino = mesFiltro.value === "todos" ? new Date().getMonth().toString() : mesFiltro.value;
+                let docIdSemana = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
 
                 try {
                     await addDoc(collection(db, "pagos"), {
@@ -564,7 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.desmarcarSemana = (idGrupo) => {
-        const docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
+        let docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
         Swal.fire({
             title: '¿Deshacer tachado?',
             text: 'La semana volverá a mostrarse pendiente (Nota: Esto NO borra el pago en dinero que hayas registrado, si quieres borrar el dinero debes hacerlo en la lista de abajo).',
@@ -594,8 +589,8 @@ document.addEventListener("DOMContentLoaded", () => {
             cancelButtonText: 'Cancelar'
         }).then(async (result) => {
             if (result.isConfirmed || result.isDenied) {
-                const metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
-                const mesDestino = mesFiltro.value === "todos" ? new Date().getMonth().toString() : mesFiltro.value;
+                let metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
+                let mesDestino = mesFiltro.value === "todos" ? new Date().getMonth().toString() : mesFiltro.value;
 
                 try {
                     await addDoc(collection(db, "pagos"), {
@@ -628,12 +623,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!tablaConsumos) return;
         tablaConsumos.innerHTML = "";
         let totalBusqueda = 0; 
-        const mes = mesFiltro.value; 
-        const textoBusqueda = inputBusquedaTabla ? inputBusquedaTabla.value.toLowerCase() : "";
+        let mes = mesFiltro.value; 
+        let textoBusqueda = inputBusquedaTabla ? inputBusquedaTabla.value.toLowerCase() : "";
 
-        const filtrados = historialConsumos.filter(r => {
-            const coincideMes = (mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
-            const coincideBusqueda = r.productoNombre.toLowerCase().includes(textoBusqueda);
+        let filtrados = historialConsumos.filter(r => {
+            let coincideMes = (mes === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mes);
+            let coincideBusqueda = r.productoNombre.toLowerCase().includes(textoBusqueda);
             return coincideMes && coincideBusqueda;
         });
 
@@ -646,10 +641,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let consumosPorGrupo = {}; 
 
         filtrados.forEach(r => {
-            const fechaObj = new Date(r.fecha + 'T00:00:00');
-            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+            let fechaObj = new Date(r.fecha + 'T00:00:00');
+            let nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
             let numSemana = obtenerSemanaDelMes(fechaObj);
-            const idGrupo = `${nombreMesConsumo}_${numSemana}`;
+            let idGrupo = `${nombreMesConsumo}_${numSemana}`;
             
             if (!consumosPorGrupo[idGrupo]) consumosPorGrupo[idGrupo] = [];
             consumosPorGrupo[idGrupo].push(r);
@@ -658,10 +653,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let grupoActual = ""; 
 
         filtrados.forEach(r => {
-            const fechaObj = new Date(r.fecha + 'T00:00:00');
-            const nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+            let fechaObj = new Date(r.fecha + 'T00:00:00');
+            let nombreMesConsumo = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
             let numSemana = obtenerSemanaDelMes(fechaObj);
-            const identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
+            let identificadorGrupo = `${nombreMesConsumo}_${numSemana}`;
 
             let semanaDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
             
@@ -682,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     })
                     .reduce((acc, curr) => acc + curr.precio, 0);
 
-                const textoCabecera = mes === "todos" ? `${nombreMesConsumo} - SEMANA 0${numSemana}` : `SEMANA 0${numSemana}`;
+                let textoCabecera = mes === "todos" ? `${nombreMesConsumo} - SEMANA 0${numSemana}` : `SEMANA 0${numSemana}`;
 
                 let colorFondo = todosPagados ? '#d1e7dd' : '#f0f7ff';
                 let colorBorde = todosPagados ? '#198754' : '#0d6efd';
@@ -694,7 +689,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     ? `<button class="btn btn-sm btn-success rounded-pill fw-bold py-1 px-3 shadow-sm border-0" onclick="window.desmarcarSemana('${identificadorGrupo}')"><i class="bi bi-check-circle-fill me-1"></i>Pagado</button>`
                     : `<button class="btn btn-sm btn-warning text-dark rounded-pill fw-bold py-1 px-3 shadow-sm border-0" onclick="window.pagarYMarcarSemana('${identificadorGrupo}', ${deudaSemana}, '${textoCabecera}')"><i class="bi bi-cash-coin me-1"></i>Pagar y Tachar</button>`;
 
-                const trSemana = document.createElement("tr");
+                let trSemana = document.createElement("tr");
                 trSemana.innerHTML = `
                     <td colspan="4" class="py-2 ps-3 ps-md-4" style="background-color: ${colorFondo}; border-left: 5px solid ${colorBorde}; border-bottom: 1px solid rgba(0,0,0,0.05);">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pe-2">
@@ -715,12 +710,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 totalBusqueda += r.precio;
             }
             
-            const f = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
-            const tr = document.createElement("tr");
-            const nombreSeguro = r.productoNombre.replace(/'/g, "\\'");
+            let f = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+            let tr = document.createElement("tr");
+            let nombreSeguro = r.productoNombre.replace(/'/g, "\\'");
             
-            const tachadoClase = itemPagado ? "text-decoration: line-through; opacity: 0.6;" : "";
-            const colorLetra = itemPagado ? "text-muted" : "text-dark";
+            let tachadoClase = itemPagado ? "text-decoration: line-through; opacity: 0.6;" : "";
+            let colorLetra = itemPagado ? "text-muted" : "text-dark";
 
             let btnCobroIndividual = "";
             if (!itemPagado) {
@@ -767,7 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         window.modoEdicionActiva = { id: id };
 
-        const btnSubmit = formConsumo.querySelector("button[type='submit']");
+        let btnSubmit = formConsumo.querySelector("button[type='submit']");
         if (btnSubmit) {
             btnSubmit.innerHTML = '<i class="bi bi-save"></i> Guardar Edición';
             btnSubmit.classList.remove("btn-primary");
@@ -778,10 +773,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.editarPago = async (id, montoActual, fechaDB, metodoActual, pagadorActual) => {
-        const p = fechaDB.split('-');
-        const fechaUser = `${p[2]}-${p[1]}-${p[0]}`;
+        let p = fechaDB.split('-');
+        let fechaUser = `${p[2]}-${p[1]}-${p[0]}`;
 
-        const { value: formValues } = await Swal.fire({
+        let { value: formValues } = await Swal.fire({
             title: 'Editar Pago',
             html: `
                 <div class="mb-3 text-start">
@@ -847,9 +842,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!contenedorHistorialPagos || !listaPagosVisual) return;
         listaPagosVisual.innerHTML = "";
 
-        const mesSeleccionado = mesFiltro.value;
+        let mesSeleccionado = mesFiltro.value;
 
-        const pagosFiltrados = historialPagos.filter(p => {
+        let pagosFiltrados = historialPagos.filter(p => {
             if (mesSeleccionado === "todos") return true;
             let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : new Date(p.fecha + 'T00:00:00').getMonth().toString();
             return mesDelPago === mesSeleccionado;
@@ -862,15 +857,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         contenedorHistorialPagos.classList.remove("d-none");
         pagosFiltrados.forEach((pago) => {
-            const [y, m, d] = pago.fecha.split('-');
+            let [y, m, d] = pago.fecha.split('-');
             
-            const metodo = pago.metodo || "Efectivo";
-            const colorMetodo = metodo === "Yape" ? "#742384" : "#198754";
-            const iconoMetodo = metodo === "Yape" ? "bi-qr-code" : "bi-cash-stack";
+            let metodo = pago.metodo || "Efectivo";
+            let colorMetodo = metodo === "Yape" ? "#742384" : "#198754";
+            let iconoMetodo = metodo === "Yape" ? "bi-qr-code" : "bi-cash-stack";
             
-            const textoPagador = pago.pagador ? `<br><small class="text-secondary fw-bold"><i class="bi bi-chat-left-text me-1"></i>${pago.pagador}</small>` : "";
+            let textoPagador = pago.pagador ? `<br><small class="text-secondary fw-bold"><i class="bi bi-chat-left-text me-1"></i>${pago.pagador}</small>` : "";
 
-            const li = document.createElement("li");
+            let li = document.createElement("li");
             li.className = "list-group-item d-flex justify-content-between align-items-center px-3 py-3 border-bottom";
             li.innerHTML = `
                 <div class="d-flex align-items-center">
@@ -894,16 +889,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (formConsumo) {
         formConsumo.onsubmit = async (e) => {
             e.preventDefault();
-            const btn = formConsumo.querySelector("button[type='submit']");
-            const fechaVal = fechaConsumo._flatpickr ? fechaConsumo.value : fechaConsumo.value; 
+            let btn = formConsumo.querySelector("button[type='submit']");
+            let fechaVal = fechaConsumo._flatpickr ? fechaConsumo.value : fechaConsumo.value; 
             
             let prodCrudo = inputProducto.value.trim();
             if (prodCrudo.endsWith("+")) prodCrudo = prodCrudo.slice(0, -1).trim();
-            const cant = parseInt(inputCantidad.value);
+            let cant = parseInt(inputCantidad.value);
 
             if (!prodCrudo || cant < 1) return;
 
-            const nombresSeparados = prodCrudo.split("+").map(n => n.trim()).filter(n => n !== "");
+            let nombresSeparados = prodCrudo.split("+").map(n => n.trim()).filter(n => n !== "");
             let precioTotalFinal = 0;
             let itemsDeEstePedido = [];
 
@@ -912,19 +907,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 let cantidadLocal = 1;
                 let precioPersonalizado = null;
 
-                const matchPrecio = rawName.match(/^(.*?)\s*\(\s*S\/\s*([\d.]+)\s*\)$/i);
+                let matchPrecio = rawName.match(/^(.*?)\s*\(\s*S\/\s*([\d.]+)\s*\)$/i);
                 if (matchPrecio) {
                     nombreLimpio = matchPrecio[1].trim();
                     precioPersonalizado = parseFloat(matchPrecio[2]);
                 } else {
-                    const matchCant = rawName.match(/^(.*?)\s*\(\s*(\d+)\s*\)$/);
+                    let matchCant = rawName.match(/^(.*?)\s*\(\s*(\d+)\s*\)$/);
                     if (matchCant) {
                         nombreLimpio = matchCant[1].trim();
                         cantidadLocal = parseInt(matchCant[2], 10);
                     }
                 }
 
-                const productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombreLimpio.toLowerCase());
+                let productoEncontrado = productosDB.find(p => p.nombre.toLowerCase() === nombreLimpio.toLowerCase());
 
                 if (!productoEncontrado && precioPersonalizado === null) {
                     Swal.fire('Producto no encontrado', `El producto "${nombreLimpio}" NO EXISTE en tu inventario. Selecciónalo de la lista.`, 'error');
@@ -945,7 +940,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     let nom = productoEncontrado.nombre.toLowerCase();
                     if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
                         
-                        const { value: precioIngresado } = await Swal.fire({
+                        let { value: precioIngresado } = await Swal.fire({
                             title: `Precio del plato`,
                             text: `Ingresa el precio de cobro para "${productoEncontrado.nombre}":`,
                             input: 'number',
@@ -1001,7 +996,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     btn.classList.remove("btn-success");
                     btn.classList.add("btn-primary");
                 } else {
-                    const indexExistente = historialConsumos.findIndex(r => r.fecha === fechaVal);
+                    let indexExistente = historialConsumos.findIndex(r => r.fecha === fechaVal);
                     if (indexExistente !== -1) {
                         let reg = historialConsumos[indexExistente];
                         await updateDoc(doc(db, "consumos", reg.id), {
@@ -1031,12 +1026,12 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    const guardarAbono = async (metodo) => {
+    let guardarAbono = async (metodo) => {
         if (!montoAbono) return;
         let monto = parseFloat(montoAbono.value);
         if (isNaN(monto) || monto <= 0) return;
 
-        const fechaVal = fechaAbono.value;
+        let fechaVal = fechaAbono.value;
         if (!fechaVal) return;
 
         let pagador = "";
@@ -1112,17 +1107,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    const btnWhatsApp = document.getElementById("btnWhatsApp");
+    let btnWhatsApp = document.getElementById("btnWhatsApp");
     if (btnWhatsApp) {
         btnWhatsApp.addEventListener("click", () => {
-            const mesSeleccionado = mesFiltro.value;
-            const nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
-            const consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+            let mesSeleccionado = mesFiltro.value;
+            let nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
+            let consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
             if (consumosDelMes.length === 0) { Swal.fire('Vacío', 'No hay consumos registrados en este mes para enviar.', 'info'); return; }
 
-            const sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
-            const horaActual = new Date().getHours();
+            let sumaTotal = consumosDelMes.reduce((acc, reg) => acc + reg.precio, 0);
+            let horaActual = new Date().getHours();
             let saludo = horaActual < 12 ? "Buenos días" : horaActual < 19 ? "Buenas tardes" : "Buenas noches";
 
             let mensaje = `*REGISTRO DE CONSUMO EN EL QUIOSCO*\n\n`;
@@ -1134,9 +1129,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             consumosDelMes.forEach(registro => {
-                const [y, m, d] = registro.fecha.split('-');
-                const fBonita = new Date(registro.fecha + 'T00:00:00');
-                const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
+                let [y, m, d] = registro.fecha.split('-');
+                let fBonita = new Date(registro.fecha + 'T00:00:00');
+                let diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
                 let detalleLimpio = registro.productoNombre.split(/<br>\s*\+?|<br>|\n/).map(item => item.trim().replace(/^\+\s*/, '')).filter(item => item !== '').join(" + ");
                 mensaje += `- ${diasCortos[fBonita.getDay()]} ${d}/${m}: ${detalleLimpio} (S/ ${registro.precio.toFixed(2)})\n`;
             });
@@ -1146,18 +1141,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const btnExportarPDF = document.getElementById("btnExportarPDF");
+    let btnExportarPDF = document.getElementById("btnExportarPDF");
 
     if (btnExportarPDF) {
         btnExportarPDF.addEventListener("click", async () => {
-            const mesSeleccionado = mesFiltro.value;
-            const nombreMesHeader = mesFiltro.options[mesFiltro.selectedIndex].text;
+            let mesSeleccionado = mesFiltro.value;
+            let nombreMesHeader = mesFiltro.options[mesFiltro.selectedIndex].text;
 
             let consumosExportar = [];
             let tituloPeriodo = "";
 
             if (mesSeleccionado === "todos") {
-                const { isConfirmed } = await Swal.fire({
+                let { isConfirmed } = await Swal.fire({
                     title: 'Reporte Global',
                     text: 'Vas a descargar el historial de TODOS los meses registrados. ¿Deseas continuar?',
                     icon: 'info',
@@ -1173,7 +1168,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 tituloPeriodo = "HISTÓRICO COMPLETO";
                 
             } else {
-                const { value: seleccion } = await Swal.fire({
+                let { value: seleccion } = await Swal.fire({
                     title: 'Descargar Reporte PDF',
                     text: `Mes seleccionado: ${nombreMesHeader}`,
                     input: 'select',
@@ -1213,10 +1208,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let sumaTotalPDF_Test = 0;
             consumosExportar.forEach((r) => {
-                const fechaObj = new Date(r.fecha + 'T00:00:00');
-                const nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+                let fechaObj = new Date(r.fecha + 'T00:00:00');
+                let nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
                 let numSem = obtenerSemanaDelMes(fechaObj);
-                const idGrupo = `${nombreMesR}_${numSem}`;
+                let idGrupo = `${nombreMesR}_${numSem}`;
                 
                 let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
                 let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
@@ -1224,11 +1219,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!itemPagado) sumaTotalPDF_Test += r.precio;
             });
 
-            const ocupacionTexto = etiquetaRolEl ? etiquetaRolEl.textContent : 'Personal';
-            const tituloTotal = "TOTAL PENDIENTE";
+            let ocupacionTexto = etiquetaRolEl ? etiquetaRolEl.textContent : 'Personal';
+            let tituloTotal = "TOTAL PENDIENTE";
 
             if (sumaTotalPDF_Test === 0) {
-                const confZero = await Swal.fire({
+                let confZero = await Swal.fire({
                     title: 'Periodo Cancelado',
                     text: `El periodo seleccionado (${tituloPeriodo}) ya no tiene deudas pendientes. ¿Deseas descargar el reporte de todas formas como comprobante?`,
                     icon: 'info',
@@ -1247,11 +1242,11 @@ document.addEventListener("DOMContentLoaded", () => {
             let filasHtml = "";
 
             consumosExportar.forEach((r, index) => {
-                const fechaObj = new Date(r.fecha + 'T00:00:00');
-                const [y, m, d] = r.fecha.split('-');
-                const nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+                let fechaObj = new Date(r.fecha + 'T00:00:00');
+                let [y, m, d] = r.fecha.split('-');
+                let nombreMesR = fechaObj.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
                 let numSem = obtenerSemanaDelMes(fechaObj);
-                const idGrupo = `${nombreMesR}_${numSem}`;
+                let idGrupo = `${nombreMesR}_${numSem}`;
 
                 let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
                 let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
@@ -1260,7 +1255,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     grupoActualPDF = idGrupo;
                     
                     let itemsGrupo = consumosExportar.filter(x => {
-                        const fO = new Date(x.fecha + 'T00:00:00');
+                        let fO = new Date(x.fecha + 'T00:00:00');
                         return `${fO.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase()}_${obtenerSemanaDelMes(fO)}` === idGrupo;
                     });
                     
@@ -1269,7 +1264,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         return x.pagado === true || (s && (!x.timestamp || x.timestamp <= s.timestamp));
                     });
 
-                    const badgePDF = todosPagadosPDF 
+                    let badgePDF = todosPagadosPDF 
                         ? `<span style="color: #198754; font-size: 11px;">(✅ CANCELADA)</span>` 
                         : `<span style="color: #dc3545; font-size: 11px;">(⏳ PENDIENTE)</span>`;
 
@@ -1282,9 +1277,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     `;
                 }
 
-                const diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
-                const bgFila = index % 2 === 0 ? "#fffffe" : "#fcfcfb";
-                const tachado = itemPagado ? "text-decoration: line-through; color: #6c757c !important;" : "";
+                let diasCortos = ['Dom.', 'Lun.', 'Mar.', 'Mié.', 'Jue.', 'Vie.', 'Sáb.'];
+                let bgFila = index % 2 === 0 ? "#fffffe" : "#fcfcfb";
+                let tachado = itemPagado ? "text-decoration: line-through; color: #6c757c !important;" : "";
 
                 filasHtml += `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
@@ -1301,7 +1296,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             });
 
-            const reciboPDF = document.createElement("div");
+            let reciboPDF = document.createElement("div");
             reciboPDF.innerHTML = `
                 <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #fffffe; color: #000001;">
                     <div style="text-align: center; border-bottom: 3px solid #0d6efd; padding-bottom: 10px; margin-bottom: 15px;">
@@ -1368,7 +1363,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
 
-            const opcionesPDF = {
+            let opcionesPDF = {
                 margin: [5, 0, 10, 0],
                 filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${tituloPeriodo.replace(/ /g, "_")}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
@@ -1383,6 +1378,106 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("ERROR PDF:", error);
                 btnExportarPDF.disabled = false;
             });
+        });
+    }
+
+    let btnEstadisticas = document.getElementById("btnEstadisticas");
+    if (btnEstadisticas) {
+        btnEstadisticas.addEventListener("click", () => {
+            let mesSeleccionado = mesFiltro.value;
+            let nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
+            let consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
+
+            if (consumosDelMes.length === 0) {
+                Swal.fire('Sin datos', 'No hay consumos registrados para generar un gráfico.', 'info');
+                return;
+            }
+
+            let dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            let gastosPorDia = { 'Lunes': 0, 'Martes': 0, 'Miércoles': 0, 'Jueves': 0, 'Viernes': 0, 'Sábado': 0 };
+
+            consumosDelMes.forEach(r => {
+                let f = new Date(r.fecha + 'T00:00:00');
+                let nombreDia = dias[f.getDay()];
+                if(gastosPorDia[nombreDia] !== undefined) {
+                    gastosPorDia[nombreDia] += r.precio;
+                }
+            });
+
+            let labels = Object.keys(gastosPorDia);
+            let data = Object.values(gastosPorDia);
+
+            let isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+
+            Swal.fire({
+                title: `Gastos de ${nombreMes}`,
+                html: '<canvas id="miGrafico" style="width:100%; max-height:300px;"></canvas>',
+                width: 600,
+                background: isDark ? '#1e1e1e' : '#ffffff', 
+                color: isDark ? '#f8f9fa' : '#212529', 
+                showConfirmButton: true,
+                confirmButtonText: '<i class="bi bi-check-lg"></i> Entendido',
+                confirmButtonColor: '#0d6efd',
+                didOpen: () => {
+                    let ctx = document.getElementById('miGrafico').getContext('2d');
+                    let textColor = isDark ? '#e0e0e0' : '#6c757d';
+
+                    new Chart(ctx, {
+                        type: 'bar', 
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total Gastado (S/)',
+                                data: data,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.7)',
+                                    'rgba(54, 162, 235, 0.7)',
+                                    'rgba(255, 206, 86, 0.7)',
+                                    'rgba(75, 192, 192, 0.7)',
+                                    'rgba(153, 102, 255, 0.7)',
+                                    'rgba(255, 159, 64, 0.7)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { labels: { color: textColor } }
+                            },
+                            scales: { 
+                                y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: isDark ? '#333' : '#e9ecef' } },
+                                x: { ticks: { color: textColor }, grid: { display: false } }
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    let navbar = document.getElementById("main-navbar");
+    let ultimoScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (navbar) {
+        window.addEventListener("scroll", () => {
+            let scrollActual = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollActual > ultimoScroll && scrollActual > 60) {
+                navbar.style.top = `-${navbar.offsetHeight}px`; 
+            }
+            else {
+                navbar.style.top = "0"; 
+            }
+            ultimoScroll = scrollActual <= 0 ? 0 : scrollActual; 
         });
     }
 });
