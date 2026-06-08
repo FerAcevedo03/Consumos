@@ -36,7 +36,6 @@ function obtenerVisual(catReal, nombreProd) {
         else if (n.includes('galleta') || n.includes('morochas') || n.includes('picaras')) c = 'galleta';
         else if (n.includes('chupetin') || n.includes('caramelo') || n.includes('sublime')) c = 'dulce';
     }
-
     return { emoji: iconosVisuales[c] || "📦" };
 }
 
@@ -1353,10 +1352,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fb; border: 1px solid #dee2e6; color: #212528;">
                         <tr style="text-align: center;">
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>CLIENTE:</strong><br><span style="color: #000000; font-size: 14px;">${nombreUsuario}</span></td>
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>OCUPACIÓN:</strong><br><span style="color: #000000; font-size: 14px;">${ocupacionTexto}</span></td>
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>PERIODO:</strong><br><span style="color: #000000; font-size: 14px;">${tituloPeriodo}</span></td>
-                            <td style="padding: 15px 10px; width: 25%;"><strong>EMISIÓN:</strong><br><span style="color: #000000; font-size: 14px;">${new Date().toLocaleDateString('es-PE')}</span></td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">CLIENTE:</div>
+                                <div style="color: #251f1f; font-size: 14px; font-weight: normal;">${nombreUsuario}</div>
+                            </td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">OCUPACIÓN:</div>
+                                <div style="color: #2e2727; font-size: 14px; font-weight: normal;">${ocupacionTexto}</div>
+                            </td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">PERIODO:</div>
+                                <div style="color: #2b2626; font-size: 14px; font-weight: normal;">${tituloPeriodo}</div>
+                            </td>
+                            <td style="padding: 15px 10px; width: 25%;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">EMISIÓN:</div>
+                                <div style="color: #221f1f; font-size: 14px; font-weight: normal;">${new Date().toLocaleDateString('es-PE')}</div>
+                            </td>
                         </tr>
                     </table>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
@@ -1411,36 +1422,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
 
-            let contenedorMedicion = document.createElement("div");
-            contenedorMedicion.style.position = "absolute";
-            contenedorMedicion.style.top = "0px";
-            contenedorMedicion.style.left = "0px";
-            contenedorMedicion.style.zIndex = "-9999";
-            contenedorMedicion.style.visibility = "hidden";
-            contenedorMedicion.style.width = "1120px"; 
-            contenedorMedicion.appendChild(reciboPDF);
-            document.body.appendChild(contenedorMedicion);
+            // Contenedor sombra para asegurar centrado y renderizado
+            let divContenedor = document.createElement("div");
+            divContenedor.style.cssText = "position:fixed; top:0; left:0; width:1120px; z-index:-1000; overflow:hidden;";
+            divContenedor.appendChild(reciboPDF);
+            document.body.appendChild(divContenedor);
+
+            await new Promise(resolve => setTimeout(resolve, 150)); // Pausa para renderizado de texto
 
             let alturaEnPx = reciboPDF.offsetHeight;
-            let alturaEnMm = alturaEnPx * 0.264583; 
-            let alturaPaginaFinal = Math.ceil(alturaEnMm) + 22; 
-
-            document.body.removeChild(contenedorMedicion);
+            let alturaEnMm = alturaEnPx * 0.264583;
+            let alturaFinal = Math.max(210, alturaEnMm + 20);
 
             let opcionesPDF = {
-                margin: 10, 
+                margin: [10, 10, 10, 10], 
                 filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${tituloPeriodo.replace(/ /g, "_")}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
                 pagebreak: { mode: 'avoid-all' },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
-                jsPDF: { unit: 'mm', format: [316.33, alturaPaginaFinal], orientation: 'portrait' } 
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: [316.33, alturaFinal], orientation: 'portrait' }
             };
 
             html2pdf().set(opcionesPDF).from(reciboPDF).save().then(() => {
+                document.body.removeChild(divContenedor);
                 btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
             }).catch(error => {
                 console.error("ERROR PDF:", error);
+                document.body.removeChild(divContenedor);
                 btnExportarPDF.disabled = false;
             });
         });
