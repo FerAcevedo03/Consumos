@@ -36,6 +36,7 @@ function obtenerVisual(catReal, nombreProd) {
         else if (n.includes('galleta') || n.includes('morochas') || n.includes('picaras')) c = 'galleta';
         else if (n.includes('chupetin') || n.includes('caramelo') || n.includes('sublime')) c = 'dulce';
     }
+
     return { emoji: iconosVisuales[c] || "📦" };
 }
 
@@ -1149,8 +1150,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let consumosExportar = [];
             let tituloPeriodo = "";
-            // CAMBIO 1: bandera para saber si se está exportando una semana individual
-            let esSemanaIndividual = false;
 
             if (mesSeleccionado === "todos") {
                 let { isConfirmed } = await Swal.fire({
@@ -1193,8 +1192,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
                 if (seleccion !== "todo") {
-                    // CAMBIO 2: marcar que es semana individual
-                    esSemanaIndividual = true;
                     consumosDelMes = consumosDelMes.filter(r => obtenerSemanaDelMes(new Date(r.fecha + 'T00:00:00')) == seleccion);
                     tituloPeriodo = `SEMANA 0${seleccion} - ${nombreMesHeader}`;
                 } else {
@@ -1268,13 +1265,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
 
                     let badgePDF = todosPagadosPDF
-                        ? `<span style="color: #198754; font-size: 11px;">(CANCELADA)</span>`
-                        : `<span style="color: #dc3545; font-size: 11px;">(PENDIENTE)</span>`;
+                        ? `<span style="color: #198754; font-size: 11px;">(✅ CANCELADA)</span>`
+                        : `<span style="color: #dc3545; font-size: 11px;">(⏳ PENDIENTE)</span>`;
 
                     filasHtml += `
                         <tr style="background-color: #f0f7fe; page-break-after: avoid;">
                             <td colspan="4" style="padding: 10px 15px; border-bottom: 2px solid #0d6efd; color: #0d6efd; font-weight: bold; font-size: 13px;">
-                                ${nombreMesR} - SEMANA 0${numSem} <span style="margin-left: 5px;">${badgePDF}</span>
+                                <span style="margin-right: 10px;">📅</span> ${nombreMesR} - SEMANA 0${numSem} ${badgePDF}
                             </td>
                         </tr>
                     `;
@@ -1329,8 +1326,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     });
 
-                    // CAMBIO 3: el subtotal de semana solo se muestra en el reporte mensual, no en el semanal
-                    if (!todosPagadosPDF && !esSemanaIndividual) {
+                    if (!todosPagadosPDF) {
                         filasHtml += `
                             <tr style="background-color: #fdf2f2; page-break-inside: avoid;">
                                 <td colspan="3" style="padding: 10px 15px; text-align: right; font-size: 13px; color: #dc3545; font-weight: bold; border-bottom: 2px solid #dee2e6;">
@@ -1350,29 +1346,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let reciboPDF = document.createElement("div");
             reciboPDF.innerHTML = `
-                <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #fffffe; color: #000001; margin: 0 auto;">
+                <div style="width: 1120px; padding: 20px 40px; box-sizing: border-box; font-family: Arial, sans-serif; background-color: #fffffe; color: #000001;">
                     <div style="text-align: center; border-bottom: 3px solid #0d6efd; padding-bottom: 10px; margin-bottom: 15px;">
                         <div style="color: #0d6efd; margin: 0; font-size: 32px; font-weight: 900;">Quiosco</div>
                         <div style="color: #6c757d; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; font-weight: bold;">REPORTE DE CONSUMO - ${tituloPeriodo}</div>
                     </div>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background-color: #f8f9fb; border: 1px solid #dee2e6; color: #212528;">
                         <tr style="text-align: center;">
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">CLIENTE:</div>
-                                <div style="color: #251f1f; font-size: 14px; font-weight: normal;">${nombreUsuario}</div>
-                            </td>
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">OCUPACIÓN:</div>
-                                <div style="color: #2e2727; font-size: 14px; font-weight: normal;">${ocupacionTexto}</div>
-                            </td>
-                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">PERIODO:</div>
-                                <div style="color: #2b2626; font-size: 14px; font-weight: normal;">${tituloPeriodo}</div>
-                            </td>
-                            <td style="padding: 15px 10px; width: 25%;">
-                                <div style="font-weight: bold; margin-bottom: 5px;">EMISIÓN:</div>
-                                <div style="color: #221f1f; font-size: 14px; font-weight: normal;">${new Date().toLocaleDateString('es-PE')}</div>
-                            </td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>CLIENTE:</strong><br>${nombreUsuario}</td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>OCUPACIÓN:</strong><br>${ocupacionTexto}</td>
+                            <td style="padding: 15px 10px; border-right: 1px solid #dee2e6; width: 25%;"><strong>PERIODO:</strong><br>${tituloPeriodo}</td>
+                            <td style="padding: 15px 10px; width: 25%;"><strong>EMISIÓN:</strong><br>${new Date().toLocaleDateString('es-PE')}</td>
                         </tr>
                     </table>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
@@ -1420,42 +1404,26 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </td>
                             </tr>
                         </table>
-                        <!-- CAMBIO 4: texto de pie de página completo restaurado -->
                         <div style="text-align: center; color: #495057; font-size: 15px; margin-top: 25px; font-weight: bold; font-style: italic;">
-                            <p>Gracias por preferir nuestro servicio, se agradece el pronto pago de su cuenta, Tenga un excelente día.</p>
+                            <p>Se agradece el pronto pago de su cuenta, Tenga un excelente día.</p>
                         </div>
                     </div>
                 </div>
             `;
 
-            let divContenedor = document.createElement("div");
-            divContenedor.style.cssText = "position:fixed; top:0; left:0; width:1120px; z-index:-1000; overflow:visible;";
-            divContenedor.appendChild(reciboPDF);
-            document.body.appendChild(divContenedor);
-
-            await new Promise(resolve => setTimeout(resolve, 150));
-
-            let alturaEnPx = reciboPDF.scrollHeight;
-            let alturaEnMm = alturaEnPx * 0.264583;
-            let alturaFinal = Math.max(330, alturaEnMm + 25);
-
             let opcionesPDF = {
-                margin: [10, 10, 10, 10],
+                margin: [5, 0, 10, 0],
                 filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${tituloPeriodo.replace(/ /g, "_")}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
-                pagebreak: { mode: ['css', 'legacy'] }, // mejor manejo de saltos de página
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } // <-- cambio clave
+                html2canvas: { scale: 2, useCORS: true, width: 1120, windowWidth: 1120, x: 0, y: 0, scrollX: 0, scrollY: 0 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
             };
 
-
             html2pdf().set(opcionesPDF).from(reciboPDF).save().then(() => {
-                document.body.removeChild(divContenedor);
                 btnExportarPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> PDF';
                 btnExportarPDF.disabled = false;
             }).catch(error => {
                 console.error("ERROR PDF:", error);
-                document.body.removeChild(divContenedor);
                 btnExportarPDF.disabled = false;
             });
         });
