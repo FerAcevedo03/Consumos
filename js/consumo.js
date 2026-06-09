@@ -1149,6 +1149,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let consumosExportar = [];
             let tituloPeriodo = "";
+            // CAMBIO 1: bandera para saber si se está exportando una semana individual
+            let esSemanaIndividual = false;
 
             if (mesSeleccionado === "todos") {
                 let { isConfirmed } = await Swal.fire({
@@ -1191,6 +1193,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
                 if (seleccion !== "todo") {
+                    // CAMBIO 2: marcar que es semana individual
+                    esSemanaIndividual = true;
                     consumosDelMes = consumosDelMes.filter(r => obtenerSemanaDelMes(new Date(r.fecha + 'T00:00:00')) == seleccion);
                     tituloPeriodo = `SEMANA 0${seleccion} - ${nombreMesHeader}`;
                 } else {
@@ -1325,7 +1329,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     });
 
-                    if (!todosPagadosPDF) {
+                    // CAMBIO 3: el subtotal de semana solo se muestra en el reporte mensual, no en el semanal
+                    if (!todosPagadosPDF && !esSemanaIndividual) {
                         filasHtml += `
                             <tr style="background-color: #fdf2f2; page-break-inside: avoid;">
                                 <td colspan="3" style="padding: 10px 15px; text-align: right; font-size: 13px; color: #dc3545; font-weight: bold; border-bottom: 2px solid #dee2e6;">
@@ -1415,24 +1420,24 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </td>
                             </tr>
                         </table>
+                        <!-- CAMBIO 4: texto de pie de página completo restaurado -->
                         <div style="text-align: center; color: #495057; font-size: 15px; margin-top: 25px; font-weight: bold; font-style: italic;">
-                            <p>Se agradece el pronto pago de su cuenta, Tenga un excelente día.</p>
+                            <p>Gracias por preferir nuestro servicio, se agradece el pronto pago de su cuenta, Tenga un excelente día.</p>
                         </div>
                     </div>
                 </div>
             `;
 
-            // Contenedor sombra para asegurar centrado y renderizado
             let divContenedor = document.createElement("div");
-            divContenedor.style.cssText = "position:fixed; top:0; left:0; width:1120px; z-index:-1000; overflow:hidden;";
+            divContenedor.style.cssText = "position:fixed; top:0; left:0; width:1120px; z-index:-1000; overflow:visible;";
             divContenedor.appendChild(reciboPDF);
             document.body.appendChild(divContenedor);
 
-            await new Promise(resolve => setTimeout(resolve, 150)); // Pausa para renderizado de texto
+            await new Promise(resolve => setTimeout(resolve, 150));
 
-            let alturaEnPx = reciboPDF.offsetHeight;
+            let alturaEnPx = reciboPDF.scrollHeight;
             let alturaEnMm = alturaEnPx * 0.264583;
-            let alturaFinal = Math.max(210, alturaEnMm + 20);
+            let alturaFinal = Math.max(330, alturaEnMm + 25);
 
             let opcionesPDF = {
                 margin: [10, 10, 10, 10], 
