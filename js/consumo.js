@@ -1443,10 +1443,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 margin: [10, 10, 10, 10],
                 filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${tituloPeriodo.replace(/ /g, "_")}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
-                pagebreak: { mode: ['css', 'legacy'] }, // mejor manejo de saltos
+                pagebreak: { mode: ['css', 'legacy'] }, // mejor manejo de saltos de página
                 html2canvas: { scale: 2, useCORS: true, letterRendering: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } // <-- cambio clave
             };
+
 
             html2pdf().set(opcionesPDF).from(reciboPDF).save().then(() => {
                 document.body.removeChild(divContenedor);
