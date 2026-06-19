@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-
 const firebaseConfig = {
     apiKey: "AIzaSyBuXHMvdHZbJLoo-SakENFEcUvlECJvTRA",
     authDomain: "quiosco-nobel-school.firebaseapp.com",
@@ -14,12 +13,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-
 onAuthStateChanged(auth, (user) => {
-    if (!user && !window.location.pathname.includes("login.html")) {
-        window.location.replace("login.html");
-    } else if (user && !window.location.pathname.includes("login.html")) {
-        document.body.style.display = "block";
+    const esPaginaLogin = window.location.pathname.includes("login.html");
+
+    if (user) {
+        if (esPaginaLogin) {
+            window.location.replace("index.html");
+        } else {
+            document.body.style.display = "block";
+        }
+    } else {
+        if (!esPaginaLogin) {
+            window.location.replace("login.html");
+        } else {
+            document.body.style.display = "block";
+        }
     }
 });
 
