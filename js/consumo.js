@@ -1147,10 +1147,8 @@ document.addEventListener("DOMContentLoaded", () => {
         btnExportarPDF.addEventListener("click", async () => {
             let mesSeleccionado = mesFiltro.value;
             let nombreMesHeader = mesFiltro.options[mesFiltro.selectedIndex].text;
-
             let consumosExportar = [];
             let tituloPeriodo = "";
-            // CAMBIO 1: bandera para distinguir semana individual de reporte mensual
             let esSemanaIndividual = false;
 
             if (mesSeleccionado === "todos") {
@@ -1194,7 +1192,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 let consumosDelMes = historialConsumos.filter(r => new Date(r.fecha + 'T00:00:00').getMonth() == mesSeleccionado);
 
                 if (seleccion !== "todo") {
-                    // CAMBIO 2: activa la bandera cuando se elige semana específica
                     esSemanaIndividual = true;
                     consumosDelMes = consumosDelMes.filter(r => obtenerSemanaDelMes(new Date(r.fecha + 'T00:00:00')) == seleccion);
                     tituloPeriodo = `SEMANA 0${seleccion} - ${nombreMesHeader}`;
@@ -1268,7 +1265,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         return x.pagado === true || (s && (!x.timestamp || x.timestamp <= s.timestamp));
                     });
 
-                    // CAMBIO 3: emojis eliminados, texto limpio y formal
                     let badgePDF = todosPagadosPDF
                         ? `<span style="color: #198754; font-size: 11px; font-weight: normal;">(CANCELADA)</span>`
                         : `<span style="color: #dc3545; font-size: 11px; font-weight: normal;">(PENDIENTE)</span>`;
@@ -1331,7 +1327,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     });
 
-                    // CAMBIO 4: subtotal solo se muestra en reporte mensual, no en semana individual
+
                     if (!todosPagadosPDF && !esSemanaIndividual) {
                         filasHtml += `
                             <tr style="background-color: #fdf2f2; page-break-inside: avoid;">

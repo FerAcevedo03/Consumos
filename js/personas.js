@@ -21,17 +21,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let personasDB = [];
 
-    // Configuramos colores según si es alumno, profesor o administrativo
     let colorFondo = "#ffc107", colorIcono = "#000", iconoHtml = "bi-mortarboard-fill", btnTheme = "btn-warning";
     if (tipo === "profesores") { colorFondo = "#0d6efd"; colorIcono = "#fff"; iconoHtml = "bi-person-workspace"; btnTheme = "btn-primary"; }
     else if (tipo === "administrativos") { colorFondo = "#198754"; colorIcono = "#fff"; iconoHtml = "bi-person-badge-fill"; btnTheme = "btn-success"; }
 
-    // 1. LECTURA EN TIEMPO REAL DESDE FIREBASE
+
     onSnapshot(query(collection(db, tipo)), (snap) => {
         personasDB = [];
         snap.forEach(doc => personasDB.push({ id: doc.id, ...doc.data() }));
         
-        // SOLUCIÓN AL CARGADO INFINITO: Evitar que choque si un documento no tiene nombre
+
         personasDB.sort((a, b) => {
             const nombreA = a.nombre || "";
             const nombreB = b.nombre || "";
@@ -89,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 2. AÑADIR NUEVO CON ALERTA ANIMADA (SWEETALERT2)
     if (btnAgregarModal) {
         btnAgregarModal.onclick = async () => {
             const { value: nombreNuevo } = await Swal.fire({
@@ -132,7 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = `consumo.html?nombre=${encodeURIComponent(nombre)}&rol=${encodeURIComponent(rol)}`;
     };
 
-    // 3. ELIMINAR CON ALERTA ANIMADA DE CONFIRMACIÓN
     window.eliminarPersona = (id, nombre) => {
         Swal.fire({
             title: '¿Eliminar persona?',
@@ -155,7 +152,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 4. EDITAR CON ALERTA ANIMADA
     window.editarPersona = async (id, nombreViejo) => {
         const { value: nombreEditado } = await Swal.fire({
             title: `Editar Nombre`,

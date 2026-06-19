@@ -1,8 +1,4 @@
-// ==========================================================================
-// EJECUCIÓN INMEDIATA (CERO PARPADEO)
-// ==========================================================================
-// Este código corre antes de que el navegador dibuje el body, 
-// bloqueando el molesto "flash blanco".
+
 const temaGuardado = localStorage.getItem("tema_nobel");
 
 if (temaGuardado === "dark") {
@@ -16,9 +12,7 @@ if (temaGuardado === "dark") {
     }
 }
 
-// ==========================================================================
-// LÓGICA DEL BOTÓN AL CARGAR LA PÁGINA
-// ==========================================================================
+
 document.addEventListener("DOMContentLoaded", () => {
     // Busca el botón, sin importar si estás en index.html o en consumo.html
     const btnTheme = document.getElementById("theme-toggle") || document.getElementById("btnDarkMode");
@@ -37,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Seteamos el icono según como cargó la página
+  
     actualizarIcono(document.documentElement.getAttribute("data-bs-theme"));
 
     if (btnTheme) {

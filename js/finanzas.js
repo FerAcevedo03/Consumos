@@ -15,7 +15,7 @@ const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
     
-    // MODO PRIVACIDAD
+   
     let modoPrivado = localStorage.getItem("modoPrivado") === "true";
     const btnPrivacidad = document.getElementById("btnPrivacidad");
     const contenedorGrafico = document.getElementById("contenedorGrafico");

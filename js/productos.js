@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let productosDB = [];
 
-    // LECTURA EN TIEMPO REAL DESDE FIREBASE
     onSnapshot(query(collection(db, "productos")), (snap) => {
         productosDB = [];
         snap.forEach(doc => productosDB.push({ id: doc.id, ...doc.data() }));
@@ -91,7 +90,6 @@ document.addEventListener("DOMContentLoaded", () => {
         filtrados.forEach(p => {
             let catLimpia = p.categoria || "otro";
 
-            // AQUÍ ESTÁ LA MAGIA: Si cambia la categoría, dibujamos una fila separadora
             if (catLimpia !== categoriaActual) {
                 categoriaActual = catLimpia;
                 let nombreMostrado = nombresCategorias[catLimpia] || "📦 OTROS";
@@ -108,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const tr = document.createElement("tr");
             let icono = iconos[catLimpia] || "📦";
             
-            // FILA CORREGIDA: text-end para alinear, y d-flex gap-2 para los botones
+
             tr.innerHTML = `
                 <td class="text-center ps-4 fs-4 align-middle">${icono}</td>
                 <td class="fw-bold text-body-emphasis align-middle">${p.nombre}</td>
@@ -124,7 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // TUS VENTANAS ORIGINALES DE SWEET ALERT
     if (btnAgregarModal) {
         btnAgregarModal.onclick = async () => {
             const { value: formValues } = await Swal.fire({
