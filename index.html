@@ -21,54 +21,47 @@
 
 <body class="bg-body-tertiary">
 
-  <nav id="main-navbar" class="navbar navbar-dark py-2 px-2 px-md-3 shadow-sm"
+  <nav id="main-navbar" class="navbar navbar-dark py-2 px-3 shadow-sm"
     style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
-    <div class="container-fluid container-md d-flex justify-content-between align-items-center gap-2">
+    <div class="container-fluid container-md d-flex flex-wrap justify-content-between align-items-center gap-2">
 
-      <!-- BOTÓN SALIR: Se adapta al tamaño -->
-      <div class="d-flex flex-shrink-0">
-        <button onclick="cerrarSesion()"
-          class="btn btn-danger d-flex align-items-center px-2 px-sm-3 py-2 shadow-sm border-0"
+      <!-- Botón Salir -->
+      <div class="d-flex align-items-center">
+        <button onclick="cerrarSesion()" class="btn btn-danger d-flex align-items-center px-3 py-2 shadow-sm border-0"
           style="border-radius: 8px; font-weight: 500;">
           <i class="bi bi-box-arrow-right fs-5"></i>
           <span class="ms-2 d-none d-sm-inline">Salir</span>
         </button>
       </div>
 
-      <!-- BADGE CENTRAL: Elástico y trunca texto si no cabe -->
-      <div class="d-flex justify-content-center flex-grow-1" style="min-width: 0;">
-        <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-3 shadow-sm border border-light w-100"
-          style="cursor: default; max-width: max-content;">
-
-          <button id="theme-toggle"
-            class="btn btn-sm btn-outline-secondary rounded-circle me-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0"
-            style="width: 35px; height: 35px;">
-            <i id="theme-icon" class="bi bi-moon-fill fs-5"></i>
-          </button>
-
-          <div class="rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm flex-shrink-0"
-            style="width: 35px; height: 35px; background-color: #6c757d;">
-            <span class="text-white"><i class="bi bi-shield-lock-fill fs-6"></i></span>
-          </div>
-
-          <div class="d-flex flex-column lh-1 text-start" style="min-width: 0;">
-            <!-- Ocultamos "Panel Control" en móviles para dar espacio a la fuente gigante -->
-            <span class="fw-bold text-dark text-truncate d-none d-sm-block" style="font-size: 0.85rem;">Panel
-              Control</span>
-            <span class="text-muted text-truncate"
-              style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-top: 2px;">ADMINISTRADOR</span>
-          </div>
+      <!-- Identificador de Usuario Central -->
+      <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-3 shadow-sm border border-light">
+        <button id="theme-toggle"
+          class="btn btn-sm btn-outline-secondary rounded-circle me-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0"
+          style="width: 35px; height: 35px;">
+          <i id="theme-icon" class="bi bi-moon-fill fs-5"></i>
+        </button>
+        <div class="rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm flex-shrink-0"
+          style="width: 35px; height: 35px; background-color: #6c757d;">
+          <span class="text-white"><i class="bi bi-shield-lock-fill fs-6"></i></span>
+        </div>
+        <div class="d-flex flex-column lh-1 text-start">
+          <span class="fw-bold text-dark text-truncate d-none d-sm-block" style="font-size: 0.85rem;">Panel
+            Control</span>
+          <span class="text-muted"
+            style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-top: 2px;">ADMINISTRADOR</span>
         </div>
       </div>
 
-      <!-- LOGO: Mantiene su tamaño -->
-      <div class="d-flex flex-shrink-0 align-items-center">
+
+      <div class="d-flex align-items-center">
         <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
           <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block"
             style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
-          <img src="logo.png" alt="Logo Nobel School" width="42" height="42" class="rounded bg-white p-1 shadow-sm">
+          <img src="logo.png" alt="Logo Nobel School" width="40" height="40" class="rounded bg-white p-1 shadow-sm">
         </a>
       </div>
+
     </div>
   </nav>
 
@@ -85,7 +78,6 @@
         <h4 class="fs-4 fs-md-3 fw-medium m-0 texto-saludo" id="saludoUsuario">Cargando saludo...</h4>
 
         <div class="d-flex justify-content-center my-2">
-          <!-- BADGE DE FECHA: Ahora tiene text-wrap para crecer hacia abajo si la letra es gigante -->
           <span id="fechaActual"
             class="badge badge-fecha px-4 py-2 rounded-4 fs-5 fw-medium shadow-sm text-wrap w-100 w-md-auto">
             <i class="bi bi-calendar3 me-2"></i>Cargando fecha...
@@ -103,7 +95,6 @@
               <div class="input-group input-group-lg shadow-sm rounded-4 overflow-hidden buscador-input-group">
                 <span class="input-group-text bg-transparent border-0 ps-3 pe-2 flex-shrink-0"><i
                     class="bi bi-person-fill fs-3"></i></span>
-                <!-- TEXTO CORTO para que no se corte en letras grandes -->
                 <input type="text" id="buscadorGlobal"
                   class="form-control border-0 bg-transparent shadow-none fw-bold fs-4 py-3" placeholder="Buscar..."
                   autocomplete="off">
