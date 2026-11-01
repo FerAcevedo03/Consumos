@@ -75,28 +75,6 @@ body.bg-profes {
     color: white;
 }
 
-.menu-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    background-color: white;
-}
-
-.menu-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
-}
-
-.card-persona {
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    background-color: #ffffff;
-}
-
-.card-persona:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
-    border-color: #ffc107 !important;
-}
-
 .icono-avatar {
     width: 50px;
     height: 50px;
@@ -113,7 +91,6 @@ body.bg-alumnos {
     background-color: #fffaf0;
 }
 
-
 [data-bs-theme="dark"],
 [data-bs-theme="dark"] body,
 [data-bs-theme="dark"] body.bg-light,
@@ -128,8 +105,7 @@ body.bg-alumnos {
 [data-bs-theme="dark"] .card,
 [data-bs-theme="dark"] .card-header,
 [data-bs-theme="dark"] .list-group-item,
-[data-bs-theme="dark"] .menu-card,
-[data-bs-theme="dark"] .card-persona {
+[data-bs-theme="dark"] .menu-card {
     background-color: #1e1e1e !important;
     color: #e0e0e0 !important;
     border-color: #333333 !important;
@@ -391,43 +367,285 @@ body.bg-alumnos {
     background: #495057;
 }
 
+.panel-principal {
+    background: linear-gradient(145deg, #ffffff, #f1f5f9);
+    color: #1e293b;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.buscador-contenedor {
+    background-color: #ffffff;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04) !important;
+    transition: background-color 0.3s ease;
+}
+
+.buscador-input-group {
+    background-color: #f8fafc;
+    border: 2px solid #cbd5e1 !important;
+}
+
+.buscador-input-group input {
+    color: #0f172a !important;
+}
+
+.buscador-input-group span i {
+    color: #3b82f6 !important;
+}
+
+.texto-saludo {
+    color: #334155 !important;
+}
+
+.badge-fecha {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+/* Modo oscuro para el Panel de Búsqueda */
+[data-bs-theme="dark"] .panel-principal {
+    background: linear-gradient(145deg, #1e293b, #0f172a) !important;
+    color: #f8f9fa !important;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme="dark"] .buscador-contenedor {
+    background-color: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .buscador-input-group {
+    background-color: #0f172a !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .buscador-input-group input {
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .texto-saludo {
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .badge-fecha {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.menu-card {
+    border-radius: 24px !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+    border: 2px solid transparent !important;
+}
+
+.menu-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.icon-circle {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
 
 .btn-tarjeta-profesores {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
-    border: none !important;
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
 }
 
 .btn-tarjeta-personal {
-    background: linear-gradient(135deg, #198754 0%, #146c43 100%) !important;
-    border: none !important;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
 }
 
 .btn-tarjeta-alumnos {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
-    border: none !important;
-}
-
-.btn-tarjeta-alumnos h4,
-.btn-tarjeta-alumnos p {
-    color: #212529 !important;
-    /* Letra oscura en la tarjeta amarilla para contraste */
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
 }
 
 .btn-tarjeta-inventario {
-    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
-    border: none !important;
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%) !important;
 }
 
+.btn-tarjeta-profesores .icon-circle i,
+.btn-tarjeta-personal .icon-circle i {
+    color: #ffffff !important;
+}
+
+.btn-tarjeta-alumnos .icon-circle i,
+.btn-tarjeta-inventario .icon-circle i {
+    color: #000000 !important;
+}
+
+.btn-tarjeta-alumnos h4,
+.btn-tarjeta-alumnos p,
 .btn-tarjeta-inventario h4,
 .btn-tarjeta-inventario p {
-    color: #212529 !important;
-    /* Letra oscura en la tarjeta celeste para contraste */
+    color: #000000 !important;
+    text-shadow: none !important;
 }
 
-/* Evitar que el modo oscuro sobrescriba los colores de estos botones gigantes */
+.btn-tarjeta-profesores h4,
+.btn-tarjeta-profesores p,
+.btn-tarjeta-personal h4,
+.btn-tarjeta-personal p {
+    color: #ffffff !important;
+}
+
+.btn-tarjeta-profesores .badge,
+.btn-tarjeta-personal .badge {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-tarjeta-alumnos .badge,
+.btn-tarjeta-inventario .badge {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    color: #000000 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    font-weight: 700 !important;
+}
+
 [data-bs-theme="dark"] .btn-tarjeta-profesores,
 [data-bs-theme="dark"] .btn-tarjeta-personal,
 [data-bs-theme="dark"] .btn-tarjeta-alumnos,
 [data-bs-theme="dark"] .btn-tarjeta-inventario {
-    color: #fff !important;
+    color: inherit;
+}
+
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+
+
+.card-persona {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .card-persona {
+    /* Fondo oscuro sólido para mejorar el contraste */
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+
+.avatar-glow {
+    box-shadow: 0 0 15px currentColor;
+    transition: transform 0.3s ease;
+}
+
+.card-persona:hover .avatar-glow {
+    transform: scale(1.05) rotate(-5deg);
+}
+
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+/* Botones Suaves (Soft UI) - Botón Eliminar */
+.btn-soft-danger {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    color: #dc3545 !important;
+    transition: all 0.3s ease;
+}
+
+.btn-soft-danger:hover {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+    transform: scale(1.08);
+}
+
+
+.btn-soft-edit {
+    background-color: rgba(108, 117, 125, 0.1) !important;
+    color: #6c757d !important;
+    transition: all 0.3s ease;
+}
+
+[data-bs-theme="dark"] .btn-soft-edit {
+    color: #adb5bd !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.btn-soft-edit:hover {
+    background-color: #0d6efd !important;
+    color: #ffffff !important;
+    transform: scale(1.1) rotate(10deg);
+}
+
+.btn-consumos-hover {
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.btn-consumos-hover:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+
+.swal2-actions .swal2-confirm {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.swal2-actions .swal2-cancel {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .swal2-actions .swal2-cancel {
+    background-color: #495057 !important;
+}
+
+.dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Orden forzado para celulares y pantallas estrechas (1 columna) */
+.grid-registro { order: 1; }
+.grid-historial { order: 2; }
+.grid-pagos { order: 3; }
+
+/* A partir de Monitores Verticales o Tablets (992px) -> 2 Columnas */
+@media (min-width: 992px) {
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 38% 62%;
+        grid-template-rows: max-content max-content auto;
+        gap: 1.5rem;
+    }
+    .grid-registro { grid-column: 1; grid-row: 1; order: unset; margin-bottom: 0; }
+    .grid-pagos { grid-column: 1; grid-row: 2; order: unset; margin-top: 0; }
+    .grid-historial { grid-column: 2; grid-row: 1 / span 3; order: unset; }
+}
+
+/* Monitores estándar horizontales de PC (1200px+) -> 2 Columnas anchas */
+@media (min-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 33% 67%;
+    }
 }

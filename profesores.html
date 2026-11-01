@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profesores - Nobel School</title>
   <link rel="icon" href="logo.png" type="image/png">
-  
+
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/styles.css">
@@ -18,67 +18,94 @@
 
 <body class="bg-profes" data-tipo="profesores">
 
-  <nav id="main-navbar" class="navbar navbar-dark py-2 px-1 px-md-0 shadow-sm" style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
+  <nav id="main-navbar" class="navbar navbar-dark py-2 px-1 px-md-0 shadow-sm"
+    style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
     <div class="container-fluid container-md d-flex justify-content-between align-items-center">
-      
       <div class="d-flex justify-content-start" style="width: 25%;">
-        <a href="index.html" class="btn btn-outline-light d-flex align-items-center px-2 px-sm-3 py-1 shadow-sm text-decoration-none" style="border-radius: 8px; font-weight: 500; border-width: 1.5px;">
-          <i class="bi bi-arrow-left"></i> 
-          <span class="ms-2 d-none d-sm-inline">Volver</span>
+        <a href="index.html"
+          class="btn btn-outline-light d-flex align-items-center px-2 px-sm-3 py-1 shadow-sm text-decoration-none"
+          style="border-radius: 8px; font-weight: 500; border-width: 1.5px;">
+          <i class="bi bi-house-door-fill fs-5"></i>
+          <span class="ms-2 d-none d-sm-inline">Inicio</span>
         </a>
       </div>
 
       <div class="d-flex justify-content-center" style="width: 50%;">
-        <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-2 pe-sm-3 shadow-sm border border-light" style="cursor: default; max-width: 100%; white-space: nowrap;">
-          <button id="theme-toggle" class="btn btn-sm btn-outline-secondary rounded-circle me-1 me-sm-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0" style="width: 32px; height: 32px;">
+        <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-2 pe-sm-3 shadow-sm border border-light"
+          style="cursor: default; max-width: 100%; white-space: nowrap;">
+          <button id="theme-toggle"
+            class="btn btn-sm btn-outline-secondary rounded-circle me-1 me-sm-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0"
+            style="width: 32px; height: 32px;">
             <i id="theme-icon" class="bi bi-moon-fill" style="font-size: 0.9rem;"></i>
           </button>
-          <div class="rounded-circle d-flex align-items-center justify-content-center me-1 me-sm-2 shadow-sm flex-shrink-0" style="width: 32px; height: 32px; background-color: #0d6efd;">
+          <div
+            class="rounded-circle d-flex align-items-center justify-content-center me-1 me-sm-2 shadow-sm flex-shrink-0"
+            style="width: 32px; height: 32px; background-color: #0d6efd;">
             <span class="fs-6 text-white" style="line-height: 1;"><i class="bi bi-person-workspace"></i></span>
           </div>
           <div class="d-flex flex-column lh-1 text-start text-truncate">
-            <span class="fw-bold text-dark text-truncate" style="font-size: 0.85rem; max-width: 100px;">Profesores</span>
-            <span class="text-muted mt-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">Gestión</span>
+            <span class="fw-bold text-dark text-truncate"
+              style="font-size: 0.85rem; max-width: 100px;">Profesores</span>
+            <span class="text-muted mt-1"
+              style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">Gestión</span>
           </div>
         </div>
       </div>
 
       <div class="d-flex justify-content-end align-items-center" style="width: 25%;">
         <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
-          <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block" style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
+          <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block"
+            style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
           <img src="logo.png" alt="Logo Nobel School" width="38" height="38" class="rounded bg-white p-1 shadow-sm">
         </a>
       </div>
-
     </div>
   </nav>
 
   <div class="container py-4">
-    <div class="text-center mb-5">
-      <h2 class="text-dark fw-bold" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.05);">
+    <!-- NAVEGACIÓN RÁPIDA ENTRE MÓDULOS -->
+    <div class="d-flex justify-content-center mb-4">
+      <div class="btn-group shadow-sm bg-white rounded-pill p-1 border" role="group">
+        <a href="profesores.html" class="btn btn-primary rounded-pill fw-bold px-3 px-md-4 py-2 border-0 text-white"><i
+            class="bi bi-person-workspace me-1"></i> Profesores</a>
+        <a href="administrativos.html"
+          class="btn btn-outline-success rounded-pill fw-bold px-3 px-md-4 py-2 border-0 mx-1"><i
+            class="bi bi-person-badge-fill me-1"></i> Personal</a>
+        <a href="alumnos.html"
+          class="btn btn-outline-warning rounded-pill fw-bold px-3 px-md-4 py-2 border-0 text-dark"><i
+            class="bi bi-mortarboard-fill me-1"></i> Alumnos</a>
+      </div>
+    </div>
+
+    <div class="text-center mb-5 mt-2">
+      <h2 class="text-dark fw-bold fs-2" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.05);">
         <i class="bi bi-person-workspace text-primary me-2"></i> Lista de Profesores
       </h2>
     </div>
 
     <div class="row mb-5 justify-content-between align-items-center g-3">
       <div class="col-12 col-md-8">
-        <div class="input-group input-group-lg rounded-pill shadow-sm border overflow-hidden" style="background-color: var(--bs-body-bg);">
-          <span class="input-group-text bg-transparent border-0 text-muted ps-4"><i class="bi bi-search"></i></span>
-          <input type="text" id="buscadorNombres" class="form-control border-0 bg-transparent shadow-none" placeholder="Buscar profesor por nombre...">
+        <div class="input-group input-group-lg rounded-pill shadow-sm border overflow-hidden"
+          style="background-color: var(--bs-body-bg);">
+          <span class="input-group-text bg-transparent border-0 text-muted ps-4"><i
+              class="bi bi-search fs-4"></i></span>
+          <input type="text" id="buscadorNombres" class="form-control border-0 bg-transparent shadow-none fs-4"
+            placeholder="Buscar profesor...">
         </div>
       </div>
       <div class="col-12 col-md-4 text-md-end text-center">
-        <button id="btnAgregarModal" class="btn btn-primary btn-lg fw-bold rounded-pill shadow-sm px-4 text-white w-100 w-md-auto">
-          <i class="bi bi-person-plus-fill me-2"></i> Añadir Nuevo
+        <button id="btnAgregarModal"
+          class="btn btn-primary btn-lg fw-bold rounded-pill shadow-sm px-4 py-3 text-white w-100 w-md-auto fs-5">
+          <i class="bi bi-person-plus-fill me-2 fs-4"></i> Añadir Nuevo
         </button>
       </div>
     </div>
 
     <div id="listaPersonas" class="row g-4">
-        <div class="col-12 text-center text-muted py-5">
-            <div class="spinner-border text-primary mb-2" role="status"></div>
-            <p>Cargando lista desde la nube...</p>
-        </div>
+      <div class="col-12 text-center text-muted py-5">
+        <div class="spinner-border text-primary mb-2" role="status"></div>
+        <p class="fs-5">Cargando lista de profesores...</p>
+      </div>
     </div>
   </div>
 
