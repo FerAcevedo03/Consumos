@@ -625,12 +625,12 @@ body.bg-alumnos {
     gap: 1.5rem;
 }
 
-/* Orden forzado para celulares y pantallas estrechas (1 columna) */
+
 .grid-registro { order: 1; }
 .grid-historial { order: 2; }
 .grid-pagos { order: 3; }
 
-/* A partir de Monitores Verticales o Tablets (992px) -> 2 Columnas */
+
 @media (min-width: 992px) {
     .dashboard-grid {
         display: grid;
@@ -648,4 +648,15 @@ body.bg-alumnos {
     .dashboard-grid {
         grid-template-columns: 33% 67%;
     }
+}
+
+.badge, .btn {
+    white-space: normal !important;
+    height: auto !important;
+    line-height: 1.4 !important;
+}
+
+.buscador-input-group input {
+    min-width: 0;
+    text-overflow: ellipsis;
 }

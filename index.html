@@ -21,43 +21,52 @@
 
 <body class="bg-body-tertiary">
 
-  <nav id="main-navbar" class="navbar navbar-dark py-2 px-1 px-md-0 shadow-sm"
+  <nav id="main-navbar" class="navbar navbar-dark py-2 px-2 px-md-3 shadow-sm"
     style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
-    <div class="container-fluid container-md d-flex justify-content-between align-items-center">
-      <div class="d-flex justify-content-start" style="width: 25%;">
+    <div class="container-fluid container-md d-flex justify-content-between align-items-center gap-2">
+
+      <!-- BOTÓN SALIR: Se adapta al tamaño -->
+      <div class="d-flex flex-shrink-0">
         <button onclick="cerrarSesion()"
-          class="btn btn-danger d-flex align-items-center px-2 px-sm-3 py-1 shadow-sm border-0"
+          class="btn btn-danger d-flex align-items-center px-2 px-sm-3 py-2 shadow-sm border-0"
           style="border-radius: 8px; font-weight: 500;">
-          <i class="bi bi-box-arrow-right"></i>
+          <i class="bi bi-box-arrow-right fs-5"></i>
           <span class="ms-2 d-none d-sm-inline">Salir</span>
         </button>
       </div>
-      <div class="d-flex justify-content-center" style="width: 50%;">
-        <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-2 pe-sm-3 shadow-sm border border-light"
-          style="cursor: default; max-width: 100%; white-space: nowrap;">
+
+      <!-- BADGE CENTRAL: Elástico y trunca texto si no cabe -->
+      <div class="d-flex justify-content-center flex-grow-1" style="min-width: 0;">
+        <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-3 shadow-sm border border-light w-100"
+          style="cursor: default; max-width: max-content;">
+
           <button id="theme-toggle"
-            class="btn btn-sm btn-outline-secondary rounded-circle me-1 me-sm-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0"
-            style="width: 32px; height: 32px;">
-            <i id="theme-icon" class="bi bi-moon-fill" style="font-size: 0.9rem;"></i>
+            class="btn btn-sm btn-outline-secondary rounded-circle me-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0"
+            style="width: 35px; height: 35px;">
+            <i id="theme-icon" class="bi bi-moon-fill fs-5"></i>
           </button>
-          <div
-            class="rounded-circle d-flex align-items-center justify-content-center me-1 me-sm-2 shadow-sm flex-shrink-0"
-            style="width: 32px; height: 32px; background-color: #6c757d;">
-            <span class="fs-6 text-white" style="line-height: 1;"><i class="bi bi-shield-lock-fill"></i></span>
+
+          <div class="rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm flex-shrink-0"
+            style="width: 35px; height: 35px; background-color: #6c757d;">
+            <span class="text-white"><i class="bi bi-shield-lock-fill fs-6"></i></span>
           </div>
-          <div class="d-flex flex-column lh-1 text-start text-truncate">
-            <span class="fw-bold text-dark text-truncate" style="font-size: 0.85rem; max-width: 120px;">Panel
+
+          <div class="d-flex flex-column lh-1 text-start" style="min-width: 0;">
+            <!-- Ocultamos "Panel Control" en móviles para dar espacio a la fuente gigante -->
+            <span class="fw-bold text-dark text-truncate d-none d-sm-block" style="font-size: 0.85rem;">Panel
               Control</span>
-            <span class="text-muted mt-1"
-              style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">ADMINISTRADOR</span>
+            <span class="text-muted text-truncate"
+              style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-top: 2px;">ADMINISTRADOR</span>
           </div>
         </div>
       </div>
-      <div class="d-flex justify-content-end align-items-center" style="width: 25%;">
+
+      <!-- LOGO: Mantiene su tamaño -->
+      <div class="d-flex flex-shrink-0 align-items-center">
         <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
           <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block"
             style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
-          <img src="logo.png" alt="Logo Nobel School" width="38" height="38" class="rounded bg-white p-1 shadow-sm">
+          <img src="logo.png" alt="Logo Nobel School" width="42" height="42" class="rounded bg-white p-1 shadow-sm">
         </a>
       </div>
     </div>
@@ -68,34 +77,36 @@
       class="p-4 p-md-5 text-center panel-principal rounded-4 shadow-sm border-top border-primary border-5 position-relative">
       <div class="position-absolute top-0 start-0 w-100 h-100 opacidad-20 bg-smart-time"
         style="border-radius: inherit;"></div>
-      <div class="position-relative z-1">
-        <!-- Título principal agrandado -->
-        <h1 class="fs-2 fs-md-1 fw-bold mb-3" style="letter-spacing: -1px;">SISTEMA DE CONTROL DE CONSUMO</h1>
-        <!-- Saludo agrandado -->
-        <h4 class="fs-4 fs-md-3 fw-medium mb-3 texto-saludo" id="saludoUsuario">Cargando saludo...</h4>
 
-        <div class="d-flex justify-content-center mb-4">
-          <!-- Fecha agrandada -->
-          <span id="fechaActual" class="badge badge-fecha px-4 py-2 rounded-pill fs-5 fw-medium shadow-sm">
+      <div class="position-relative z-1 d-flex flex-column gap-3">
+
+        <h1 class="fs-2 fs-md-1 fw-bold m-0" style="letter-spacing: -1px; line-height: 1.2;">SISTEMA DE CONTROL DE
+          CONSUMO</h1>
+        <h4 class="fs-4 fs-md-3 fw-medium m-0 texto-saludo" id="saludoUsuario">Cargando saludo...</h4>
+
+        <div class="d-flex justify-content-center my-2">
+          <!-- BADGE DE FECHA: Ahora tiene text-wrap para crecer hacia abajo si la letra es gigante -->
+          <span id="fechaActual"
+            class="badge badge-fecha px-4 py-2 rounded-4 fs-5 fw-medium shadow-sm text-wrap w-100 w-md-auto">
             <i class="bi bi-calendar3 me-2"></i>Cargando fecha...
           </span>
         </div>
 
         <div class="row justify-content-center mt-2">
           <div class="col-12 col-lg-10">
-            <div class="position-relative p-4 rounded-4 text-start buscador-contenedor">
-              <!-- Label del buscador agrandado -->
-              <label class="form-label fw-bold texto-saludo fs-5 ms-2 mb-3"><i
+            <div class="position-relative p-3 p-md-4 rounded-4 text-start buscador-contenedor">
+
+              <label class="form-label fw-bold texto-saludo fs-5 ms-2 mb-3 text-wrap"><i
                   class="bi bi-search text-primary me-2 fs-4"></i> BÚSQUEDA RÁPIDA: ¿De quién deseas ver la cuenta
                 hoy?</label>
 
               <div class="input-group input-group-lg shadow-sm rounded-4 overflow-hidden buscador-input-group">
-                <span class="input-group-text bg-transparent border-0 ps-3 pe-2"><i
+                <span class="input-group-text bg-transparent border-0 ps-3 pe-2 flex-shrink-0"><i
                     class="bi bi-person-fill fs-3"></i></span>
-                <!-- Input de búsqueda con texto gigante (fs-4) y mucho padding (py-3) -->
+                <!-- TEXTO CORTO para que no se corte en letras grandes -->
                 <input type="text" id="buscadorGlobal"
-                  class="form-control border-0 bg-transparent shadow-none fw-bold fs-4 py-3"
-                  placeholder="Escribe un nombre aquí..." autocomplete="off">
+                  class="form-control border-0 bg-transparent shadow-none fw-bold fs-4 py-3" placeholder="Buscar..."
+                  autocomplete="off">
               </div>
               <ul id="listaResultadosGlobal" class="dropdown-menu w-100 shadow-lg border-0 mt-2 text-start p-2 fs-5"
                 style="max-height: 350px; overflow-y: auto; border-radius: 15px; display: none; position: absolute; z-index: 1050; background-color: #1e293b;">
@@ -108,26 +119,23 @@
   </div>
 
   <div class="container mt-4 mb-4">
-    <!-- ATENCIÓN: Cambiado a col-12 col-sm-6 col-lg-3 para que en celular grande o tablet los textos grandes no se rompan -->
     <div class="row g-4 text-center">
+
       <div class="col-12 col-sm-6 col-lg-3">
         <a href="profesores.html" class="text-decoration-none d-block h-100">
-          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-3 p-md-4 btn-tarjeta-profesores">
+          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-4 btn-tarjeta-profesores">
             <div class="d-flex justify-content-center mb-3">
-              <!-- Círculo del icono más grande -->
-              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle"
-                style="width: 70px; height: 70px;">
+              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle flex-shrink-0"
+                style="width: 75px; height: 75px;">
                 <i class="bi bi-person-workspace fs-1"></i>
               </div>
             </div>
-            <!-- Textos aumentados a fs-4 (títulos) y fs-6 (descripciones) -->
-            <h4 class="fw-bold mb-2 fs-4">Profesores</h4>
-            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm">Cuentas del personal docente</p>
+            <h4 class="fw-bold mb-2 fs-3 text-wrap">Profesores</h4>
+            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm opacity-75">Cuentas del personal docente</p>
             <div class="mt-auto">
-              <!-- Botón inferior agrandado a fs-6 con más padding -->
               <span
-                class="badge rounded-pill px-3 py-2 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-6 fw-medium"
-                id="count-profesores" style="min-height: 42px;">Calculando...</span>
+                class="badge rounded-pill px-3 py-3 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-5 fw-medium"
+                id="count-profesores">Calculando...</span>
             </div>
           </div>
         </a>
@@ -135,19 +143,19 @@
 
       <div class="col-12 col-sm-6 col-lg-3">
         <a href="administrativos.html" class="text-decoration-none d-block h-100">
-          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-3 p-md-4 btn-tarjeta-personal">
+          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-4 btn-tarjeta-personal">
             <div class="d-flex justify-content-center mb-3">
-              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle"
-                style="width: 70px; height: 70px;">
+              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle flex-shrink-0"
+                style="width: 75px; height: 75px;">
                 <i class="bi bi-person-badge-fill fs-1"></i>
               </div>
             </div>
-            <h4 class="fw-bold mb-2 fs-4">Personal</h4>
-            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm">Cuentas administrativas</p>
+            <h4 class="fw-bold mb-2 fs-3 text-wrap">Personal</h4>
+            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm opacity-75">Cuentas administrativas</p>
             <div class="mt-auto">
               <span
-                class="badge rounded-pill px-3 py-2 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-6 fw-medium"
-                id="count-administrativos" style="min-height: 42px;">Calculando...</span>
+                class="badge rounded-pill px-3 py-3 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-5 fw-medium"
+                id="count-administrativos">Calculando...</span>
             </div>
           </div>
         </a>
@@ -155,19 +163,19 @@
 
       <div class="col-12 col-sm-6 col-lg-3">
         <a href="alumnos.html" class="text-decoration-none d-block h-100">
-          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-3 p-md-4 btn-tarjeta-alumnos">
+          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-4 btn-tarjeta-alumnos">
             <div class="d-flex justify-content-center mb-3">
-              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle"
-                style="width: 70px; height: 70px;">
+              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle flex-shrink-0"
+                style="width: 75px; height: 75px;">
                 <i class="bi bi-mortarboard-fill fs-1"></i>
               </div>
             </div>
-            <h4 class="fw-bold mb-2 fs-4">Alumnos</h4>
-            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm">Cuentas de estudiantes</p>
+            <h4 class="fw-bold mb-2 fs-3 text-wrap">Alumnos</h4>
+            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm opacity-75">Cuentas de estudiantes</p>
             <div class="mt-auto">
               <span
-                class="badge rounded-pill px-3 py-2 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-6 fw-medium"
-                id="count-alumnos" style="min-height: 42px;">Calculando...</span>
+                class="badge rounded-pill px-3 py-3 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-5 fw-medium"
+                id="count-alumnos">Calculando...</span>
             </div>
           </div>
         </a>
@@ -175,31 +183,32 @@
 
       <div class="col-12 col-sm-6 col-lg-3">
         <a href="productos.html" class="text-decoration-none d-block h-100">
-          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-3 p-md-4 btn-tarjeta-inventario">
+          <div class="card h-100 shadow-sm menu-card d-flex flex-column p-4 btn-tarjeta-inventario">
             <div class="d-flex justify-content-center mb-3">
-              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle"
-                style="width: 70px; height: 70px;">
+              <div class="rounded-circle d-flex align-items-center justify-content-center icon-circle flex-shrink-0"
+                style="width: 75px; height: 75px;">
                 <i class="bi bi-box-seam-fill fs-1"></i>
               </div>
             </div>
-            <h4 class="fw-bold mb-2 fs-4">Inventario</h4>
-            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm">Precios y lista de productos</p>
+            <h4 class="fw-bold mb-2 fs-3 text-wrap">Inventario</h4>
+            <p class="fs-6 fw-medium mb-4 flex-grow-1 px-1 lh-sm opacity-75">Precios y lista de productos</p>
             <div class="mt-auto">
               <span
-                class="badge rounded-pill px-3 py-2 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-6 fw-medium"
-                id="count-productos" style="min-height: 42px;">Calculando...</span>
+                class="badge rounded-pill px-3 py-3 w-100 shadow-sm d-flex align-items-center justify-content-center text-wrap fs-5 fw-medium"
+                id="count-productos">Calculando...</span>
             </div>
           </div>
         </a>
       </div>
+
     </div>
   </div>
 
   <div class="container d-flex justify-content-center mb-5 mt-4">
-    <button id="btnBoveda" class="btn btn-sm border-0 text-muted opacity-50 px-4 py-2 rounded-pill shadow-none fs-6"
-      style="background-color: var(--bs-tertiary-bg); transition: all 0.3s ease;"
-      onmouseover="this.classList.remove('opacity-50')" onmouseout="this.classList.add('opacity-50')">
-      <i class="bi bi-shield-lock-fill me-1"></i> Administración
+    <button id="btnBoveda"
+      class="btn btn-sm border-0 text-muted opacity-50 px-4 py-3 rounded-pill shadow-none fs-5 hover-lift"
+      style="background-color: var(--bs-tertiary-bg);">
+      <i class="bi bi-shield-lock-fill me-2"></i> Administración
     </button>
   </div>
 
