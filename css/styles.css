@@ -626,9 +626,17 @@ body.bg-alumnos {
 }
 
 
-.grid-registro { order: 1; }
-.grid-historial { order: 2; }
-.grid-pagos { order: 3; }
+.grid-registro {
+    order: 1;
+}
+
+.grid-historial {
+    order: 2;
+}
+
+.grid-pagos {
+    order: 3;
+}
 
 
 @media (min-width: 992px) {
@@ -638,9 +646,26 @@ body.bg-alumnos {
         grid-template-rows: max-content max-content auto;
         gap: 1.5rem;
     }
-    .grid-registro { grid-column: 1; grid-row: 1; order: unset; margin-bottom: 0; }
-    .grid-pagos { grid-column: 1; grid-row: 2; order: unset; margin-top: 0; }
-    .grid-historial { grid-column: 2; grid-row: 1 / span 3; order: unset; }
+
+    .grid-registro {
+        grid-column: 1;
+        grid-row: 1;
+        order: unset;
+        margin-bottom: 0;
+    }
+
+    .grid-pagos {
+        grid-column: 1;
+        grid-row: 2;
+        order: unset;
+        margin-top: 0;
+    }
+
+    .grid-historial {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        order: unset;
+    }
 }
 
 /* Monitores estándar horizontales de PC (1200px+) -> 2 Columnas anchas */
@@ -650,7 +675,8 @@ body.bg-alumnos {
     }
 }
 
-.badge, .btn {
+.badge,
+.btn {
     white-space: normal !important;
     height: auto !important;
     line-height: 1.4 !important;
@@ -659,4 +685,71 @@ body.bg-alumnos {
 .buscador-input-group input {
     min-width: 0;
     text-overflow: ellipsis;
+}
+
+#main-navbar .container-fluid {
+    flex-wrap: nowrap !important;
+}
+
+#main-navbar .nav-user-pill {
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+#main-navbar .nav-role {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Pantallas pequeñas (celulares) */
+@media (max-width: 575.98px) {
+    #main-navbar {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    #main-navbar .container-fluid {
+        gap: 0.4rem !important;
+    }
+
+    #main-navbar .btn-salir {
+        padding: 0.45rem 0.65rem !important;
+    }
+
+    #main-navbar .btn-salir i {
+        font-size: 1.1rem !important;
+    }
+
+    #main-navbar .nav-user-pill {
+        padding-right: 0.6rem !important;
+    }
+
+    #main-navbar .nav-theme-btn,
+    #main-navbar .nav-avatar {
+        width: 30px !important;
+        height: 30px !important;
+        margin-right: 0.35rem !important;
+    }
+
+    #main-navbar .nav-theme-btn i {
+        font-size: 1rem !important;
+    }
+
+    #main-navbar .nav-role {
+        font-size: 0.55rem !important;
+        letter-spacing: 0.2px !important;
+    }
+
+    #main-navbar .nav-logo {
+        width: 34px !important;
+        height: 34px !important;
+    }
+}
+
+/* Pantallas muy angostas: se oculta el ícono del escudo */
+@media (max-width: 389.98px) {
+    #main-navbar .nav-avatar {
+        display: none !important;
+    }
 }
