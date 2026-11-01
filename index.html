@@ -23,11 +23,12 @@
 
   <nav id="main-navbar" class="navbar navbar-dark py-2 px-3 shadow-sm"
     style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
-    <div class="container-fluid container-md d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="container-fluid container-md d-flex flex-nowrap justify-content-between align-items-center gap-2">
 
       <!-- Botón Salir -->
-      <div class="d-flex align-items-center">
-        <button onclick="cerrarSesion()" class="btn btn-danger d-flex align-items-center px-3 py-2 shadow-sm border-0"
+      <div class="d-flex align-items-center flex-shrink-0">
+        <button onclick="cerrarSesion()"
+          class="btn btn-danger btn-salir d-flex align-items-center px-3 py-2 shadow-sm border-0"
           style="border-radius: 8px; font-weight: 500;">
           <i class="bi bi-box-arrow-right fs-5"></i>
           <span class="ms-2 d-none d-sm-inline">Salir</span>
@@ -35,30 +36,32 @@
       </div>
 
       <!-- Identificador de Usuario Central -->
-      <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-3 shadow-sm border border-light">
+      <div class="nav-user-pill d-flex align-items-center bg-white rounded-pill p-1 pe-3 shadow-sm border border-light">
         <button id="theme-toggle"
-          class="btn btn-sm btn-outline-secondary rounded-circle me-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0"
+          class="nav-theme-btn btn btn-sm btn-outline-secondary rounded-circle me-2 d-flex align-items-center justify-content-center border-0 flex-shrink-0"
           style="width: 35px; height: 35px;">
           <i id="theme-icon" class="bi bi-moon-fill fs-5"></i>
         </button>
-        <div class="rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm flex-shrink-0"
+        <div
+          class="nav-avatar rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm flex-shrink-0"
           style="width: 35px; height: 35px; background-color: #6c757d;">
           <span class="text-white"><i class="bi bi-shield-lock-fill fs-6"></i></span>
         </div>
         <div class="d-flex flex-column lh-1 text-start">
           <span class="fw-bold text-dark text-truncate d-none d-sm-block" style="font-size: 0.85rem;">Panel
             Control</span>
-          <span class="text-muted"
+          <span class="nav-role text-muted"
             style="font-size: 0.65rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-top: 2px;">ADMINISTRADOR</span>
         </div>
       </div>
 
 
-      <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center flex-shrink-0">
         <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
           <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block"
             style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
-          <img src="logo.png" alt="Logo Nobel School" width="40" height="40" class="rounded bg-white p-1 shadow-sm">
+          <img src="logo.png" alt="Logo Nobel School" width="40" height="40"
+            class="nav-logo rounded bg-white p-1 shadow-sm">
         </a>
       </div>
 
