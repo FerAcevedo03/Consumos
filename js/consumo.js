@@ -16,23 +16,14 @@ let db = getFirestore(app);
 // CORRECCIÓN: Cálculo de semana infalible
 function obtenerDatosSemana(fechaString) {
     let f = new Date(fechaString + 'T00:00:00');
-
-    // Encontrar el Lunes de la semana actual
     let dia = f.getDay();
     let dif = dia === 0 ? -6 : 1 - dia;
     let lunes = new Date(f.getFullYear(), f.getMonth(), f.getDate() + dif);
-
-    // El mes "efectivo" siempre será el mes al que pertenece el Lunes
     let mesEfectivo = lunes.getMonth();
     let anioEfectivo = lunes.getFullYear();
     let nombreMes = lunes.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-
-    // Calcular cuántos días vacíos hubo en la primera semana de ese mes
     let primerDia = new Date(anioEfectivo, mesEfectivo, 1);
     let ajuste = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
-
-    // Matemáticas corregidas: Nos basamos en el día del LUNES, así evitamos 
-    // el error si el domingo cae el día 1 del mes siguiente.
     let numSemana = Math.ceil((lunes.getDate() + ajuste) / 7);
 
     return { mesEfectivo, anioEfectivo, nombreMes, numSemana };
@@ -120,6 +111,173 @@ document.addEventListener("DOMContentLoaded", () => {
     let historialPagos = [];
     let semanasPagadas = [];
     let productosDB = [];
+
+    let usuariosMismoRol = [];
+    let inputBuscarUsuario = document.getElementById("inputBuscarUsuario");
+    let listaSugerenciasUsuarios = document.getElementById("listaSugerenciasUsuarios");
+    let indexUserSelec = -1;
+
+    if (rolUsuario !== "index") {
+        onSnapshot(query(collection(db, rolUsuario)), (snap) => {
+            usuariosMismoRol = [];
+            snap.forEach(doc => usuariosMismoRol.push({ id: doc.id, ...doc.data() }));
+        });
+    }
+
+    if (inputBuscarUsuario) {
+        inputBuscarUsuario.addEventListener("input", () => {
+            let val = inputBuscarUsuario.value.toLowerCase().trim();
+            listaSugerenciasUsuarios.innerHTML = "";
+            indexUserSelec = -1;
+
+            if (val.length > 0) {
+                let filtrados = usuariosMismoRol.filter(u => u.nombre.toLowerCase().includes(val) && u.nombre !== nombreUsuario);
+
+                if (filtrados.length > 0) {
+                    listaSugerenciasUsuarios.style.display = "block";
+                    filtrados.forEach(u => {
+                        let li = document.createElement("li");
+                        li.innerHTML = `
+                            <a class="dropdown-item py-3 px-3 d-flex align-items-center border-bottom border-light" href="#" style="transition: all 0.2s ease;">
+                                <i class="bi bi-person-circle fs-4 me-3 text-muted"></i>
+                                <span class="fw-bold text-body-emphasis fs-5 user-name-target">${u.nombre}</span>
+                            </a>
+                        `;
+                        li.onmousedown = (e) => {
+                            e.preventDefault();
+                            window.location.href = `consumo.html?nombre=${encodeURIComponent(u.nombre)}&rol=${encodeURIComponent(rolUsuario)}`;
+                        };
+                        listaSugerenciasUsuarios.appendChild(li);
+                    });
+                } else {
+                    listaSugerenciasUsuarios.style.display = "none";
+                }
+            } else {
+                listaSugerenciasUsuarios.style.display = "none";
+            }
+        });
+
+        // Eventos de teclado para el buscador de usuarios
+        inputBuscarUsuario.addEventListener("keydown", (e) => {
+            let items = listaSugerenciasUsuarios.querySelectorAll("a.dropdown-item");
+            if (listaSugerenciasUsuarios.style.display === "none" || items.length === 0) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                indexUserSelec++;
+                if (indexUserSelec >= items.length) indexUserSelec = 0;
+                actualizarSeleccionUsuario(items);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                indexUserSelec--;
+                if (indexUserSelec < 0) indexUserSelec = items.length - 1;
+                actualizarSeleccionUsuario(items);
+            } else if (e.key === "Enter") {
+                e.preventDefault();
+                if (indexUserSelec > -1) {
+                    let nombreSeleccionado = items[indexUserSelec].querySelector(".user-name-target").textContent;
+                    window.location.href = `consumo.html?nombre=${encodeURIComponent(nombreSeleccionado)}&rol=${encodeURIComponent(rolUsuario)}`;
+                }
+                else if (items.length > 0) {
+                    let nombreSeleccionado = items[0].querySelector(".user-name-target").textContent;
+                    window.location.href = `consumo.html?nombre=${encodeURIComponent(nombreSeleccionado)}&rol=${encodeURIComponent(rolUsuario)}`;
+                }
+            }
+        });
+
+        function actualizarSeleccionUsuario(items) {
+            items.forEach((item, i) => {
+                if (i === indexUserSelec) {
+                    item.classList.add("active");
+                    item.style.backgroundColor = "#0d6efd";
+                    item.querySelector('.text-body-emphasis').style.color = "white";
+                    item.querySelector('i').classList.remove("text-muted");
+                    item.querySelector('i').style.color = "white";
+                    item.scrollIntoView({ block: "nearest" });
+                } else {
+                    item.classList.remove("active");
+                    item.style.backgroundColor = "";
+                    item.querySelector('.text-body-emphasis').style.color = "";
+                    item.querySelector('i').classList.add("text-muted");
+                    item.querySelector('i').style.color = "";
+                }
+            });
+        }
+    }
+
+    // --- 2. LÓGICA DE AÑADIR PRODUCTO DIRECTO ---
+    let btnCrearProducto = document.getElementById("btnCrearProducto");
+    if (btnCrearProducto) {
+        btnCrearProducto.addEventListener("click", async () => {
+            const { value: formValues } = await Swal.fire({
+                title: '<h3 class="fw-bold mb-0">Nuevo Producto</h3>',
+                html: `
+                    <div class="mt-4 text-start">
+                        <label class="form-label fw-bold small text-muted">Nombre del Producto</label>
+                        <input id="swal-prod-nombre" class="form-control form-control-lg fw-bold" placeholder="Ej: Galleta de Vainilla" autocomplete="off">
+                    </div>
+                    <div class="mt-3 text-start">
+                        <label class="form-label fw-bold small text-muted">Precio Unitario (S/)</label>
+                        <input id="swal-prod-precio" type="number" step="0.01" class="form-control form-control-lg fw-bold text-primary" placeholder="Ej: 1.50">
+                    </div>
+                    <div class="mt-3 text-start">
+                        <label class="form-label fw-bold small text-muted">Categoría</label>
+                        <select id="swal-prod-cat" class="form-select form-select-lg">
+                            <option value="comida">Comida / Menú</option>
+                            <option value="bebida">Bebida</option>
+                            <option value="pan">Pan</option>
+                            <option value="galleta" selected>Galleta / Snack</option>
+                            <option value="dulce">Dulce / Golosina</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-save me-1"></i> Guardar',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-primary btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
+                preConfirm: () => {
+                    let n = document.getElementById('swal-prod-nombre').value.trim();
+                    let p = parseFloat(document.getElementById('swal-prod-precio').value);
+                    let c = document.getElementById('swal-prod-cat').value;
+
+                    if (!n) { Swal.showValidationMessage('Ingresa un nombre para el producto'); return false; }
+                    if (isNaN(p) || p <= 0) { Swal.showValidationMessage('Ingresa un precio válido'); return false; }
+
+                    return { nombre: n, precio: p, categoria: c };
+                }
+            });
+
+            if (formValues) {
+                try {
+                    let nFormateado = formValues.nombre.charAt(0).toUpperCase() + formValues.nombre.slice(1).toLowerCase();
+
+                    let existe = productosDB.some(p => p.nombre.toLowerCase() === nFormateado.toLowerCase());
+                    if (existe) {
+                        Swal.fire('Atención', 'Ya existe un producto con ese nombre.', 'warning');
+                        return;
+                    }
+
+                    await addDoc(collection(db, "productos"), {
+                        nombre: nFormateado,
+                        precio: formValues.precio,
+                        categoria: formValues.categoria,
+                        timestamp: Date.now()
+                    });
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Producto agregado', showConfirmButton: false, timer: 2500 });
+
+                    if (inputProducto) {
+                        inputProducto.value = nFormateado + " + ";
+                        if (inputCantidad) inputCantidad.value = 1;
+                        inputProducto.focus();
+                    }
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        });
+    }
 
     onSnapshot(collection(db, "productos"), (snap) => {
         if (!snap.empty) {
@@ -300,39 +458,62 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!estadoCuentaMesVisual) return;
 
         let mesSeleccionado = mesFiltro.value;
-        let totalConsumoBruto = 0;
-        let totalPagosBruto = 0;
 
-        if (mesSeleccionado === "todos") {
-            if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "none";
-            totalConsumoBruto = historialConsumos.reduce((acc, r) => acc + r.precio, 0);
-            totalPagosBruto = historialPagos.reduce((acc, p) => acc + p.monto, 0);
-        } else {
-            if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "inline-block";
+        let consumosFiltrados = mesSeleccionado === "todos"
+            ? historialConsumos
+            : historialConsumos.filter(r => obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
 
-            let consumosDelMes = historialConsumos.filter(r => obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
-            let pagosDelMes = historialPagos.filter(p => {
+        let pagosFiltrados = mesSeleccionado === "todos"
+            ? historialPagos
+            : historialPagos.filter(p => {
                 let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : obtenerDatosSemana(p.fecha).mesEfectivo.toString();
                 return mesDelPago === mesSeleccionado;
             });
 
-            totalConsumoBruto = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
-            totalPagosBruto = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
+        let totalConsumoBruto = 0;
+        let deudaVisualReal = 0;
+
+        consumosFiltrados.forEach(r => {
+            totalConsumoBruto += r.precio;
+            let d = obtenerDatosSemana(r.fecha);
+            let idGrupo = `${d.nombreMes}_${d.numSemana}`;
+            let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
+            let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
+
+            if (!itemPagado) {
+                deudaVisualReal += r.precio;
+            }
+        });
+
+        let totalPagosBruto = pagosFiltrados.reduce((acc, p) => acc + p.monto, 0);
+
+        let pendienteMostrar = 0;
+        let canceloMostrar = 0;
+        let badgeHTML = "";
+
+        if (mesSeleccionado === "todos") {
+            if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "none";
+            pendienteMostrar = totalConsumoBruto - totalPagosBruto;
+            if (pendienteMostrar < 0) pendienteMostrar = 0;
+            if (pendienteMostrar < deudaVisualReal) pendienteMostrar = deudaVisualReal;
+            canceloMostrar = totalPagosBruto;
+        } else {
+            if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "inline-block";
+            pendienteMostrar = deudaVisualReal;
+            canceloMostrar = totalConsumoBruto - deudaVisualReal;
+
+            if (totalPagosBruto > totalConsumoBruto) {
+                canceloMostrar = totalPagosBruto;
+            }
         }
 
-        let deudaActiva = totalConsumoBruto - totalPagosBruto;
-        if (deudaActiva < 0) deudaActiva = 0;
-
-        let saldoAFavor = totalPagosBruto - totalConsumoBruto;
+        let saldoAFavor = canceloMostrar - totalConsumoBruto;
         if (saldoAFavor < 0) saldoAFavor = 0;
 
-        let saldoFinal = saldoAFavor - deudaActiva;
-
-        let badgeHTML = "";
-        if (saldoFinal < -0.01) {
-            badgeHTML = `<span class="badge bg-danger px-4 py-2 rounded-pill shadow-sm fs-5"><i class="bi bi-exclamation-triangle-fill me-1"></i> FALTAN: S/ ${Math.abs(saldoFinal).toFixed(2)}</span>`;
-        } else if (saldoFinal > 0.01) {
-            badgeHTML = `<span class="badge bg-success px-4 py-2 rounded-pill shadow-sm fs-5"><i class="bi bi-gift-fill me-1"></i> A FAVOR: S/ ${saldoFinal.toFixed(2)}</span>`;
+        if (pendienteMostrar > 0.01) {
+            badgeHTML = `<span class="badge bg-danger px-4 py-2 rounded-pill shadow-sm fs-5"><i class="bi bi-exclamation-triangle-fill me-1"></i> FALTAN: S/ ${pendienteMostrar.toFixed(2)}</span>`;
+        } else if (saldoAFavor > 0.01) {
+            badgeHTML = `<span class="badge bg-success px-4 py-2 rounded-pill shadow-sm fs-5"><i class="bi bi-gift-fill me-1"></i> A FAVOR: S/ ${saldoAFavor.toFixed(2)}</span>`;
         } else {
             badgeHTML = `<span class="badge bg-secondary px-4 py-2 rounded-pill shadow-sm fs-5"><i class="bi bi-shield-check me-1"></i> AL DÍA</span>`;
         }
@@ -341,11 +522,11 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="d-inline-flex bg-white px-4 py-3 rounded-4 shadow-sm border border-light mb-3 w-100 justify-content-center">
                 <div class="pe-4 border-end w-50 text-center">
                     <span class="d-block text-muted fw-bold mb-1" style="font-size: 0.85rem;">PENDIENTE</span>
-                    <span class="fw-bold text-dark lh-1 fs-2">S/ ${deudaActiva.toFixed(2)}</span>
+                    <span class="fw-bold text-dark lh-1 fs-2">S/ ${pendienteMostrar.toFixed(2)}</span>
                 </div>
                 <div class="ps-4 w-50 text-center">
                     <span class="d-block text-muted fw-bold mb-1" style="font-size: 0.85rem;">CANCELÓ</span>
-                    <span class="fw-bold text-success lh-1 fs-2">S/ ${totalPagosBruto.toFixed(2)}</span>
+                    <span class="fw-bold text-success lh-1 fs-2">S/ ${canceloMostrar.toFixed(2)}</span>
                 </div>
             </div>
             <div class="text-center mt-1">
@@ -354,27 +535,25 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         if (totalAcumulado && (!inputBusquedaTabla || inputBusquedaTabla.value.trim() === "")) {
-            totalAcumulado.textContent = `S/ ${deudaActiva.toFixed(2)}`;
+            totalAcumulado.textContent = `S/ ${pendienteMostrar.toFixed(2)}`;
         }
 
         if (btnMarcarMesPagado && mesSeleccionado !== "todos") {
-            let consumosDelMes = historialConsumos.filter(r => obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
             let todosSemanasPagadas = false;
-
-            if (consumosDelMes.length > 0) {
-                todosSemanasPagadas = consumosDelMes.every(r => {
+            if (consumosFiltrados.length > 0) {
+                todosSemanasPagadas = consumosFiltrados.every(r => {
                     let d = obtenerDatosSemana(r.fecha);
                     let idGrupo = `${d.nombreMes}_${d.numSemana}`;
                     return r.pagado === true || semanasPagadas.some(s => s.idGrupo === idGrupo);
                 });
             }
 
-            if (todosSemanasPagadas && consumosDelMes.length > 0) {
+            if (todosSemanasPagadas && consumosFiltrados.length > 0) {
                 btnMarcarMesPagado.innerHTML = '<i class="bi bi-x-circle"></i> DESMARCAR MES';
                 btnMarcarMesPagado.className = "btn btn-outline-danger fw-bold py-2 px-3 shadow-sm bg-white rounded-pill mt-2 mt-sm-0";
                 btnMarcarMesPagado.setAttribute("data-estado", "pagado");
             } else {
-                btnMarcarMesPagado.innerHTML = '<i class="bi bi-check-all fs-5"></i> COBRAR MES';
+                btnMarcarMesPagado.innerHTML = '<i class="bi bi-check-all fs-5"></i> Cobrar Mes';
                 btnMarcarMesPagado.className = "btn btn-outline-success fw-bold py-2 px-3 shadow-sm bg-white rounded-pill mt-2 mt-sm-0 fs-6";
                 btnMarcarMesPagado.setAttribute("data-estado", "pendiente");
             }
@@ -440,7 +619,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let totalConsumoMes = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
             let totalPagosMes = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
-            let deudaFaltante = totalConsumoMes - totalPagosMes;
+
+            let deudaFaltante = 0;
+            consumosDelMes.forEach(r => {
+                let d = obtenerDatosSemana(r.fecha);
+                let idGrupo = `${d.nombreMes}_${d.numSemana}`;
+                let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
+                let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
+                if (!itemPagado) deudaFaltante += r.precio;
+            });
 
             if (deudaFaltante > 0.01) {
                 Swal.fire({
@@ -1006,7 +1193,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     await updateDoc(doc(db, "consumos", window.modoEdicionActiva.id), {
                         productoNombre: textoNuevoPedido,
                         precio: precioTotalFinal,
-                        fecha: fechaVal
+                        fecha: fechaVal,
+                        pagado: false
                     });
                     window.modoEdicionActiva = null;
                     btn.classList.remove("btn-success");
@@ -1018,7 +1206,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         let reg = historialConsumos[indexExistente];
                         await updateDoc(doc(db, "consumos", reg.id), {
                             productoNombre: agruparTextos(reg.productoNombre + " + " + textoNuevoPedido),
-                            precio: reg.precio + precioTotalFinal
+                            precio: reg.precio + precioTotalFinal,
+                            pagado: false
                         });
                     } else {
                         await addDoc(collection(db, "consumos"), {
@@ -1026,7 +1215,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             fecha: fechaVal,
                             productoNombre: textoNuevoPedido,
                             precio: precioTotalFinal,
-                            timestamp: Date.now()
+                            timestamp: Date.now(),
+                            pagado: false
                         });
                     }
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado a la cuenta', showConfirmButton: false, timer: 2000 });
@@ -1157,7 +1347,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // MAGIA PDF REESTRUCTURADA
     let btnExportarPDF = document.getElementById("btnExportarPDF");
 
     if (btnExportarPDF) {
@@ -1193,7 +1382,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let semanasUnicas = [...new Set(consumosDelMes.map(r => obtenerDatosSemana(r.fecha).numSemana))].sort((a, b) => a - b);
 
-                // CÓDIGO HTML MEJORADO Y LIMPIO PARA LA ALERTA
                 let checkboxesHTML = semanasUnicas.map(s => `
                     <div class="form-check d-flex align-items-center mb-3">
                         <input class="form-check-input swal-week-checkbox shadow-sm me-3" type="checkbox" value="${s}" id="sem${s}" style="transform: scale(1.5); cursor: pointer;">
@@ -1331,7 +1519,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (`${nD.nombreMes}_${nD.numSemana}` !== idGrupo) esUltimoDelGrupo = true;
                 }
 
-                // AHORA SIEMPRE AGREGA EL SUBTOTAL DE LA SEMANA SELECCIONADA
                 if (esUltimoDelGrupo) {
                     let itemsGrupo = consumosExportar.filter(x => {
                         let iD = obtenerDatosSemana(x.fecha);
@@ -1340,7 +1527,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     let totalSemanaPDF = 0;
                     itemsGrupo.forEach(x => {
-                        totalSemanaPDF += x.precio; // Total consumido en esa semana (sin importar pagos)
+                        totalSemanaPDF += x.precio;
                     });
 
                     filasHtml += `

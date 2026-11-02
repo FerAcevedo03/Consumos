@@ -27,18 +27,16 @@
 
 <body class="bg-light overflow-x-hidden">
 
+  <!-- NAVBAR -->
   <nav id="main-navbar" class="navbar navbar-dark py-2 px-1 px-md-0 shadow-sm"
     style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
     <div class="container-fluid container-xl d-flex justify-content-between align-items-center">
-
       <div class="d-flex justify-content-start" style="width: 25%;">
         <button id="btnVolver" class="btn btn-outline-light d-flex align-items-center px-2 px-sm-3 py-1 shadow-sm"
           style="border-radius: 8px; font-weight: 500; border-width: 1.5px;">
-          <i class="bi bi-arrow-left"></i>
-          <span class="ms-2 d-none d-sm-inline">Volver</span>
+          <i class="bi bi-arrow-left"></i> <span class="ms-2 d-none d-sm-inline">Volver</span>
         </button>
       </div>
-
       <div class="d-flex justify-content-center" style="width: 50%;">
         <div class="d-flex align-items-center bg-white rounded-pill p-1 pe-2 pe-sm-3 shadow-sm border border-light"
           style="cursor: default; max-width: 100%; white-space: nowrap;">
@@ -60,7 +58,6 @@
           </div>
         </div>
       </div>
-
       <div class="d-flex justify-content-end align-items-center" style="width: 25%;">
         <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
           <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-md-block"
@@ -68,18 +65,32 @@
           <img src="logo.png" alt="Logo Nobel School" width="38" height="38" class="rounded bg-white p-1 shadow-sm">
         </a>
       </div>
-
     </div>
   </nav>
 
   <div class="container-fluid py-4 px-md-4 px-xl-5" style="max-width: 1600px;">
 
-    <!-- GRID INTELIGENTE (1 COLUMNA EN MÓVIL, 2 COLUMNAS EN PC Y MONITOR VERTICAL) -->
+    <!-- CONTENEDOR GRID INTELIGENTE: Todas las cajas están sueltas -->
     <div class="dashboard-grid">
 
-      <!-- ======================= -->
-      <!-- 1. REGISTRAR CONSUMO -->
-      <!-- ======================= -->
+      <!-- 1. BUSCADOR RÁPIDO DE USUARIOS -->
+      <div class="grid-buscar-user card shadow-sm border-0 rounded-4" style="background-color: transparent;">
+        <div class="card-body p-0 position-relative">
+          <div class="input-group input-group-lg shadow-sm rounded-4 overflow-hidden border"
+            style="background-color: var(--bs-body-bg);">
+            <span class="input-group-text bg-transparent border-0 text-muted ps-4"><i
+                class="bi bi-person-lines-fill fs-5"></i></span>
+            <input type="text" id="inputBuscarUsuario"
+              class="form-control border-0 bg-transparent py-3 fs-5 shadow-none text-body"
+              placeholder="Cambiar de cliente..." autocomplete="off">
+          </div>
+          <ul id="listaSugerenciasUsuarios" class="dropdown-menu w-100 shadow-lg border-0 mt-1 p-2 fs-5"
+            style="max-height: 250px; overflow-y: auto; border-radius: 15px; z-index: 1060; display: none; position: absolute; background-color: #1e293b;">
+          </ul>
+        </div>
+      </div>
+
+      <!-- 2. REGISTRAR CONSUMO -->
       <div class="grid-registro card shadow-sm border-0 rounded-4" style="background-color: transparent;">
         <div class="card-header bg-primary pt-3 pb-3 border-0 d-flex align-items-center rounded-top-4">
           <i class="bi bi-cart-plus-fill fs-4 me-2 text-white"></i>
@@ -87,8 +98,7 @@
         </div>
         <div class="card-body p-4 rounded-bottom-4 shadow-sm" style="background-color: var(--bs-card-bg);">
           <form id="formConsumo" class="row g-4">
-
-            <div class="col-12 col-xl-12">
+            <div class="col-12">
               <label class="form-label text-muted small fw-bold text-uppercase">Día de Consumo</label>
               <div class="input-group input-group-lg shadow-sm rounded-3">
                 <button
@@ -108,8 +118,13 @@
               </div>
             </div>
 
-            <div class="col-12 col-xl-12">
-              <label class="form-label text-muted small fw-bold text-uppercase">Búsqueda de Producto</label>
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label text-muted small fw-bold text-uppercase mb-0">Búsqueda de Producto</label>
+                <button type="button" id="btnCrearProducto"
+                  class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3 py-1 shadow-sm"
+                  style="font-size: 0.8rem;"><i class="bi bi-plus-circle-fill me-1"></i>Nuevo</button>
+              </div>
               <div class="dropdown w-100">
                 <div class="input-group input-group-lg shadow-sm rounded-3">
                   <span class="input-group-text border-end-0 bg-transparent fs-5">🔍</span>
@@ -121,7 +136,7 @@
               </div>
             </div>
 
-            <div class="col-12 col-xl-12">
+            <div class="col-12">
               <label class="form-label text-muted small fw-bold text-uppercase">Cantidad</label>
               <div class="input-group input-group-lg shadow-sm rounded-3">
                 <span class="input-group-text border-end-0 bg-transparent fs-5">🔢</span>
@@ -136,21 +151,17 @@
                 <i class="bi bi-plus-circle-fill"></i> Agregar al registro
               </button>
             </div>
-
           </form>
         </div>
       </div>
 
-      <!-- ======================= -->
-      <!-- 2. HISTORIAL DE CONSUMO -->
-      <!-- ======================= -->
+      <!-- 3. HISTORIAL DE CONSUMOS -->
       <div class="grid-historial card shadow-sm border-0 rounded-4 h-100">
         <div
           class="card-header bg-white pt-4 pb-3 d-flex flex-column flex-md-row justify-content-between align-items-center border-bottom gap-3 rounded-top-4">
           <h4 class="mb-0 fw-bold text-dark text-center text-md-start"><i
               class="bi bi-clock-history text-primary me-2"></i>Historial de Consumos</h4>
           <div class="d-flex flex-wrap justify-content-center align-items-center gap-2">
-
             <button id="btnEstadisticas" class="btn btn-info text-white fw-bold shadow-sm px-3 rounded-pill"><i
                 class="bi bi-bar-chart-fill"></i> <span class="d-none d-sm-inline">Estadísticas</span></button>
             <button id="btnWhatsApp" class="btn btn-success fw-bold shadow-sm px-3 rounded-pill"><i
@@ -238,13 +249,10 @@
         </div>
       </div>
 
-      <!-- ======================= -->
-      <!-- 3. REGISTRAR PAGO -->
-      <!-- ======================= -->
+      <!-- 4. GESTIÓN DE PAGOS -->
       <div class="grid-pagos card shadow-sm border-0 rounded-4"
         style="background-color: #f0f9ff; border-left: 6px solid #0284c7 !important;">
         <div class="card-body p-4">
-
           <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
             <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-wallet2 text-success me-2"></i>Gestión de Pagos</h5>
             <button id="btnMarcarMesPagado"
@@ -258,12 +266,10 @@
 
           <div class="bg-white p-4 rounded-4 shadow-sm border w-100 mb-4">
             <h6 class="fw-bold text-muted small mb-3 text-uppercase">Registrar Nuevo Abono</h6>
-
             <div class="mb-3">
               <input type="text" id="inputPagador" class="form-control form-control-lg border-secondary fw-medium"
                 placeholder="Concepto o nota del pago...">
             </div>
-
             <div class="row g-3 mb-4">
               <div class="col-6">
                 <input type="number" id="montoAbono"
@@ -279,7 +285,6 @@
                 </div>
               </div>
             </div>
-
             <div class="row g-3">
               <div class="col-6">
                 <button type="button" id="btnAbonoYape"
@@ -300,7 +305,6 @@
             </h6>
             <ul id="listaPagosVisual" class="list-group list-group-flush rounded-3 shadow-sm bg-white border"></ul>
           </div>
-
         </div>
       </div>
 
