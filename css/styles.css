@@ -75,18 +75,6 @@ body.bg-profes {
     color: white;
 }
 
-.card-persona {
-    transition: all 0.3s ease;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    background-color: #ffffff;
-}
-
-.card-persona:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
-    border-color: #ffc107 !important;
-}
-
 .icono-avatar {
     width: 50px;
     height: 50px;
@@ -117,8 +105,7 @@ body.bg-alumnos {
 [data-bs-theme="dark"] .card,
 [data-bs-theme="dark"] .card-header,
 [data-bs-theme="dark"] .list-group-item,
-[data-bs-theme="dark"] .menu-card,
-[data-bs-theme="dark"] .card-persona {
+[data-bs-theme="dark"] .menu-card {
     background-color: #1e1e1e !important;
     color: #e0e0e0 !important;
     border-color: #333333 !important;
@@ -419,6 +406,7 @@ body.bg-alumnos {
     border: 1px solid #cbd5e1 !important;
 }
 
+/* Modo oscuro para el Panel de Búsqueda */
 [data-bs-theme="dark"] .panel-principal {
     background: linear-gradient(145deg, #1e293b, #0f172a) !important;
     color: #f8f9fa !important;
@@ -540,6 +528,8 @@ body.bg-alumnos {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
 }
 
+
+
 .card-persona {
     background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(12px);
@@ -548,10 +538,12 @@ body.bg-alumnos {
 }
 
 [data-bs-theme="dark"] .card-persona {
+    /* Fondo oscuro sólido para mejorar el contraste */
     background: #1e293b !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
 }
+
 
 .avatar-glow {
     box-shadow: 0 0 15px currentColor;
@@ -562,6 +554,7 @@ body.bg-alumnos {
     transform: scale(1.05) rotate(-5deg);
 }
 
+
 .status-dot {
     width: 10px;
     height: 10px;
@@ -571,6 +564,7 @@ body.bg-alumnos {
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
+/* Botones Suaves (Soft UI) - Botón Eliminar */
 .btn-soft-danger {
     background-color: rgba(220, 53, 69, 0.15) !important;
     color: #dc3545 !important;
@@ -582,6 +576,7 @@ body.bg-alumnos {
     color: #ffffff !important;
     transform: scale(1.08);
 }
+
 
 .btn-soft-edit {
     background-color: rgba(108, 117, 125, 0.1) !important;
@@ -609,6 +604,7 @@ body.bg-alumnos {
     filter: brightness(1.1);
 }
 
+
 .swal2-actions .swal2-confirm {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
@@ -621,6 +617,62 @@ body.bg-alumnos {
 
 [data-bs-theme="dark"] .swal2-actions .swal2-cancel {
     background-color: #495057 !important;
+}
+
+.dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+
+.grid-registro {
+    order: 1;
+}
+
+.grid-historial {
+    order: 2;
+}
+
+.grid-pagos {
+    order: 3;
+}
+
+
+@media (min-width: 992px) {
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 38% 62%;
+        grid-template-rows: max-content max-content auto;
+        gap: 1.5rem;
+    }
+
+    .grid-registro {
+        grid-column: 1;
+        grid-row: 1;
+        order: unset;
+        margin-bottom: 0;
+    }
+
+    .grid-pagos {
+        grid-column: 1;
+        grid-row: 2;
+        order: unset;
+        margin-top: 0;
+    }
+
+    .grid-historial {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        order: unset;
+    }
+}
+
+/* Monitores estándar horizontales de PC (1200px+) -> 2 Columnas anchas */
+@media (min-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 33% 67%;
+    }
 }
 
 .badge,
@@ -650,6 +702,7 @@ body.bg-alumnos {
     text-overflow: ellipsis;
 }
 
+/* Pantallas pequeñas (celulares) */
 @media (max-width: 575.98px) {
     #main-navbar {
         padding-left: 0.5rem !important;
@@ -694,65 +747,9 @@ body.bg-alumnos {
     }
 }
 
+/* Pantallas muy angostas: se oculta el ícono del escudo */
 @media (max-width: 389.98px) {
     #main-navbar .nav-avatar {
         display: none !important;
-    }
-}
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: 100%;
-    gap: 1.5rem;
-    width: 100%;
-}
-
-.grid-buscar-user {
-    grid-row: 1;
-}
-
-.grid-registro {
-    grid-row: 2;
-}
-
-.grid-historial {
-    grid-row: 3;
-}
-
-.grid-pagos {
-    grid-row: 4;
-}
-
-@media (min-width: 992px) {
-    .dashboard-grid {
-        grid-template-columns: 35% 65%;
-        grid-template-rows: max-content max-content auto;
-        align-items: start;
-    }
-
-    .grid-buscar-user {
-        grid-column: 1;
-        grid-row: 1;
-    }
-
-    .grid-registro {
-        grid-column: 1;
-        grid-row: 2;
-    }
-
-    .grid-pagos {
-        grid-column: 1;
-        grid-row: 3;
-    }
-
-    .grid-historial {
-        grid-column: 2;
-        grid-row: 1 / span 3;
-    }
-}
-
-@media (min-width: 1200px) {
-    .dashboard-grid {
-        grid-template-columns: 32% 68%;
     }
 }

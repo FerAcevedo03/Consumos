@@ -13,20 +13,52 @@ let firebaseConfig = {
 let app = initializeApp(firebaseConfig);
 let db = getFirestore(app);
 
-// CORRECCIÓN: Cálculo de semana infalible
 function obtenerDatosSemana(fechaString) {
     let f = new Date(fechaString + 'T00:00:00');
-    let dia = f.getDay();
-    let dif = dia === 0 ? -6 : 1 - dia;
-    let lunes = new Date(f.getFullYear(), f.getMonth(), f.getDate() + dif);
-    let mesEfectivo = lunes.getMonth();
-    let anioEfectivo = lunes.getFullYear();
-    let nombreMes = lunes.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+
+    if (tipoCuentaActiva === 'semanal') {
+        let lunes = new Date(f);
+        lunes.setDate(f.getDate() - ((f.getDay() + 6) % 7));
+        return {
+            mesEfectivo: lunes.getMonth(),
+            anioEfectivo: lunes.getFullYear(),
+            nombreMes: lunes.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase(),
+            numSemana: Math.ceil(lunes.getDate() / 7)
+        };
+    }
+
+    let mesEfectivo = f.getMonth();
+    let anioEfectivo = f.getFullYear();
+    let nombreMes = f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
+
     let primerDia = new Date(anioEfectivo, mesEfectivo, 1);
-    let ajuste = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
-    let numSemana = Math.ceil((lunes.getDate() + ajuste) / 7);
+    let offset = (primerDia.getDay() + 6) % 7;
+    let numSemana = Math.floor((f.getDate() - 1 + offset) / 7) + 1;
 
     return { mesEfectivo, anioEfectivo, nombreMes, numSemana };
+}
+
+let tipoCuentaActiva = 'semanal';
+let idDocumentoUsuario = null;
+
+function getGroupData(fechaStr, mesVal) {
+    let d = obtenerDatosSemana(fechaStr);
+    let idGrupo = "";
+    let textoCabecera = "";
+
+    if (tipoCuentaActiva === 'mensual') {
+        idGrupo = `${d.nombreMes}_COMPLETO`;
+        textoCabecera = mesVal === "todos" ? `MES DE ${d.nombreMes}` : `TODO EL MES DE ${d.nombreMes}`;
+    } else if (tipoCuentaActiva === 'diaria') {
+        let fObj = new Date(fechaStr + 'T00:00:00');
+        let diaStr = fObj.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+        idGrupo = `DIA_${fechaStr}`;
+        textoCabecera = diaStr.toUpperCase();
+    } else {
+        idGrupo = `${d.nombreMes}_${d.numSemana}`;
+        textoCabecera = mesVal === "todos" ? `${d.nombreMes} - SEMANA 0${d.numSemana}` : `SEMANA 0${d.numSemana}`;
+    }
+    return { idGrupo, textoCabecera, numSemana: d.numSemana, nombreMes: d.nombreMes };
 }
 
 let iconosVisuales = {
@@ -36,7 +68,6 @@ let iconosVisuales = {
 
 function obtenerVisual(catReal, nombreProd) {
     let c = catReal ? catReal.toLowerCase() : 'otro';
-
     if (!iconosVisuales[c]) {
         c = 'otro';
         let n = nombreProd.toLowerCase();
@@ -58,12 +89,11 @@ document.addEventListener("DOMContentLoaded", () => {
     let etiquetaRolEl = document.getElementById("etiquetaRol");
     let avatarFondoEl = document.getElementById("avatarFondo");
 
+    if (nombrePersonaEl) nombrePersonaEl.textContent = nombreUsuario;
     if (rolUsuario === "profesores") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Profesor"; }
     else if (rolUsuario === "alumnos") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Alumno"; }
     else if (rolUsuario === "administrativos") { if (etiquetaRolEl) etiquetaRolEl.textContent = "Administrativo"; }
     else { if (etiquetaRolEl) etiquetaRolEl.textContent = "Personal"; }
-
-    if (nombrePersonaEl) nombrePersonaEl.textContent = nombreUsuario;
 
     if (avatarFondoEl) {
         let coloresAvatar = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#0097a7', '#00897b', '#43a047', '#689f38', '#ef6c00', '#e65100', '#f4511e'];
@@ -76,6 +106,103 @@ document.addEventListener("DOMContentLoaded", () => {
 
         avatarFondoEl.style.backgroundColor = colorAsignado;
         avatarFondoEl.innerHTML = `<span class="fw-bold text-white shadow-sm" style="font-size: 1.1rem; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${inicial}</span>`;
+    }
+
+    const TIPOS_CUENTA = {
+        diaria: { label: 'Diaria', icono: 'bi-calendar-day', desc: 'Cada día se cobra por separado.', color: '#f59e0b' },
+        semanal: { label: 'Semanal', icono: 'bi-calendar-week', desc: 'De lunes a domingo.', color: '#0d6efd' },
+        mensual: { label: 'Mensual', icono: 'bi-calendar-month', desc: 'Un solo cobro por mes.', color: '#198754' }
+    };
+
+    function actualizarChipTipoCuenta() {
+        let btn = document.getElementById("btnTipoCuenta");
+        let t = TIPOS_CUENTA[tipoCuentaActiva] || TIPOS_CUENTA.semanal;
+        if (btn) {
+            btn.innerHTML = `<i class="bi ${t.icono}"></i> <span id="txtTipoCuenta" class="d-none d-sm-inline ms-1">${t.label}</span>`;
+            btn.style.backgroundColor = t.color;
+            btn.style.borderColor = t.color;
+            btn.className = "btn text-white fw-bold shadow-sm px-3 rounded-pill d-flex align-items-center gap-1 hover-lift";
+        }
+    }
+
+    async function abrirSelectorTipoCuenta() {
+        let elegido = tipoCuentaActiva;
+
+        let tarjetas = Object.keys(TIPOS_CUENTA).map(key => {
+            let t = TIPOS_CUENTA[key];
+            return `
+                <div class="tipo-card ${key === elegido ? 'selected' : ''}" data-tipo="${key}" style="--c: ${t.color};">
+                    <div class="tipo-icon"><i class="bi ${t.icono}"></i></div>
+                    <div class="text-start">
+                        <div class="tipo-title">${t.label}</div>
+                        <div class="tipo-desc">${t.desc}</div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        const { value: tipoSeleccionado } = await Swal.fire({
+            title: '<h4 class="fw-bold mb-0">Tipo de cuenta</h4>',
+            html: `
+                <p class="text-muted mb-4">¿Cómo se le cobra a <b>${nombreUsuario}</b>?</p>
+                <div class="d-flex flex-column gap-3">${tarjetas}</div>
+                <style>
+                    .tipo-card { display: flex; align-items: center; gap: 16px; padding: 16px 18px; border: 2px solid var(--bs-border-color); border-radius: 16px; cursor: pointer; transition: all .2s; color: var(--bs-body-color); }
+                    .tipo-card:hover { border-color: var(--c); transform: translateY(-2px); }
+                    .tipo-card .tipo-icon { width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
+                    .tipo-card .tipo-title { font-weight: 800; font-size: 1.2rem; line-height: 1.2; }
+                    .tipo-card .tipo-desc { font-size: .85rem; opacity: .75; margin-top: 2px; }
+                    .tipo-card.selected { background: var(--c); border-color: var(--c); color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--c) 40%, transparent); }
+                    .tipo-card.selected .tipo-icon { background: rgba(255,255,255,.22); color: #fff; }
+                </style>
+            `,
+            width: 520,
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-save me-1"></i> Guardar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'rounded-4 py-4',
+                confirmButton: 'btn btn-primary btn-lg rounded-pill px-4 fw-bold border-0 text-white',
+                cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white'
+            },
+            didOpen: () => {
+                let cards = document.querySelectorAll('.tipo-card');
+                cards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        cards.forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        elegido = card.getAttribute('data-tipo');
+                    });
+                });
+            },
+            preConfirm: () => elegido
+        });
+
+        if (tipoSeleccionado && tipoSeleccionado !== tipoCuentaActiva && idDocumentoUsuario) {
+            try {
+                await updateDoc(doc(db, rolUsuario, idDocumentoUsuario), { tipoCuenta: tipoSeleccionado });
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Tipo de cuenta actualizado', showConfirmButton: false, timer: 2000 });
+            } catch (e) {
+                Swal.fire('Error', e.message, 'error');
+            }
+        }
+    }
+
+    let btnTipoCuenta = document.getElementById("btnTipoCuenta");
+    if (btnTipoCuenta) {
+        btnTipoCuenta.addEventListener("click", abrirSelectorTipoCuenta);
+    }
+
+    if (rolUsuario !== "index") {
+        onSnapshot(query(collection(db, rolUsuario), where("nombre", "==", nombreUsuario)), (snap) => {
+            if (!snap.empty) {
+                let docUser = snap.docs[0];
+                idDocumentoUsuario = docUser.id;
+                tipoCuentaActiva = docUser.data().tipoCuenta || 'semanal';
+                actualizarChipTipoCuenta();
+                renderizarConsumos();
+                recalcularSaldoGlobal();
+            }
+        });
     }
 
     let btnVolver = document.getElementById("btnVolver");
@@ -94,7 +221,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let listaMesesUI = document.getElementById("listaMesesUI");
 
     let inputBusquedaTabla = document.getElementById("inputBusquedaTabla");
-
     let estadoCuentaMesVisual = document.getElementById("estadoCuentaMesVisual");
     let btnMarcarMesPagado = document.getElementById("btnMarcarMesPagado");
 
@@ -157,7 +283,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Eventos de teclado para el buscador de usuarios
         inputBuscarUsuario.addEventListener("keydown", (e) => {
             let items = listaSugerenciasUsuarios.querySelectorAll("a.dropdown-item");
             if (listaSugerenciasUsuarios.style.display === "none" || items.length === 0) return;
@@ -177,8 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (indexUserSelec > -1) {
                     let nombreSeleccionado = items[indexUserSelec].querySelector(".user-name-target").textContent;
                     window.location.href = `consumo.html?nombre=${encodeURIComponent(nombreSeleccionado)}&rol=${encodeURIComponent(rolUsuario)}`;
-                }
-                else if (items.length > 0) {
+                } else if (items.length > 0) {
                     let nombreSeleccionado = items[0].querySelector(".user-name-target").textContent;
                     window.location.href = `consumo.html?nombre=${encodeURIComponent(nombreSeleccionado)}&rol=${encodeURIComponent(rolUsuario)}`;
                 }
@@ -205,7 +329,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- 2. LÓGICA DE AÑADIR PRODUCTO DIRECTO ---
     let btnCrearProducto = document.getElementById("btnCrearProducto");
     if (btnCrearProducto) {
         btnCrearProducto.addEventListener("click", async () => {
@@ -458,26 +581,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!estadoCuentaMesVisual) return;
 
         let mesSeleccionado = mesFiltro.value;
-
-        let consumosFiltrados = mesSeleccionado === "todos"
-            ? historialConsumos
-            : historialConsumos.filter(r => obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
-
-        let pagosFiltrados = mesSeleccionado === "todos"
-            ? historialPagos
-            : historialPagos.filter(p => {
-                let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : obtenerDatosSemana(p.fecha).mesEfectivo.toString();
-                return mesDelPago === mesSeleccionado;
-            });
+        let consumosFiltrados = mesSeleccionado === "todos" ? historialConsumos : historialConsumos.filter(r => obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
+        let pagosFiltrados = mesSeleccionado === "todos" ? historialPagos : historialPagos.filter(p => {
+            let mesDelPago = p.mesAplicado !== undefined ? p.mesAplicado.toString() : obtenerDatosSemana(p.fecha).mesEfectivo.toString();
+            return mesDelPago === mesSeleccionado;
+        });
 
         let totalConsumoBruto = 0;
         let deudaVisualReal = 0;
 
         consumosFiltrados.forEach(r => {
             totalConsumoBruto += r.precio;
-            let d = obtenerDatosSemana(r.fecha);
-            let idGrupo = `${d.nombreMes}_${d.numSemana}`;
-            let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
+            let grp = getGroupData(r.fecha, mesSeleccionado);
+            let semanaDoc = semanasPagadas.find(s => s.idGrupo === grp.idGrupo);
             let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
 
             if (!itemPagado) {
@@ -486,7 +602,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         let totalPagosBruto = pagosFiltrados.reduce((acc, p) => acc + p.monto, 0);
-
         let pendienteMostrar = 0;
         let canceloMostrar = 0;
         let badgeHTML = "";
@@ -501,10 +616,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "inline-block";
             pendienteMostrar = deudaVisualReal;
             canceloMostrar = totalConsumoBruto - deudaVisualReal;
-
-            if (totalPagosBruto > totalConsumoBruto) {
-                canceloMostrar = totalPagosBruto;
-            }
+            if (totalPagosBruto > totalConsumoBruto) canceloMostrar = totalPagosBruto;
         }
 
         let saldoAFavor = canceloMostrar - totalConsumoBruto;
@@ -542,9 +654,8 @@ document.addEventListener("DOMContentLoaded", () => {
             let todosSemanasPagadas = false;
             if (consumosFiltrados.length > 0) {
                 todosSemanasPagadas = consumosFiltrados.every(r => {
-                    let d = obtenerDatosSemana(r.fecha);
-                    let idGrupo = `${d.nombreMes}_${d.numSemana}`;
-                    return r.pagado === true || semanasPagadas.some(s => s.idGrupo === idGrupo);
+                    let grp = getGroupData(r.fecha, mesSeleccionado);
+                    return r.pagado === true || semanasPagadas.some(s => s.idGrupo === grp.idGrupo);
                 });
             }
 
@@ -572,7 +683,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (estado === "pagado") {
                 Swal.fire({
                     title: '<h3 class="fw-bold mb-0 text-danger">¿Desmarcar mes?</h3>',
-                    html: `Las semanas de <b>${nombreMes}</b> volverán a estar pendientes.<br><br><small class="text-danger fw-bold">Ojo: Si hubo pago registrado en dinero, debes borrarlo manualmente del historial abajo.</small>`,
+                    html: `Las cuentas de <b>${nombreMes}</b> volverán a estar pendientes.<br><br><small class="text-danger fw-bold">Ojo: Si hubo pago registrado en dinero, debes borrarlo manualmente del historial abajo.</small>`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
@@ -586,10 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             btnMarcarMesPagado.disabled = true;
                             let batch = writeBatch(db);
 
-                            let gruposSemanas = [...new Set(consumosDelMes.map(r => {
-                                let d = obtenerDatosSemana(r.fecha);
-                                return `${d.nombreMes}_${d.numSemana}`;
-                            }))];
+                            let gruposSemanas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).idGrupo))];
 
                             gruposSemanas.forEach(idGrupo => {
                                 let docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
@@ -622,9 +730,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let deudaFaltante = 0;
             consumosDelMes.forEach(r => {
-                let d = obtenerDatosSemana(r.fecha);
-                let idGrupo = `${d.nombreMes}_${d.numSemana}`;
-                let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
+                let grp = getGroupData(r.fecha, mesSeleccionado);
+                let semanaDoc = semanasPagadas.find(s => s.idGrupo === grp.idGrupo);
                 let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
                 if (!itemPagado) deudaFaltante += r.precio;
             });
@@ -632,7 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (deudaFaltante > 0.01) {
                 Swal.fire({
                     title: '<h3 class="fw-bold mb-0">¿Cerrar y Cobrar Mes?</h3>',
-                    html: `Se marcarán las semanas de <b>${nombreMes}</b> como cerradas y se ingresará un abono de <b>S/ ${deudaFaltante.toFixed(2)}</b>.<br><br>¿Medio de pago?`,
+                    html: `Se marcarán los grupos de <b>${nombreMes}</b> como cerrados y se ingresará un abono de <b>S/ ${deudaFaltante.toFixed(2)}</b>.<br><br>¿Medio de pago?`,
                     icon: 'info',
                     showCancelButton: true,
                     showDenyButton: true,
@@ -649,10 +756,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }).then(async (result) => {
                     if (result.isConfirmed || result.isDenied) {
                         let metodoPago = result.isConfirmed ? 'Efectivo' : 'Yape';
-                        let gruposSemanas = [...new Set(consumosDelMes.map(r => {
-                            let d = obtenerDatosSemana(r.fecha);
-                            return `${d.nombreMes}_${d.numSemana}`;
-                        }))];
+                        let gruposSemanas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).idGrupo))];
 
                         if (gruposSemanas.length > 0) {
                             try {
@@ -691,7 +795,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 Swal.fire({
                     title: '<h3 class="fw-bold mb-0">Mes sin deudas</h3>',
-                    html: `El mes de <b>${nombreMes}</b> ya está completamente pagado. ¿Deseas marcar todas sus semanas visualmente como canceladas?`,
+                    html: `El mes de <b>${nombreMes}</b> ya está completamente pagado. ¿Deseas marcar todos los consumos visualmente como cancelados?`,
                     icon: 'info',
                     showCancelButton: true,
                     confirmButtonColor: '#198754',
@@ -701,10 +805,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-success btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' }
                 }).then(async (result) => {
                     if (result.isConfirmed) {
-                        let gruposSemanas = [...new Set(consumosDelMes.map(r => {
-                            let d = obtenerDatosSemana(r.fecha);
-                            return `${d.nombreMes}_${d.numSemana}`;
-                        }))];
+                        let gruposSemanas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).idGrupo))];
 
                         let batch = writeBatch(db);
                         gruposSemanas.forEach(idGrupo => {
@@ -717,7 +818,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             });
                         });
                         await batch.commit();
-                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Semanas canceladas', showConfirmButton: false, timer: 2000 });
+                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Mes cancelado', showConfirmButton: false, timer: 2000 });
                     }
                 });
             }
@@ -726,8 +827,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.pagarYMarcarSemana = (idGrupo, deudaSemana, textoCabecera) => {
         Swal.fire({
-            title: '<h3 class="fw-bold mb-0">Cobrar Semana</h3>',
-            html: `Se registrará un pago de <b>S/ ${deudaSemana.toFixed(2)}</b> por la <b>${textoCabecera}</b>.<br><br>¿Medio de pago?`,
+            title: '<h3 class="fw-bold mb-0">Cobrar Cuenta</h3>',
+            html: `Se registrará un pago de <b>S/ ${deudaSemana.toFixed(2)}</b> por:<br><b>${textoCabecera}</b>.<br><br>¿Medio de pago?`,
             icon: 'question',
             showCancelButton: true,
             showDenyButton: true,
@@ -764,7 +865,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         timestamp: Date.now()
                     });
 
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Semana Pagada', showConfirmButton: false, timer: 2000 });
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Cuenta Pagada', showConfirmButton: false, timer: 2000 });
                 } catch (e) {
                     Swal.fire('Error', e.message, 'error');
                 }
@@ -776,7 +877,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let docId = `${nombreUsuario}_${idGrupo}`.replace(/\s+/g, '_');
         Swal.fire({
             title: '<h3 class="fw-bold mb-0">¿Deshacer tachado?</h3>',
-            html: '<p class="fs-5 mt-3">La semana se marcará como pendiente de pago de nuevo.</p><small class="text-danger fw-bold">Ojo: Esto NO borra el pago de dinero registrado, debes borrarlo abajo manualmente.</small>',
+            html: '<p class="fs-5 mt-3">Los consumos se marcarán como pendientes de pago de nuevo.</p><small class="text-danger fw-bold">Ojo: Esto NO borra el pago de dinero registrado, debes borrarlo abajo manualmente.</small>',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
@@ -856,38 +957,43 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         let consumosPorGrupo = {};
+        let consumosPorSemana = {};
 
         filtrados.forEach(r => {
-            let d = obtenerDatosSemana(r.fecha);
-            let idGrupo = `${d.nombreMes}_${d.numSemana}`;
-            if (!consumosPorGrupo[idGrupo]) consumosPorGrupo[idGrupo] = [];
-            consumosPorGrupo[idGrupo].push(r);
+            let g = getGroupData(r.fecha, mes);
+            if (!consumosPorGrupo[g.idGrupo]) consumosPorGrupo[g.idGrupo] = [];
+            consumosPorGrupo[g.idGrupo].push(r);
+
+            let kSemana = `${g.idGrupo}_S${g.numSemana}`;
+            if (!consumosPorSemana[kSemana]) consumosPorSemana[kSemana] = [];
+            consumosPorSemana[kSemana].push(r);
         });
 
         let grupoActual = "";
+        let semanaActual = "";
 
         filtrados.forEach(r => {
-            let d = obtenerDatosSemana(r.fecha);
-            let identificadorGrupo = `${d.nombreMes}_${d.numSemana}`;
+            let grpInfo = getGroupData(r.fecha, mes);
+            let identificadorGrupo = grpInfo.idGrupo;
+
             let semanaDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
             let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
 
             if (identificadorGrupo !== grupoActual) {
                 grupoActual = identificadorGrupo;
+                semanaActual = "";
 
-                let todosPagados = consumosPorGrupo[identificadorGrupo].every(item => {
+                let itemsGrupo = consumosPorGrupo[identificadorGrupo];
+                let todosPagados = itemsGrupo.every(item => {
                     let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
                     return item.pagado === true || (sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp));
                 });
-
-                let deudaSemana = consumosPorGrupo[identificadorGrupo]
+                let deudaSemana = itemsGrupo
                     .filter(item => {
                         let sDoc = semanasPagadas.find(s => s.idGrupo === identificadorGrupo);
                         return !(item.pagado === true || (sDoc && (!item.timestamp || item.timestamp <= sDoc.timestamp)));
                     })
                     .reduce((acc, curr) => acc + curr.precio, 0);
-
-                let textoCabecera = mes === "todos" ? `${d.nombreMes} - SEMANA 0${d.numSemana}` : `SEMANA 0${d.numSemana}`;
 
                 let colorFondo = todosPagados ? '#d1e7dd' : '#f0f7ff';
                 let colorBorde = todosPagados ? '#198754' : '#0d6efd';
@@ -897,23 +1003,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 let botonAccion = todosPagados
                     ? `<button class="btn btn-success rounded-pill fw-bold py-2 px-4 shadow-sm border-0" onclick="window.desmarcarSemana('${identificadorGrupo}')"><i class="bi bi-check-circle-fill me-1"></i>Pagado</button>`
-                    : `<button class="btn btn-warning text-dark rounded-pill fw-bold py-2 px-4 shadow-sm border-0" onclick="window.pagarYMarcarSemana('${identificadorGrupo}', ${deudaSemana}, '${textoCabecera}')"><i class="bi bi-cash-coin me-1"></i>Pagar Todo</button>`;
+                    : `<button class="btn btn-warning text-dark rounded-pill fw-bold py-2 px-4 shadow-sm border-0" onclick="window.pagarYMarcarSemana('${identificadorGrupo}', ${deudaSemana}, '${grpInfo.textoCabecera}')"><i class="bi bi-cash-coin me-1"></i>Pagar Todo</button>`;
 
-                let trSemana = document.createElement("tr");
-                trSemana.innerHTML = `
+                let trGrupo = document.createElement("tr");
+                trGrupo.innerHTML = `
                     <td colspan="4" class="py-3 ps-3 ps-md-4" style="background-color: ${colorFondo}; border-left: 6px solid ${colorBorde}; border-bottom: 2px solid rgba(0,0,0,0.05);">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pe-2">
                             <div class="d-flex align-items-center flex-wrap">
-                                <span class="fw-bold ${colorTexto} fs-5"><i class="bi bi-calendar3 me-2"></i>${textoCabecera}</span>
+                                <span class="fw-bold ${colorTexto} fs-5"><i class="bi bi-calendar3 me-2"></i>${grpInfo.textoCabecera}</span>
                                 ${badgeTotal}
                             </div>
-                            <div class="d-flex align-items-center gap-2">
-                                ${botonAccion}
-                            </div>
+                            <div class="d-flex align-items-center gap-2">${botonAccion}</div>
                         </div>
                     </td>
                 `;
-                tablaConsumos.appendChild(trSemana);
+                tablaConsumos.appendChild(trGrupo);
+            }
+
+            if (tipoCuentaActiva === 'mensual') {
+                let kSemana = `${identificadorGrupo}_S${grpInfo.numSemana}`;
+                if (kSemana !== semanaActual) {
+                    semanaActual = kSemana;
+                    let totalSemana = consumosPorSemana[kSemana].reduce((acc, c) => acc + c.precio, 0);
+                    let trSub = document.createElement("tr");
+                    trSub.innerHTML = `
+                        <td colspan="4" class="py-2 ps-4" style="background-color: rgba(13,110,253,0.07); border-left: 6px solid rgba(13,110,253,0.35);">
+                            <div class="d-flex justify-content-between align-items-center pe-3">
+                                <span class="fw-bold text-secondary"><i class="bi bi-calendar-week me-2"></i>Semana 0${grpInfo.numSemana}</span>
+                                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis px-3 py-2">Consumido: S/ ${totalSemana.toFixed(2)}</span>
+                            </div>
+                        </td>
+                    `;
+                    tablaConsumos.appendChild(trSub);
+                }
             }
 
             if (!itemPagado) totalBusqueda += r.precio;
@@ -1146,15 +1268,54 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
 
                         let { value: precioIngresado } = await Swal.fire({
-                            title: `<h3 class="fw-bold">Precio del Plato</h3>`,
-                            text: `¿Cuánto cobrarás hoy por "${productoEncontrado.nombre}"?`,
-                            input: 'number',
-                            inputValue: productoEncontrado.precio,
-                            inputAttributes: { step: '0.01' },
+                            title: `<h3 class="fw-bold">Precio de ${productoEncontrado.nombre}</h3>`,
+                            html: `
+                                <p class="text-muted mb-4">Selecciona o ingresa el precio para hoy:</p>
+                                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                                    <div class="price-box" data-price="5">S/ 5.00</div>
+                                    <div class="price-box" data-price="7">S/ 7.00</div>
+                                    <div class="price-box" data-price="8">S/ 8.00</div>
+                                    <div class="price-box" data-price="10">S/ 10.00</div>
+                                    <div class="price-box" data-price="12">S/ 12.00</div>
+                                </div>
+                                <div class="mt-3 text-start">
+                                    <label class="form-label text-muted small fw-bold">Otras cantidades manuales:</label>
+                                    <input type="number" id="custom-price-input" step="0.01" class="form-control form-control-lg fw-bold text-primary text-center" placeholder="Ej: 6.50">
+                                </div>
+                                <style>
+                                    .price-box { width: 30%; border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: all 0.2s; font-weight: bold; font-size: 1.1rem; color: var(--bs-body-color); text-align: center; }
+                                    .price-box:hover { border-color: #0d6efd; background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+                                    .price-box.selected { border-color: #0d6efd; background-color: #0d6efd; color: #ffffff !important; transform: scale(1.05); }
+                                    [data-bs-theme="dark"] .price-box { border-color: #495057; }
+                                    [data-bs-theme="dark"] .price-box:hover { border-color: #0d6efd; background-color: rgba(13, 110, 253, 0.2); }
+                                </style>
+                            `,
                             showCancelButton: true,
                             confirmButtonText: 'Guardar',
                             cancelButtonText: 'Cancelar',
-                            customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-primary btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' }
+                            customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-primary btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
+                            didOpen: () => {
+                                const boxes = document.querySelectorAll('.price-box');
+                                const input = document.getElementById('custom-price-input');
+                                boxes.forEach(box => {
+                                    box.addEventListener('click', () => {
+                                        boxes.forEach(b => b.classList.remove('selected'));
+                                        box.classList.add('selected');
+                                        input.value = box.getAttribute('data-price');
+                                    });
+                                });
+                                input.addEventListener('input', () => {
+                                    boxes.forEach(b => b.classList.remove('selected'));
+                                });
+                            },
+                            preConfirm: () => {
+                                let val = document.getElementById('custom-price-input').value;
+                                if (!val || isNaN(val) || parseFloat(val) <= 0) {
+                                    Swal.showValidationMessage('Selecciona o ingresa un precio válido');
+                                    return false;
+                                }
+                                return parseFloat(val);
+                            }
                         });
                         if (!precioIngresado) return;
                         precioDelProducto = parseFloat(precioIngresado);
@@ -1380,52 +1541,68 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                let semanasUnicas = [...new Set(consumosDelMes.map(r => obtenerDatosSemana(r.fecha).numSemana))].sort((a, b) => a - b);
+                if (tipoCuentaActiva === 'semanal') {
+                    let semanasUnicas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).numSemana))].sort((a, b) => a - b);
 
-                let checkboxesHTML = semanasUnicas.map(s => `
-                    <div class="form-check d-flex align-items-center mb-3">
-                        <input class="form-check-input swal-week-checkbox shadow-sm me-3" type="checkbox" value="${s}" id="sem${s}" style="transform: scale(1.5); cursor: pointer;">
-                        <label class="form-check-label fw-bold text-dark fs-5" for="sem${s}" style="cursor: pointer;">Semana 0${s}</label>
-                    </div>
-                `).join('');
-
-                let { value: semanasElegidas, isConfirmed } = await Swal.fire({
-                    title: '<h3 class="fw-bold mb-0 text-danger"><i class="bi bi-file-earmark-pdf-fill"></i> Crear PDF</h3>',
-                    html: `
-                        <p class="text-muted fs-6 mb-4">Selecciona las semanas de <b>${nombreMesHeader}</b> que deseas incluir en el reporte:</p>
-                        <div class="bg-light p-4 rounded-4 border shadow-sm text-start mx-auto" style="max-width: 300px;">
-                            <div class="form-check d-flex align-items-center mb-3 pb-3 border-bottom border-secondary border-opacity-25">
-                               <input class="form-check-input shadow-sm me-3" type="checkbox" id="selectAllWeeks" onchange="document.querySelectorAll('.swal-week-checkbox').forEach(cb => cb.checked = this.checked)" style="transform: scale(1.5); cursor: pointer;">
-                               <label class="form-check-label fw-bolder text-primary fs-5" for="selectAllWeeks" style="cursor: pointer;">Seleccionar Todo</label>
-                            </div>
-                            ${checkboxesHTML}
+                    let checkboxesHTML = semanasUnicas.map(s => `
+                        <div class="form-check d-flex align-items-center mb-3">
+                            <input class="form-check-input swal-week-checkbox shadow-sm me-3" type="checkbox" value="${s}" id="sem${s}" style="transform: scale(1.5); cursor: pointer;">
+                            <label class="form-check-label fw-bold text-dark fs-5" for="sem${s}" style="cursor: pointer;">Semana 0${s}</label>
                         </div>
-                    `,
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="bi bi-cloud-download"></i> Descargar',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#dc3545',
-                    preConfirm: () => {
-                        let selecciones = Array.from(document.querySelectorAll('.swal-week-checkbox:checked')).map(cb => parseInt(cb.value));
-                        if (selecciones.length === 0) Swal.showValidationMessage('Debes elegir al menos una semana');
-                        return selecciones;
-                    },
-                    customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-danger btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
-                    didOpen: () => {
-                        Swal.getConfirmButton().style.cssText = 'background-color: #dc3545 !important; color: white !important;';
+                    `).join('');
+
+                    let { value: semanasElegidas, isConfirmed } = await Swal.fire({
+                        title: '<h3 class="fw-bold mb-0 text-danger"><i class="bi bi-file-earmark-pdf-fill"></i> Crear PDF</h3>',
+                        html: `
+                            <p class="text-muted fs-6 mb-4">Selecciona las semanas de <b>${nombreMesHeader}</b> que deseas incluir en el reporte:</p>
+                            <div class="bg-light p-4 rounded-4 border shadow-sm text-start mx-auto" style="max-width: 300px;">
+                                <div class="form-check d-flex align-items-center mb-3 pb-3 border-bottom border-secondary border-opacity-25">
+                                   <input class="form-check-input shadow-sm me-3" type="checkbox" id="selectAllWeeks" onchange="document.querySelectorAll('.swal-week-checkbox').forEach(cb => cb.checked = this.checked)" style="transform: scale(1.5); cursor: pointer;">
+                                   <label class="form-check-label fw-bolder text-primary fs-5" for="selectAllWeeks" style="cursor: pointer;">Seleccionar Todo</label>
+                                </div>
+                                ${checkboxesHTML}
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="bi bi-cloud-download"></i> Descargar',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#dc3545',
+                        preConfirm: () => {
+                            let selecciones = Array.from(document.querySelectorAll('.swal-week-checkbox:checked')).map(cb => parseInt(cb.value));
+                            if (selecciones.length === 0) Swal.showValidationMessage('Debes elegir al menos una semana');
+                            return selecciones;
+                        },
+                        customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-danger btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
+                        didOpen: () => {
+                            Swal.getConfirmButton().style.cssText = 'background-color: #dc3545 !important; color: white !important;';
+                        }
+                    });
+
+                    if (!isConfirmed || !semanasElegidas) return;
+
+                    consumosExportar = consumosDelMes.filter(r => semanasElegidas.includes(getGroupData(r.fecha, mesSeleccionado).numSemana));
+
+                    if (semanasElegidas.length === semanasUnicas.length) {
+                        tituloPeriodo = `MES DE ${nombreMesHeader.toUpperCase()}`;
+                    } else {
+                        esSemanaIndividual = true;
+                        let numFormateados = semanasElegidas.map(s => `0${s}`).join(', ');
+                        tituloPeriodo = `SEMANAS: ${numFormateados} - ${nombreMesHeader.toUpperCase()}`;
                     }
-                });
-
-                if (!isConfirmed || !semanasElegidas) return;
-
-                consumosExportar = consumosDelMes.filter(r => semanasElegidas.includes(obtenerDatosSemana(r.fecha).numSemana));
-
-                if (semanasElegidas.length === semanasUnicas.length) {
-                    tituloPeriodo = `MES DE ${nombreMesHeader.toUpperCase()}`;
                 } else {
-                    esSemanaIndividual = true;
-                    let numFormateados = semanasElegidas.map(s => `0${s}`).join(', ');
-                    tituloPeriodo = `SEMANAS: ${numFormateados} - ${nombreMesHeader.toUpperCase()}`;
+                    let { isConfirmed } = await Swal.fire({
+                        title: '<h3 class="fw-bold mb-0 text-danger"><i class="bi bi-file-earmark-pdf-fill"></i> Crear PDF</h3>',
+                        html: `<p class="fs-5 mt-3">Generar reporte del mes de <b>${nombreMesHeader}</b> completo.</p>`,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="bi bi-cloud-download"></i> Descargar',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#dc3545',
+                        customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-danger btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
+                        didOpen: () => { Swal.getConfirmButton().style.cssText = 'background-color: #dc3545 !important; color: white !important;'; }
+                    });
+                    if (!isConfirmed) return;
+                    consumosExportar = consumosDelMes;
+                    tituloPeriodo = `MES DE ${nombreMesHeader.toUpperCase()}`;
                 }
             }
 
@@ -1433,9 +1610,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let sumaTotalPDF_Test = 0;
             consumosExportar.forEach((r) => {
-                let d = obtenerDatosSemana(r.fecha);
-                let idGrupo = `${d.nombreMes}_${d.numSemana}`;
-                let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
+                let grp = getGroupData(r.fecha, mesSeleccionado);
+                let semanaDoc = semanasPagadas.find(s => s.idGrupo === grp.idGrupo);
                 let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
                 if (!itemPagado) sumaTotalPDF_Test += r.precio;
             });
@@ -1462,21 +1638,19 @@ document.addEventListener("DOMContentLoaded", () => {
             btnExportarPDF.disabled = true;
 
             let grupoActualPDF = "";
+            let semanaActualPDF = "";
             let filasHtml = "";
 
             consumosExportar.forEach((r, index) => {
-                let dData = obtenerDatosSemana(r.fecha);
+                let grpData = getGroupData(r.fecha, mesSeleccionado);
                 let [y, m, d] = r.fecha.split('-');
-                let idGrupo = `${dData.nombreMes}_${dData.numSemana}`;
+                let idGrupo = grpData.idGrupo;
                 let semanaDoc = semanasPagadas.find(s => s.idGrupo === idGrupo);
                 let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
 
                 if (idGrupo !== grupoActualPDF) {
                     grupoActualPDF = idGrupo;
-                    let itemsGrupo = consumosExportar.filter(x => {
-                        let innerD = obtenerDatosSemana(x.fecha);
-                        return `${innerD.nombreMes}_${innerD.numSemana}` === idGrupo;
-                    });
+                    let itemsGrupo = consumosExportar.filter(x => getGroupData(x.fecha, mesSeleccionado).idGrupo === idGrupo);
                     let todosPagadosPDF = itemsGrupo.every(x => {
                         let s = semanasPagadas.find(sw => sw.idGrupo === idGrupo);
                         return x.pagado === true || (s && (!x.timestamp || x.timestamp <= s.timestamp));
@@ -1486,7 +1660,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     filasHtml += `
                         <tr style="background-color: #f0f7fe; page-break-after: avoid;">
                             <td colspan="4" style="padding: 10px 15px; border-bottom: 2px solid #0d6efd; color: #0d6efd; font-weight: bold; font-size: 13px;">
-                                ${dData.nombreMes} - SEMANA 0${dData.numSemana} ${badgePDF}
+                                ${grpData.textoCabecera} ${badgePDF}
                             </td>
                         </tr>
                     `;
@@ -1496,6 +1670,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 let fechaDisplay = new Date(r.fecha + 'T00:00:00');
                 let bgFila = index % 2 === 0 ? "#fffffe" : "#fcfcfb";
                 let tachado = itemPagado ? "text-decoration: line-through; color: #6c757c !important;" : "";
+
+                if (tipoCuentaActiva === 'mensual') {
+                    let claveSemana = `${idGrupo}_S${grpData.numSemana}`;
+                    if (claveSemana !== semanaActualPDF) {
+                        semanaActualPDF = claveSemana;
+                        let subtotalSemana = consumosExportar
+                            .filter(x => { let g = getGroupData(x.fecha, mesSeleccionado); return g.idGrupo === idGrupo && g.numSemana === grpData.numSemana; })
+                            .reduce((acc, x) => acc + x.precio, 0);
+                        filasHtml += `
+                            <tr style="background-color: #f4f6f8; page-break-after: avoid;">
+                                <td colspan="3" style="padding: 8px 15px 8px 30px; color: #6c757d; font-weight: bold; font-size: 12px; border-bottom: 1px solid #dee2e6;">Semana 0${grpData.numSemana}</td>
+                                <td style="padding: 8px 15px; color: #6c757d; font-weight: bold; font-size: 12px; text-align: right; border-bottom: 1px solid #dee2e6;">Subtotal: S/ ${subtotalSemana.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
+                }
 
                 filasHtml += `
                     <tr style="background-color: ${bgFila}; page-break-inside: avoid;">
@@ -1515,24 +1705,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (index === consumosExportar.length - 1) {
                     esUltimoDelGrupo = true;
                 } else {
-                    let nD = obtenerDatosSemana(consumosExportar[index + 1].fecha);
-                    if (`${nD.nombreMes}_${nD.numSemana}` !== idGrupo) esUltimoDelGrupo = true;
+                    let nD = getGroupData(consumosExportar[index + 1].fecha, mesSeleccionado);
+                    if (nD.idGrupo !== idGrupo) esUltimoDelGrupo = true;
                 }
 
                 if (esUltimoDelGrupo) {
-                    let itemsGrupo = consumosExportar.filter(x => {
-                        let iD = obtenerDatosSemana(x.fecha);
-                        return `${iD.nombreMes}_${iD.numSemana}` === idGrupo;
-                    });
-
+                    let itemsGrupo = consumosExportar.filter(x => getGroupData(x.fecha, mesSeleccionado).idGrupo === idGrupo);
                     let totalSemanaPDF = 0;
-                    itemsGrupo.forEach(x => {
-                        totalSemanaPDF += x.precio;
-                    });
+                    itemsGrupo.forEach(x => { totalSemanaPDF += x.precio; });
 
                     filasHtml += `
                         <tr style="background-color: #fdf2f2; page-break-inside: avoid;">
-                            <td colspan="3" style="padding: 10px 15px; text-align: right; font-size: 13px; color: #dc3545; font-weight: bold; border-bottom: 2px solid #dee2e6;">Total consumido en la semana:</td>
+                            <td colspan="3" style="padding: 10px 15px; text-align: right; font-size: 13px; color: #dc3545; font-weight: bold; border-bottom: 2px solid #dee2e6;">Total consumido en el periodo:</td>
                             <td style="padding: 10px 15px; border-bottom: 2px solid #dee2e6; color: #dc3545; font-weight: bold;">
                                 <div style="display: flex; justify-content: space-between; width: 85px; margin-left: auto;">
                                     <span>S/</span><span>${totalSemanaPDF.toFixed(2)}</span>
