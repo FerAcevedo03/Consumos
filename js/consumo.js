@@ -13,6 +13,7 @@ let firebaseConfig = {
 let app = initializeApp(firebaseConfig);
 let db = getFirestore(app);
 
+// CORRECCIÓN MATEMÁTICA RESTAURADA (La tuya original exacta)
 function obtenerDatosSemana(fechaString) {
     let f = new Date(fechaString + 'T00:00:00');
 
@@ -30,7 +31,6 @@ function obtenerDatosSemana(fechaString) {
     let mesEfectivo = f.getMonth();
     let anioEfectivo = f.getFullYear();
     let nombreMes = f.toLocaleDateString('es-PE', { month: 'long' }).toUpperCase();
-
     let primerDia = new Date(anioEfectivo, mesEfectivo, 1);
     let offset = (primerDia.getDay() + 6) % 7;
     let numSemana = Math.floor((f.getDate() - 1 + offset) / 7) + 1;
@@ -103,14 +103,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         let colorAsignado = coloresAvatar[sumaLetras % coloresAvatar.length];
         let inicial = nombreUsuario.charAt(0).toUpperCase();
-
         avatarFondoEl.style.backgroundColor = colorAsignado;
         avatarFondoEl.innerHTML = `<span class="fw-bold text-white shadow-sm" style="font-size: 1.1rem; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${inicial}</span>`;
     }
 
     const TIPOS_CUENTA = {
         diaria: { label: 'Diaria', icono: 'bi-calendar-day', desc: 'Cada día se cobra por separado.', color: '#f59e0b' },
-        semanal: { label: 'Semanal', icono: 'bi-calendar-week', desc: 'De lunes a domingo.', color: '#0d6efd' },
+        semanal: { label: 'Semanal', icono: 'bi-calendar-week', desc: 'Semanas naturales del mes.', color: '#0d6efd' },
         mensual: { label: 'Mensual', icono: 'bi-calendar-month', desc: 'Un solo cobro por mes.', color: '#198754' }
     };
 
@@ -238,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let semanasPagadas = [];
     let productosDB = [];
 
+    // --- BUSCADOR DE USUARIOS EN EL NAVBAR ---
     let usuariosMismoRol = [];
     let inputBuscarUsuario = document.getElementById("inputBuscarUsuario");
     let listaSugerenciasUsuarios = document.getElementById("listaSugerenciasUsuarios");
@@ -258,19 +258,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (val.length > 0) {
                 let filtrados = usuariosMismoRol.filter(u => u.nombre.toLowerCase().includes(val) && u.nombre !== nombreUsuario);
-
+                
                 if (filtrados.length > 0) {
                     listaSugerenciasUsuarios.style.display = "block";
                     filtrados.forEach(u => {
                         let li = document.createElement("li");
                         li.innerHTML = `
-                            <a class="dropdown-item py-3 px-3 d-flex align-items-center border-bottom border-light" href="#" style="transition: all 0.2s ease;">
-                                <i class="bi bi-person-circle fs-4 me-3 text-muted"></i>
-                                <span class="fw-bold text-body-emphasis fs-5 user-name-target">${u.nombre}</span>
+                            <a class="dropdown-item py-2 px-3 d-flex align-items-center border-bottom border-light" href="#" style="transition: all 0.2s ease;">
+                                <i class="bi bi-person-circle fs-5 me-2 text-muted"></i>
+                                <span class="fw-bold text-body-emphasis fs-6 user-name-target">${u.nombre}</span>
                             </a>
                         `;
-                        li.onmousedown = (e) => {
-                            e.preventDefault();
+                        li.onmousedown = (e) => { 
+                            e.preventDefault(); 
                             window.location.href = `consumo.html?nombre=${encodeURIComponent(u.nombre)}&rol=${encodeURIComponent(rolUsuario)}`;
                         };
                         listaSugerenciasUsuarios.appendChild(li);
@@ -283,19 +283,22 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        inputBuscarUsuario.addEventListener("blur", () => { setTimeout(() => { listaSugerenciasUsuarios.style.display = "none"; }, 200); });
+        inputBuscarUsuario.addEventListener("focus", () => { if(inputBuscarUsuario.value.trim().length > 0) listaSugerenciasUsuarios.style.display = "block"; });
+
         inputBuscarUsuario.addEventListener("keydown", (e) => {
             let items = listaSugerenciasUsuarios.querySelectorAll("a.dropdown-item");
             if (listaSugerenciasUsuarios.style.display === "none" || items.length === 0) return;
-
+            
             if (e.key === "ArrowDown") {
-                e.preventDefault();
-                indexUserSelec++;
-                if (indexUserSelec >= items.length) indexUserSelec = 0;
+                e.preventDefault(); 
+                indexUserSelec++; 
+                if (indexUserSelec >= items.length) indexUserSelec = 0; 
                 actualizarSeleccionUsuario(items);
             } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                indexUserSelec--;
-                if (indexUserSelec < 0) indexUserSelec = items.length - 1;
+                e.preventDefault(); 
+                indexUserSelec--; 
+                if (indexUserSelec < 0) indexUserSelec = items.length - 1; 
                 actualizarSeleccionUsuario(items);
             } else if (e.key === "Enter") {
                 e.preventDefault();
@@ -317,7 +320,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     item.querySelector('.text-body-emphasis').style.color = "white";
                     item.querySelector('i').classList.remove("text-muted");
                     item.querySelector('i').style.color = "white";
-                    item.scrollIntoView({ block: "nearest" });
                 } else {
                     item.classList.remove("active");
                     item.style.backgroundColor = "";
@@ -329,6 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // --- NUEVO PRODUCTO ---
     let btnCrearProducto = document.getElementById("btnCrearProducto");
     if (btnCrearProducto) {
         btnCrearProducto.addEventListener("click", async () => {
@@ -346,12 +349,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="mt-3 text-start">
                         <label class="form-label fw-bold small text-muted">Categoría</label>
                         <select id="swal-prod-cat" class="form-select form-select-lg">
-                            <option value="comida">Comida / Menú</option>
-                            <option value="bebida">Bebida</option>
-                            <option value="pan">Pan</option>
-                            <option value="galleta" selected>Galleta / Snack</option>
-                            <option value="dulce">Dulce / Golosina</option>
-                            <option value="otro">Otro</option>
+                            <option value="comida">🍛 Comida (Menú)</option>
+                            <option value="bebida">🥤 Bebidas</option>
+                            <option value="pan">🥖 Pan / Sándwich</option>
+                            <option value="galleta" selected>🍪 Galletas</option>
+                            <option value="keke">🧁 Kekes / Porciones</option>
+                            <option value="postre">🍮 Postres</option>
+                            <option value="dulce">🍬 Dulces</option>
+                            <option value="snack">🍟 Snacks</option>
+                            <option value="utiles">✏️ Útiles</option>
+                            <option value="otro">📦 Otro</option>
                         </select>
                     </div>
                 `,
@@ -364,10 +371,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     let n = document.getElementById('swal-prod-nombre').value.trim();
                     let p = parseFloat(document.getElementById('swal-prod-precio').value);
                     let c = document.getElementById('swal-prod-cat').value;
-
+                    
                     if (!n) { Swal.showValidationMessage('Ingresa un nombre para el producto'); return false; }
                     if (isNaN(p) || p <= 0) { Swal.showValidationMessage('Ingresa un precio válido'); return false; }
-
+                    
                     return { nombre: n, precio: p, categoria: c };
                 }
             });
@@ -375,7 +382,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (formValues) {
                 try {
                     let nFormateado = formValues.nombre.charAt(0).toUpperCase() + formValues.nombre.slice(1).toLowerCase();
-
+                    
                     let existe = productosDB.some(p => p.nombre.toLowerCase() === nFormateado.toLowerCase());
                     if (existe) {
                         Swal.fire('Atención', 'Ya existe un producto con ese nombre.', 'warning');
@@ -389,8 +396,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         timestamp: Date.now()
                     });
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Producto agregado', showConfirmButton: false, timer: 2500 });
-
-                    if (inputProducto) {
+                    
+                    if(inputProducto) {
                         inputProducto.value = nFormateado + " + ";
                         if (inputCantidad) inputCantidad.value = 1;
                         inputProducto.focus();
@@ -401,6 +408,105 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // --- LISTA COMPLETA PARA EDITAR PRODUCTOS (Solución al Botón Lápiz) ---
+    let btnEditarListaProductos = document.getElementById("btnEditarListaProductos");
+    if (btnEditarListaProductos) {
+        btnEditarListaProductos.addEventListener("click", async () => {
+            if (productosDB.length === 0) {
+                Swal.fire('Info', 'No hay productos registrados aún.', 'info');
+                return;
+            }
+            
+            // Ordenamos alfabéticamente para que sea fácil buscar
+            let prodsHTML = productosDB.sort((a,b) => a.nombre.localeCompare(b.nombre)).map(p => {
+                let vis = obtenerVisual(p.categoria, p.nombre);
+                return `
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom hover-bg-light" style="cursor: pointer;" onclick="window.ejecutarEdicionBase('${p.id}', '${p.nombre.replace(/'/g, "\\'")}', ${p.precio}, '${p.categoria || 'otro'}')">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-4 me-3">${vis.emoji}</span>
+                            <span class="fw-bold text-dark text-start">${p.nombre}</span>
+                        </div>
+                        <span class="badge bg-primary rounded-pill px-3 py-2">S/ ${p.precio.toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            Swal.fire({
+                title: '<h4 class="fw-bold mb-0">Editar Productos</h4>',
+                html: `
+                    <p class="text-muted small mb-3">Selecciona el producto que deseas modificar:</p>
+                    <div class="text-start border rounded-3 shadow-sm overflow-auto" style="max-height: 400px; background-color: var(--bs-body-bg);">
+                        ${prodsHTML}
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Cerrar',
+                customClass: { popup: 'rounded-4 py-4', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-5 fw-bold border-0 text-white mt-3' }
+            });
+        });
+    }
+
+    window.ejecutarEdicionBase = async (idProd, nombreAct, precioAct, catAct) => {
+        Swal.close();
+        setTimeout(async () => {
+            const { value: editValues } = await Swal.fire({
+                title: `<h4 class="fw-bold mb-0">Editar: ${nombreAct}</h4>`,
+                html: `
+                    <div class="mt-4 text-start">
+                        <label class="form-label fw-bold small text-muted">Nombre del Producto</label>
+                        <input id="swal-edit-nombre-base" class="form-control form-control-lg fw-bold" value="${nombreAct}" autocomplete="off">
+                    </div>
+                    <div class="mt-3 text-start">
+                        <label class="form-label fw-bold small text-muted">Precio Unitario (S/)</label>
+                        <input id="swal-edit-precio-base" type="number" step="0.01" class="form-control form-control-lg fw-bold text-primary" value="${precioAct}">
+                    </div>
+                    <div class="mt-3 text-start">
+                        <label class="form-label fw-bold small text-muted">Categoría</label>
+                        <select id="swal-edit-cat-base" class="form-select form-select-lg">
+                            <option value="comida" ${catAct==='comida'?'selected':''}>🍛 Comida (Menú)</option>
+                            <option value="bebida" ${catAct==='bebida'?'selected':''}>🥤 Bebidas</option>
+                            <option value="pan" ${catAct==='pan'?'selected':''}>🥖 Pan / Sándwich</option>
+                            <option value="galleta" ${catAct==='galleta'?'selected':''}>🍪 Galletas</option>
+                            <option value="keke" ${catAct==='keke'?'selected':''}>🧁 Kekes / Porciones</option>
+                            <option value="postre" ${catAct==='postre'?'selected':''}>🍮 Postres</option>
+                            <option value="dulce" ${catAct==='dulce'?'selected':''}>🍬 Dulces</option>
+                            <option value="snack" ${catAct==='snack'?'selected':''}>🍟 Snacks</option>
+                            <option value="utiles" ${catAct==='utiles'?'selected':''}>✏️ Útiles</option>
+                            <option value="otro" ${catAct==='otro'?'selected':''}>📦 Otro</option>
+                        </select>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-save me-1"></i> Actualizar',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-primary btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
+                preConfirm: () => {
+                    let n = document.getElementById('swal-edit-nombre-base').value.trim();
+                    let p = parseFloat(document.getElementById('swal-edit-precio-base').value);
+                    let c = document.getElementById('swal-edit-cat-base').value;
+                    if (!n) { Swal.showValidationMessage('El nombre no puede estar vacío'); return false; }
+                    if (isNaN(p) || p <= 0) { Swal.showValidationMessage('Ingresa un precio válido'); return false; }
+                    return { nombre: n, precio: p, categoria: c };
+                }
+            });
+
+            if (editValues) {
+                try {
+                    let nFormat = editValues.nombre.charAt(0).toUpperCase() + editValues.nombre.slice(1).toLowerCase();
+                    await updateDoc(doc(db, "productos", idProd), {
+                        nombre: nFormat,
+                        precio: editValues.precio,
+                        categoria: editValues.categoria
+                    });
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Producto actualizado', showConfirmButton: false, timer: 2000 });
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        }, 300);
+    };
 
     onSnapshot(collection(db, "productos"), (snap) => {
         if (!snap.empty) {
@@ -445,9 +551,14 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!item) return;
             e.preventDefault();
             let valor = item.getAttribute("data-val");
+            let texto = item.textContent;
+            
             if (mesFiltro.value !== valor) {
                 mesFiltro.value = valor;
-                mesFiltro.dispatchEvent(new Event('change'));
+                if (textoMesVisual) textoMesVisual.textContent = texto;
+                renderizarConsumos();
+                recalcularSaldoGlobal();
+                renderizarListaPagos();
             }
         });
     }
@@ -469,7 +580,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (mesFiltro.value !== mesDeLaFecha) {
                 mesFiltro.value = mesDeLaFecha;
-                mesFiltro.dispatchEvent(new Event('change'));
+                let optionSelec = Array.from(mesFiltro.options).find(opt => opt.value === mesDeLaFecha);
+                if (textoMesVisual && optionSelec) textoMesVisual.textContent = optionSelec.text;
+                
+                renderizarConsumos();
+                recalcularSaldoGlobal();
+                renderizarListaPagos();
             }
         });
     }
@@ -477,7 +593,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let fechaHoy = new Date();
     if (mesFiltro) {
         mesFiltro.value = fechaHoy.getMonth().toString();
-        if (textoMesVisual) textoMesVisual.textContent = mesFiltro.options[mesFiltro.selectedIndex].text;
+        let optionSeleccionadaInicial = Array.from(mesFiltro.options).find(opt => opt.value === mesFiltro.value);
+        if (textoMesVisual && optionSeleccionadaInicial) {
+             textoMesVisual.textContent = optionSeleccionadaInicial.text;
+        }
     }
 
     if (inputBusquedaTabla) inputBusquedaTabla.addEventListener("input", renderizarConsumos);
@@ -595,7 +714,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let grp = getGroupData(r.fecha, mesSeleccionado);
             let semanaDoc = semanasPagadas.find(s => s.idGrupo === grp.idGrupo);
             let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
-
+            
             if (!itemPagado) {
                 deudaVisualReal += r.precio;
             }
@@ -610,10 +729,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "none";
             pendienteMostrar = totalConsumoBruto - totalPagosBruto;
             if (pendienteMostrar < 0) pendienteMostrar = 0;
-            if (pendienteMostrar < deudaVisualReal) pendienteMostrar = deudaVisualReal;
+            if (pendienteMostrar < deudaVisualReal) pendienteMostrar = deudaVisualReal; 
             canceloMostrar = totalPagosBruto;
         } else {
-            if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "inline-block";
+            if (btnMarcarMesPagado) {
+                btnMarcarMesPagado.style.display = (tipoCuentaActiva === 'mensual') ? "none" : "inline-block";
+            }
+            
             pendienteMostrar = deudaVisualReal;
             canceloMostrar = totalConsumoBruto - deudaVisualReal;
             if (totalPagosBruto > totalConsumoBruto) canceloMostrar = totalPagosBruto;
@@ -650,7 +772,7 @@ document.addEventListener("DOMContentLoaded", () => {
             totalAcumulado.textContent = `S/ ${pendienteMostrar.toFixed(2)}`;
         }
 
-        if (btnMarcarMesPagado && mesSeleccionado !== "todos") {
+        if (btnMarcarMesPagado && mesSeleccionado !== "todos" && tipoCuentaActiva !== 'mensual') {
             let todosSemanasPagadas = false;
             if (consumosFiltrados.length > 0) {
                 todosSemanasPagadas = consumosFiltrados.every(r => {
@@ -727,13 +849,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let totalConsumoMes = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
             let totalPagosMes = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
-
+            
             let deudaFaltante = 0;
             consumosDelMes.forEach(r => {
                 let grp = getGroupData(r.fecha, mesSeleccionado);
                 let semanaDoc = semanasPagadas.find(s => s.idGrupo === grp.idGrupo);
                 let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
-                if (!itemPagado) deudaFaltante += r.precio;
+                if(!itemPagado) deudaFaltante += r.precio;
             });
 
             if (deudaFaltante > 0.01) {
@@ -749,9 +871,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', denyButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
                     didOpen: () => {
                         let confirmBtn = Swal.getConfirmButton();
-                        if (confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
+                        if(confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
                         let denyBtn = Swal.getDenyButton();
-                        if (denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
+                        if(denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
                     }
                 }).then(async (result) => {
                     if (result.isConfirmed || result.isDenied) {
@@ -838,9 +960,9 @@ document.addEventListener("DOMContentLoaded", () => {
             customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', denyButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
             didOpen: () => {
                 let confirmBtn = Swal.getConfirmButton();
-                if (confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
+                if(confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
                 let denyBtn = Swal.getDenyButton();
-                if (denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
+                if(denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
             }
         }).then(async (result) => {
             if (result.isConfirmed || result.isDenied) {
@@ -904,9 +1026,9 @@ document.addEventListener("DOMContentLoaded", () => {
             customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', denyButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
             didOpen: () => {
                 let confirmBtn = Swal.getConfirmButton();
-                if (confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
+                if(confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
                 let denyBtn = Swal.getDenyButton();
-                if (denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
+                if(denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
             }
         }).then(async (result) => {
             if (result.isConfirmed || result.isDenied) {
@@ -1104,8 +1226,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.editarPago = async (id, montoActual, fechaDB, metodoActual, pagadorActual) => {
         let p = fechaDB.split('-');
-        let fechaUser = `${p[2]}-${p[1]}-${p[0]}`;
-
+        
         let { value: formValues } = await Swal.fire({
             title: '<h3 class="fw-bold mb-0">Editar Pago</h3>',
             html: `
@@ -1245,8 +1366,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (!productoEncontrado && precioPersonalizado === null) {
                     Swal.fire({
-                        title: '<h3 class="fw-bold mb-0 text-danger">Producto Inválido</h3>',
-                        html: `<p class="fs-5">El producto <b>"${nombreLimpio}"</b> no está registrado.</p>`,
+                        title: '<h3 class="fw-bold mb-0 text-danger">Producto Inválido</h3>', 
+                        html: `<p class="fs-5">El producto <b>"${nombreLimpio}"</b> no está registrado.</p>`, 
                         icon: 'error',
                         customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-danger btn-lg rounded-pill px-4 fw-bold border-0 text-white' }
                     });
@@ -1516,7 +1637,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let nombreMesHeader = mesFiltro.options[mesFiltro.selectedIndex].text;
             let consumosExportar = [];
             let tituloPeriodo = "";
-            let esSemanaIndividual = false;
+            let fileNamePersonalizado = `Consumo_${nombreUsuario.replace(/ /g, "_")}`;
 
             if (mesSeleccionado === "todos") {
                 let { isConfirmed } = await Swal.fire({
@@ -1532,18 +1653,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!isConfirmed) return;
                 consumosExportar = historialConsumos;
                 tituloPeriodo = "HISTÓRICO COMPLETO";
+                fileNamePersonalizado += `_Global`;
 
             } else {
                 let consumosDelMes = historialConsumos.filter(r => obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
-
+                
                 if (consumosDelMes.length === 0) {
-                    Swal.fire({ title: 'Vacío', text: 'No hay datos en este mes.', icon: 'info' });
+                    Swal.fire({title: 'Vacío', text: 'No hay datos en este mes.', icon: 'info'});
                     return;
                 }
 
                 if (tipoCuentaActiva === 'semanal') {
-                    let semanasUnicas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).numSemana))].sort((a, b) => a - b);
-
+                    let semanasUnicas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).numSemana))].sort((a,b) => a - b);
+                    
                     let checkboxesHTML = semanasUnicas.map(s => `
                         <div class="form-check d-flex align-items-center mb-3">
                             <input class="form-check-input swal-week-checkbox shadow-sm me-3" type="checkbox" value="${s}" id="sem${s}" style="transform: scale(1.5); cursor: pointer;">
@@ -1581,13 +1703,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (!isConfirmed || !semanasElegidas) return;
 
                     consumosExportar = consumosDelMes.filter(r => semanasElegidas.includes(getGroupData(r.fecha, mesSeleccionado).numSemana));
-
+                    
                     if (semanasElegidas.length === semanasUnicas.length) {
                         tituloPeriodo = `MES DE ${nombreMesHeader.toUpperCase()}`;
+                        fileNamePersonalizado += `_${nombreMesHeader}`;
                     } else {
-                        esSemanaIndividual = true;
                         let numFormateados = semanasElegidas.map(s => `0${s}`).join(', ');
                         tituloPeriodo = `SEMANAS: ${numFormateados} - ${nombreMesHeader.toUpperCase()}`;
+                        
+                        if(semanasElegidas.length === 1) {
+                            fileNamePersonalizado += `_Sem${semanasElegidas[0]}_${nombreMesHeader.substring(0,3)}`;
+                        } else {
+                            fileNamePersonalizado += `_Sems${semanasElegidas.join('-')}_${nombreMesHeader.substring(0,3)}`;
+                        }
                     }
                 } else {
                     let { isConfirmed } = await Swal.fire({
@@ -1600,9 +1728,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-danger btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
                         didOpen: () => { Swal.getConfirmButton().style.cssText = 'background-color: #dc3545 !important; color: white !important;'; }
                     });
-                    if (!isConfirmed) return;
+                    if(!isConfirmed) return;
                     consumosExportar = consumosDelMes;
                     tituloPeriodo = `MES DE ${nombreMesHeader.toUpperCase()}`;
+                    fileNamePersonalizado += `_${nombreMesHeader}`;
                 }
             }
 
@@ -1796,7 +1925,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let opcionesPDF = {
                 margin: [5, 0, 10, 0],
-                filename: `Consumo_${nombreUsuario.replace(/ /g, "_")}_${tituloPeriodo.replace(/ /g, "_")}.pdf`,
+                filename: `${fileNamePersonalizado}.pdf`,
                 image: { type: 'jpeg', quality: 1.0 },
                 html2canvas: { scale: 2, useCORS: true, width: 1120, windowWidth: 1120, x: 0, y: 0, scrollX: 0, scrollY: 0 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
@@ -1807,73 +1936,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnExportarPDF.disabled = false;
             }).catch(error => {
                 btnExportarPDF.disabled = false;
-            });
-        });
-    }
-
-    let btnEstadisticas = document.getElementById("btnEstadisticas");
-    if (btnEstadisticas) {
-        btnEstadisticas.addEventListener("click", () => {
-            let mesSeleccionado = mesFiltro.value;
-            let nombreMes = mesFiltro.options[mesFiltro.selectedIndex].text;
-            let consumosDelMes = historialConsumos.filter(r => mesSeleccionado === "todos" || obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
-
-            if (consumosDelMes.length === 0) {
-                Swal.fire('Sin datos', 'No hay consumos registrados para generar un gráfico.', 'info');
-                return;
-            }
-
-            let dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            let gastosPorDia = { 'Lunes': 0, 'Martes': 0, 'Miércoles': 0, 'Jueves': 0, 'Viernes': 0, 'Sábado': 0 };
-
-            consumosDelMes.forEach(r => {
-                let f = new Date(r.fecha + 'T00:00:00');
-                let nombreDia = dias[f.getDay()];
-                if (gastosPorDia[nombreDia] !== undefined) gastosPorDia[nombreDia] += r.precio;
-            });
-
-            let labels = Object.keys(gastosPorDia);
-            let data = Object.values(gastosPorDia);
-            let isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-
-            Swal.fire({
-                title: `<h3 class="fw-bold mb-0">Gastos de ${nombreMes}</h3>`,
-                html: '<canvas id="miGrafico" style="width:100%; max-height:300px;"></canvas>',
-                width: 600,
-                background: isDark ? '#1e1e1e' : '#ffffff',
-                color: isDark ? '#f8f9fa' : '#212529',
-                showConfirmButton: true,
-                confirmButtonText: '<i class="bi bi-check-lg"></i> Entendido',
-                confirmButtonColor: '#0d6efd',
-                customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-primary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
-                didOpen: () => {
-                    Swal.getConfirmButton().style.cssText = 'background-color: #0d6efd !important; color: white !important;';
-                    let ctx = document.getElementById('miGrafico').getContext('2d');
-                    let textColor = isDark ? '#e0e0e0' : '#6c757d';
-
-                    new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Total Gastado (S/)',
-                                data: data,
-                                backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)'],
-                                borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)'],
-                                borderWidth: 1,
-                                borderRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: { legend: { labels: { color: textColor } } },
-                            scales: {
-                                y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: isDark ? '#333' : '#e9ecef' } },
-                                x: { ticks: { color: textColor }, grid: { display: false } }
-                            }
-                        }
-                    });
-                }
             });
         });
     }
