@@ -23,11 +23,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="js/darkmode.js"></script>
   <script type="module" src="js/auth.js"></script>
+
 </head>
 
 <body class="bg-light overflow-x-hidden">
 
-  <!-- NAVBAR RESTAURADO Y AJUSTADO -->
+  <!-- NAVBAR -->
   <nav id="main-navbar" class="navbar navbar-dark py-2 px-2 px-md-3 shadow-sm"
     style="background: linear-gradient(90deg, #0d6efd 0%, #0284c7 100%);">
     <div class="container-fluid container-xl d-flex justify-content-between align-items-center flex-nowrap">
@@ -81,21 +82,18 @@
 
       <!-- DERECHA: Logo (y botón buscar en móviles) -->
       <div class="d-flex justify-content-end align-items-center gap-2 flex-shrink-0" style="width: 33%;">
-        <!-- Botón de búsqueda para móviles -->
         <button
           class="btn btn-sm btn-outline-light rounded-circle d-md-none d-flex align-items-center justify-content-center flex-shrink-0"
           type="button" data-bs-toggle="collapse" data-bs-target="#buscadorMovilCollapse" aria-expanded="false"
           style="width: 34px; height: 34px;">
           <i class="bi bi-search"></i>
         </button>
-
         <a class="navbar-brand d-flex align-items-center m-0 p-0 text-decoration-none" href="index.html">
           <span class="fw-bold fs-4 mb-0 text-white me-2 d-none d-lg-block"
             style="letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">Nobel School</span>
           <img src="logo.png" alt="Logo" width="38" height="38" class="rounded bg-white p-1 shadow-sm">
         </a>
       </div>
-
     </div>
 
     <!-- Buscador desplegable para móviles -->
@@ -117,12 +115,12 @@
   </nav>
 
   <div class="container-fluid py-4 px-md-4 px-xl-5" style="max-width: 1600px;">
+
+    <!-- GRID (Las 3 cajas están sueltas para ordenarse inteligentemente) -->
     <div class="dashboard-grid">
 
-      <!-- COLUMNA IZQUIERDA -->
-      <div class="col-12 grid-registro d-flex flex-column gap-4 align-self-start">
-
-        <!-- 1. REGISTRAR CONSUMO -->
+      <!-- 1. REGISTRAR CONSUMO -->
+      <div class="grid-registro w-100">
         <div class="card shadow-sm border-0 rounded-4" style="background-color: transparent;">
           <div class="card-header bg-primary pt-3 pb-3 border-0 d-flex align-items-center rounded-top-4">
             <i class="bi bi-cart-plus-fill fs-4 me-2 text-white"></i>
@@ -132,7 +130,6 @@
             <form id="formConsumo" class="row g-4">
               <div class="col-12">
                 <label class="form-label text-muted small fw-bold text-uppercase">Día de Consumo</label>
-                <!-- Aplicamos flex-nowrap para que los botones y el input no se aplasten -->
                 <div class="input-group input-group-lg shadow-sm rounded-3 w-100 flex-nowrap">
                   <button
                     class="btn btn-outline-secondary border-end-0 px-3 d-flex align-items-center justify-content-center flex-shrink-0"
@@ -166,7 +163,6 @@
                   </div>
                 </div>
                 <div class="dropdown w-100">
-                  <!-- Aplicamos flex-nowrap -->
                   <div class="input-group input-group-lg shadow-sm rounded-3 w-100 flex-nowrap">
                     <span class="input-group-text border-end-0 bg-transparent fs-5 flex-shrink-0">🔍</span>
                     <input type="text" id="inputProducto" class="form-control border-start-0 ps-0 fw-bold w-100 min-w-0"
@@ -179,7 +175,6 @@
 
               <div class="col-12">
                 <label class="form-label text-muted small fw-bold text-uppercase">Cantidad</label>
-                <!-- Aplicamos flex-nowrap -->
                 <div class="input-group input-group-lg shadow-sm rounded-3 w-100 flex-nowrap">
                   <span class="input-group-text border-end-0 bg-transparent fs-5 flex-shrink-0">🔢</span>
                   <input type="number" id="inputCantidad" class="form-control border-start-0 ps-0 fw-bold w-100 min-w-0"
@@ -196,73 +191,10 @@
             </form>
           </div>
         </div>
-
-        <!-- 2. GESTIÓN DE PAGOS -->
-        <div class="card shadow-sm border-0 rounded-4 grid-pagos"
-          style="background-color: #f0f9ff; border-left: 6px solid #0284c7 !important;">
-          <div class="card-body p-4">
-            <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
-              <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-wallet2 text-success me-2"></i>Gestión de Pagos</h5>
-              <button id="btnMarcarMesPagado"
-                class="btn btn-sm btn-outline-success fw-bold py-1 px-3 shadow-sm rounded-pill mt-2 mt-sm-0"
-                style="display: none;">
-                <i class="bi bi-check-all fs-6"></i> Cobrar Mes
-              </button>
-            </div>
-
-            <div id="estadoCuentaMesVisual" class="w-100 d-flex flex-column align-items-center mb-4"></div>
-
-            <div class="bg-white p-4 rounded-4 shadow-sm border w-100 mb-4">
-              <h6 class="fw-bold text-muted small mb-3 text-uppercase">Registrar Nuevo Abono</h6>
-              <div class="mb-3">
-                <input type="text" id="inputPagador"
-                  class="form-control form-control-lg border-secondary fw-medium w-100"
-                  placeholder="Concepto o nota del pago...">
-              </div>
-              <div class="row g-3 mb-4">
-                <div class="col-12 col-sm-6">
-                  <input type="number" id="montoAbono"
-                    class="form-control form-control-lg border-primary fw-bold text-primary w-100 min-w-0"
-                    placeholder="Monto S/" step="0.01">
-                </div>
-                <div class="col-12 col-sm-6">
-                  <!-- Aplicamos flex-nowrap -->
-                  <div class="input-group input-group-lg h-100 w-100 flex-nowrap">
-                    <span class="input-group-text border-end-0 text-muted px-2 bg-transparent flex-shrink-0"><i
-                        class="bi bi-calendar"></i></span>
-                    <input type="text" id="fechaAbono"
-                      class="form-control border-start-0 ps-0 text-dark bg-transparent w-100 min-w-0"
-                      placeholder="Fecha">
-                  </div>
-                </div>
-              </div>
-              <div class="row g-3">
-                <div class="col-6">
-                  <button type="button" id="btnAbonoYape"
-                    class="btn text-white w-100 fw-bold shadow-sm py-3 fs-5 hover-lift"
-                    style="background-color: #742384; border-radius: 12px;"><i class="bi bi-qr-code me-1"></i>
-                    Yape</button>
-                </div>
-                <div class="col-6">
-                  <button type="button" id="btnAbonoEfectivo"
-                    class="btn btn-success w-100 fw-bold shadow-sm py-3 fs-5 hover-lift" style="border-radius: 12px;"><i
-                      class="bi bi-cash-coin me-1"></i> Efectivo</button>
-                </div>
-              </div>
-            </div>
-
-            <div id="contenedorHistorialPagos" class="mt-4 pt-3 border-top border-info d-none">
-              <h6 class="text-muted fw-bold mb-3"><i class="bi bi-clock-history me-1"></i> HISTORIAL DE PAGOS DEL MES:
-              </h6>
-              <ul id="listaPagosVisual" class="list-group list-group-flush rounded-3 shadow-sm bg-white border"></ul>
-            </div>
-          </div>
-        </div>
-
       </div>
 
-      <!-- COLUMNA DERECHA (Historial) -->
-      <div class="col-12 grid-historial d-flex flex-column h-100 w-100 min-w-0">
+      <!-- 2. HISTORIAL DE CONSUMOS -->
+      <div class="grid-historial d-flex flex-column h-100 w-100 min-w-0">
         <div class="card shadow-sm border-0 rounded-4 h-100 d-flex flex-column w-100">
           <div
             class="card-header bg-white pt-4 pb-3 d-flex flex-column flex-md-row justify-content-between align-items-center border-bottom gap-3 rounded-top-4 flex-shrink-0">
@@ -357,6 +289,69 @@
                   </tr>
                 </tfoot>
               </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. GESTIÓN DE PAGOS -->
+      <div class="grid-pagos w-100">
+        <div class="card shadow-sm border-0 rounded-4"
+          style="background-color: #f0f9ff; border-left: 6px solid #0284c7 !important;">
+          <div class="card-body p-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+              <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-wallet2 text-success me-2"></i>Gestión de Pagos</h5>
+              <button id="btnMarcarMesPagado"
+                class="btn btn-sm btn-outline-success fw-bold py-1 px-3 shadow-sm rounded-pill mt-2 mt-sm-0"
+                style="display: none;">
+                <i class="bi bi-check-all fs-6"></i> Cobrar Mes
+              </button>
+            </div>
+
+            <div id="estadoCuentaMesVisual" class="w-100 d-flex flex-column align-items-center mb-4"></div>
+
+            <div class="bg-white p-4 rounded-4 shadow-sm border w-100 mb-4">
+              <h6 class="fw-bold text-muted small mb-3 text-uppercase">Registrar Nuevo Abono</h6>
+              <div class="mb-3">
+                <input type="text" id="inputPagador"
+                  class="form-control form-control-lg border-secondary fw-medium w-100"
+                  placeholder="Concepto o nota del pago...">
+              </div>
+              <div class="row g-3 mb-4">
+                <div class="col-12 col-sm-6">
+                  <input type="number" id="montoAbono"
+                    class="form-control form-control-lg border-primary fw-bold text-primary w-100 min-w-0"
+                    placeholder="Monto S/" step="0.01">
+                </div>
+                <div class="col-12 col-sm-6">
+                  <div class="input-group input-group-lg h-100 w-100 flex-nowrap">
+                    <span class="input-group-text border-end-0 text-muted px-2 bg-transparent flex-shrink-0"><i
+                        class="bi bi-calendar"></i></span>
+                    <input type="text" id="fechaAbono"
+                      class="form-control border-start-0 ps-0 text-dark bg-transparent w-100 min-w-0"
+                      placeholder="Fecha">
+                  </div>
+                </div>
+              </div>
+              <div class="row g-3">
+                <div class="col-6">
+                  <button type="button" id="btnAbonoYape"
+                    class="btn text-white w-100 fw-bold shadow-sm py-3 fs-5 hover-lift"
+                    style="background-color: #742384; border-radius: 12px;"><i class="bi bi-qr-code me-1"></i>
+                    Yape</button>
+                </div>
+                <div class="col-6">
+                  <button type="button" id="btnAbonoEfectivo"
+                    class="btn btn-success w-100 fw-bold shadow-sm py-3 fs-5 hover-lift" style="border-radius: 12px;"><i
+                      class="bi bi-cash-coin me-1"></i> Efectivo</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="contenedorHistorialPagos" class="mt-4 pt-3 border-top border-info d-none">
+              <h6 class="text-muted fw-bold mb-3"><i class="bi bi-clock-history me-1"></i> HISTORIAL DE PAGOS DEL MES:
+              </h6>
+              <ul id="listaPagosVisual" class="list-group list-group-flush rounded-3 shadow-sm bg-white border"></ul>
             </div>
           </div>
         </div>
