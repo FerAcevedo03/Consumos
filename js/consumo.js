@@ -13,7 +13,7 @@ let firebaseConfig = {
 let app = initializeApp(firebaseConfig);
 let db = getFirestore(app);
 
-// CORRECCIÓN MATEMÁTICA RESTAURADA (La tuya original exacta)
+
 function obtenerDatosSemana(fechaString) {
     let f = new Date(fechaString + 'T00:00:00');
 
@@ -239,9 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- BUSCADOR DE USUARIOS EN EL NAVBAR ---
     let usuariosMismoRol = [];
-    let inputBuscarUsuario = document.getElementById("inputBuscarUsuario");
-    let listaSugerenciasUsuarios = document.getElementById("listaSugerenciasUsuarios");
-    let indexUserSelec = -1;
 
     if (rolUsuario !== "index") {
         onSnapshot(query(collection(db, rolUsuario)), (snap) => {
@@ -250,17 +247,22 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (inputBuscarUsuario) {
-        inputBuscarUsuario.addEventListener("input", () => {
-            let val = inputBuscarUsuario.value.toLowerCase().trim();
-            listaSugerenciasUsuarios.innerHTML = "";
-            indexUserSelec = -1;
+    function vincularBuscadorUsuarios(inputEl, listaEl) {
+        if (!inputEl || !listaEl) return;
+        let indexSelec = -1;
+
+        inputEl.addEventListener("input", () => {
+            let val = inputEl.value.toLowerCase().trim();
+            listaEl.innerHTML = "";
+            indexSelec = -1;
 
             if (val.length > 0) {
-                let filtrados = usuariosMismoRol.filter(u => u.nombre.toLowerCase().includes(val) && u.nombre !== nombreUsuario);
-                
+                let filtrados = usuariosMismoRol.filter(u =>
+                    u.nombre.toLowerCase().includes(val) && u.nombre !== nombreUsuario
+                );
+
                 if (filtrados.length > 0) {
-                    listaSugerenciasUsuarios.style.display = "block";
+                    listaEl.style.display = "block";
                     filtrados.forEach(u => {
                         let li = document.createElement("li");
                         li.innerHTML = `
@@ -269,57 +271,63 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="fw-bold text-body-emphasis fs-6 user-name-target">${u.nombre}</span>
                             </a>
                         `;
-                        li.onmousedown = (e) => { 
-                            e.preventDefault(); 
+                        const irAlUsuario = (e) => {
+                            e.preventDefault();
                             window.location.href = `consumo.html?nombre=${encodeURIComponent(u.nombre)}&rol=${encodeURIComponent(rolUsuario)}`;
                         };
-                        listaSugerenciasUsuarios.appendChild(li);
+                        li.addEventListener("mousedown", irAlUsuario);
+                        li.addEventListener("click", irAlUsuario);
+                        listaEl.appendChild(li);
                     });
                 } else {
-                    listaSugerenciasUsuarios.style.display = "none";
+                    listaEl.style.display = "none";
                 }
             } else {
-                listaSugerenciasUsuarios.style.display = "none";
+                listaEl.style.display = "none";
             }
         });
 
-        inputBuscarUsuario.addEventListener("blur", () => { setTimeout(() => { listaSugerenciasUsuarios.style.display = "none"; }, 200); });
-        inputBuscarUsuario.addEventListener("focus", () => { if(inputBuscarUsuario.value.trim().length > 0) listaSugerenciasUsuarios.style.display = "block"; });
+        inputEl.addEventListener("blur", () => {
+            setTimeout(() => { listaEl.style.display = "none"; }, 250);
+        });
 
-        inputBuscarUsuario.addEventListener("keydown", (e) => {
-            let items = listaSugerenciasUsuarios.querySelectorAll("a.dropdown-item");
-            if (listaSugerenciasUsuarios.style.display === "none" || items.length === 0) return;
-            
+        inputEl.addEventListener("focus", () => {
+            if (inputEl.value.trim().length > 0 && listaEl.children.length > 0) {
+                listaEl.style.display = "block";
+            }
+        });
+
+        inputEl.addEventListener("keydown", (e) => {
+            let items = listaEl.querySelectorAll("a.dropdown-item");
+            if (listaEl.style.display === "none" || items.length === 0) return;
+
             if (e.key === "ArrowDown") {
-                e.preventDefault(); 
-                indexUserSelec++; 
-                if (indexUserSelec >= items.length) indexUserSelec = 0; 
-                actualizarSeleccionUsuario(items);
+                e.preventDefault();
+                indexSelec++;
+                if (indexSelec >= items.length) indexSelec = 0;
+                actualizarSeleccion(items);
             } else if (e.key === "ArrowUp") {
-                e.preventDefault(); 
-                indexUserSelec--; 
-                if (indexUserSelec < 0) indexUserSelec = items.length - 1; 
-                actualizarSeleccionUsuario(items);
+                e.preventDefault();
+                indexSelec--;
+                if (indexSelec < 0) indexSelec = items.length - 1;
+                actualizarSeleccion(items);
             } else if (e.key === "Enter") {
                 e.preventDefault();
-                if (indexUserSelec > -1) {
-                    let nombreSeleccionado = items[indexUserSelec].querySelector(".user-name-target").textContent;
-                    window.location.href = `consumo.html?nombre=${encodeURIComponent(nombreSeleccionado)}&rol=${encodeURIComponent(rolUsuario)}`;
-                } else if (items.length > 0) {
-                    let nombreSeleccionado = items[0].querySelector(".user-name-target").textContent;
-                    window.location.href = `consumo.html?nombre=${encodeURIComponent(nombreSeleccionado)}&rol=${encodeURIComponent(rolUsuario)}`;
-                }
+                let target = indexSelec > -1 ? items[indexSelec] : items[0];
+                let nombreSeleccionado = target.querySelector(".user-name-target").textContent;
+                window.location.href = `consumo.html?nombre=${encodeURIComponent(nombreSeleccionado)}&rol=${encodeURIComponent(rolUsuario)}`;
             }
         });
 
-        function actualizarSeleccionUsuario(items) {
+        function actualizarSeleccion(items) {
             items.forEach((item, i) => {
-                if (i === indexUserSelec) {
+                if (i === indexSelec) {
                     item.classList.add("active");
                     item.style.backgroundColor = "#0d6efd";
                     item.querySelector('.text-body-emphasis').style.color = "white";
                     item.querySelector('i').classList.remove("text-muted");
                     item.querySelector('i').style.color = "white";
+                    item.scrollIntoView({ block: "nearest" });
                 } else {
                     item.classList.remove("active");
                     item.style.backgroundColor = "";
@@ -329,6 +337,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }
+    }
+
+    vincularBuscadorUsuarios(
+        document.getElementById("inputBuscarUsuario"),
+        document.getElementById("listaSugerenciasUsuarios")
+    );
+    vincularBuscadorUsuarios(
+        document.getElementById("inputBuscarUsuarioMovil"),
+        document.getElementById("listaSugerenciasUsuariosMovil")
+    );
+
+    let collapseMovil = document.getElementById("buscadorMovilCollapse");
+    if (collapseMovil) {
+        collapseMovil.addEventListener("shown.bs.collapse", () => {
+            let inputMovil = document.getElementById("inputBuscarUsuarioMovil");
+            if (inputMovil) inputMovil.focus();
+        });
     }
 
     // --- NUEVO PRODUCTO ---
@@ -409,7 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- LISTA COMPLETA PARA EDITAR PRODUCTOS (Solución al Botón Lápiz) ---
+    // --- LISTA COMPLETA PARA EDITAR PRODUCTOS ---
     let btnEditarListaProductos = document.getElementById("btnEditarListaProductos");
     if (btnEditarListaProductos) {
         btnEditarListaProductos.addEventListener("click", async () => {
@@ -721,24 +746,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         let totalPagosBruto = pagosFiltrados.reduce((acc, p) => acc + p.monto, 0);
-        let pendienteMostrar = 0;
-        let canceloMostrar = 0;
+        let pagadoVisual = totalConsumoBruto - deudaVisualReal;
+        let canceloMostrar = Math.max(totalPagosBruto, pagadoVisual);
+        let pendienteMostrar = Math.max(0, totalConsumoBruto - canceloMostrar);
         let badgeHTML = "";
 
         if (mesSeleccionado === "todos") {
             if (btnMarcarMesPagado) btnMarcarMesPagado.style.display = "none";
-            pendienteMostrar = totalConsumoBruto - totalPagosBruto;
-            if (pendienteMostrar < 0) pendienteMostrar = 0;
-            if (pendienteMostrar < deudaVisualReal) pendienteMostrar = deudaVisualReal; 
-            canceloMostrar = totalPagosBruto;
         } else {
             if (btnMarcarMesPagado) {
                 btnMarcarMesPagado.style.display = (tipoCuentaActiva === 'mensual') ? "none" : "inline-block";
             }
-            
-            pendienteMostrar = deudaVisualReal;
-            canceloMostrar = totalConsumoBruto - deudaVisualReal;
-            if (totalPagosBruto > totalConsumoBruto) canceloMostrar = totalPagosBruto;
         }
 
         let saldoAFavor = canceloMostrar - totalConsumoBruto;
@@ -850,13 +868,16 @@ document.addEventListener("DOMContentLoaded", () => {
             let totalConsumoMes = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
             let totalPagosMes = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
             
-            let deudaFaltante = 0;
+            let deudaVisualMes = 0;
             consumosDelMes.forEach(r => {
                 let grp = getGroupData(r.fecha, mesSeleccionado);
                 let semanaDoc = semanasPagadas.find(s => s.idGrupo === grp.idGrupo);
                 let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
-                if(!itemPagado) deudaFaltante += r.precio;
+                if (!itemPagado) deudaVisualMes += r.precio;
             });
+
+            let pagadoVisualMes = totalConsumoMes - deudaVisualMes;
+            let deudaFaltante = Math.max(0, totalConsumoMes - Math.max(totalPagosMes, pagadoVisualMes));
 
             if (deudaFaltante > 0.01) {
                 Swal.fire({
@@ -1387,21 +1408,28 @@ document.addEventListener("DOMContentLoaded", () => {
                     let cat = (productoEncontrado.categoria || "").toLowerCase();
                     let nom = productoEncontrado.nombre.toLowerCase();
                     if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
+                        let precioSeleccionado = 5;
+                        let handleKeyPrecio = null;
 
                         let { value: precioIngresado } = await Swal.fire({
                             title: `<h3 class="fw-bold">Precio de ${productoEncontrado.nombre}</h3>`,
                             html: `
-                                <p class="text-muted mb-4">Selecciona o ingresa el precio para hoy:</p>
+                                <p class="text-muted mb-3">Selecciona el precio o presiona <b>Espacio</b> para S/ 5.00:</p>
                                 <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                                    <div class="price-box" data-price="5">S/ 5.00</div>
+                                    <div class="price-box selected" data-price="5">S/ 5.00</div>
                                     <div class="price-box" data-price="7">S/ 7.00</div>
                                     <div class="price-box" data-price="8">S/ 8.00</div>
                                     <div class="price-box" data-price="10">S/ 10.00</div>
                                     <div class="price-box" data-price="12">S/ 12.00</div>
                                 </div>
-                                <div class="mt-3 text-start">
-                                    <label class="form-label text-muted small fw-bold">Otras cantidades manuales:</label>
-                                    <input type="number" id="custom-price-input" step="0.01" class="form-control form-control-lg fw-bold text-primary text-center" placeholder="Ej: 6.50">
+                                <div class="mt-2">
+                                    <button type="button" id="btn-otro-precio" class="btn btn-link btn-sm text-decoration-none fw-semibold p-0">
+                                        ¿Precio no registrado? Presiona aquí
+                                    </button>
+                                </div>
+                                <div id="contenedor-precio-manual" class="mt-3 text-start d-none">
+                                    <label class="form-label text-muted small fw-bold">Ingresa el precio manual (S/):</label>
+                                    <input type="number" id="custom-price-input" step="0.01" class="form-control form-control-lg fw-bold text-primary text-center" placeholder="Coloca el precio a cobrar aqui">
                                 </div>
                                 <style>
                                     .price-box { width: 30%; border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: all 0.2s; font-weight: bold; font-size: 1.1rem; color: var(--bs-body-color); text-align: center; }
@@ -1411,31 +1439,62 @@ document.addEventListener("DOMContentLoaded", () => {
                                     [data-bs-theme="dark"] .price-box:hover { border-color: #0d6efd; background-color: rgba(13, 110, 253, 0.2); }
                                 </style>
                             `,
+                            focusConfirm: false,
                             showCancelButton: true,
                             confirmButtonText: 'Guardar',
                             cancelButtonText: 'Cancelar',
                             customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-primary btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
                             didOpen: () => {
                                 const boxes = document.querySelectorAll('.price-box');
-                                const input = document.getElementById('custom-price-input');
+                                const btnOtro = document.getElementById('btn-otro-precio');
+                                const contManual = document.getElementById('contenedor-precio-manual');
+                                const inputManual = document.getElementById('custom-price-input');
+
                                 boxes.forEach(box => {
                                     box.addEventListener('click', () => {
                                         boxes.forEach(b => b.classList.remove('selected'));
                                         box.classList.add('selected');
-                                        input.value = box.getAttribute('data-price');
+                                        precioSeleccionado = parseFloat(box.getAttribute('data-price'));
+                                        contManual.classList.add('d-none');
+                                        inputManual.value = '';
                                     });
                                 });
-                                input.addEventListener('input', () => {
+
+                                btnOtro.addEventListener('click', () => {
                                     boxes.forEach(b => b.classList.remove('selected'));
+                                    contManual.classList.remove('d-none');
+                                    inputManual.focus();
                                 });
+
+                                handleKeyPrecio = (ev) => {
+                                    const escribiendoManual = document.activeElement === inputManual;
+                                    if ((ev.code === 'Space' || ev.key === ' ') && !escribiendoManual) {
+                                        ev.preventDefault();
+                                        Swal.clickConfirm();
+                                    } else if (ev.key === 'Enter' && escribiendoManual) {
+                                        ev.preventDefault();
+                                        Swal.clickConfirm();
+                                    }
+                                };
+                                document.addEventListener('keydown', handleKeyPrecio);
+                            },
+                            willClose: () => {
+                                if (handleKeyPrecio) {
+                                    document.removeEventListener('keydown', handleKeyPrecio);
+                                }
                             },
                             preConfirm: () => {
-                                let val = document.getElementById('custom-price-input').value;
-                                if (!val || isNaN(val) || parseFloat(val) <= 0) {
-                                    Swal.showValidationMessage('Selecciona o ingresa un precio válido');
-                                    return false;
+                                const contManual = document.getElementById('contenedor-precio-manual');
+                                const inputManual = document.getElementById('custom-price-input');
+                                if (!contManual.classList.contains('d-none')) {
+                                    let val = parseFloat(inputManual.value);
+                                    if (isNaN(val) || val <= 0) {
+                                        Swal.showValidationMessage('Ingresa un precio válido');
+                                        return false;
+                                    }
+                                    return val;
                                 }
-                                return parseFloat(val);
+                                return precioSeleccionado;
                             }
                         });
                         if (!precioIngresado) return;
