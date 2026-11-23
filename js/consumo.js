@@ -396,10 +396,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     let n = document.getElementById('swal-prod-nombre').value.trim();
                     let p = parseFloat(document.getElementById('swal-prod-precio').value);
                     let c = document.getElementById('swal-prod-cat').value;
-                    
+
                     if (!n) { Swal.showValidationMessage('Ingresa un nombre para el producto'); return false; }
                     if (isNaN(p) || p <= 0) { Swal.showValidationMessage('Ingresa un precio válido'); return false; }
-                    
+
                     return { nombre: n, precio: p, categoria: c };
                 }
             });
@@ -407,7 +407,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (formValues) {
                 try {
                     let nFormateado = formValues.nombre.charAt(0).toUpperCase() + formValues.nombre.slice(1).toLowerCase();
-                    
+
                     let existe = productosDB.some(p => p.nombre.toLowerCase() === nFormateado.toLowerCase());
                     if (existe) {
                         Swal.fire('Atención', 'Ya existe un producto con ese nombre.', 'warning');
@@ -421,8 +421,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         timestamp: Date.now()
                     });
                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Producto agregado', showConfirmButton: false, timer: 2500 });
-                    
-                    if(inputProducto) {
+
+                    if (inputProducto) {
                         inputProducto.value = nFormateado + " + ";
                         if (inputCantidad) inputCantidad.value = 1;
                         inputProducto.focus();
@@ -442,9 +442,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 Swal.fire('Info', 'No hay productos registrados aún.', 'info');
                 return;
             }
-            
+
             // Ordenamos alfabéticamente para que sea fácil buscar
-            let prodsHTML = productosDB.sort((a,b) => a.nombre.localeCompare(b.nombre)).map(p => {
+            let prodsHTML = productosDB.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => {
                 let vis = obtenerVisual(p.categoria, p.nombre);
                 return `
                     <div class="d-flex justify-content-between align-items-center p-3 border-bottom hover-bg-light" style="cursor: pointer;" onclick="window.ejecutarEdicionBase('${p.id}', '${p.nombre.replace(/'/g, "\\'")}', ${p.precio}, '${p.categoria || 'otro'}')">
@@ -490,16 +490,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="mt-3 text-start">
                         <label class="form-label fw-bold small text-muted">Categoría</label>
                         <select id="swal-edit-cat-base" class="form-select form-select-lg">
-                            <option value="comida" ${catAct==='comida'?'selected':''}>🍛 Comida (Menú)</option>
-                            <option value="bebida" ${catAct==='bebida'?'selected':''}>🥤 Bebidas</option>
-                            <option value="pan" ${catAct==='pan'?'selected':''}>🥖 Pan / Sándwich</option>
-                            <option value="galleta" ${catAct==='galleta'?'selected':''}>🍪 Galletas</option>
-                            <option value="keke" ${catAct==='keke'?'selected':''}>🧁 Kekes / Porciones</option>
-                            <option value="postre" ${catAct==='postre'?'selected':''}>🍮 Postres</option>
-                            <option value="dulce" ${catAct==='dulce'?'selected':''}>🍬 Dulces</option>
-                            <option value="snack" ${catAct==='snack'?'selected':''}>🍟 Snacks</option>
-                            <option value="utiles" ${catAct==='utiles'?'selected':''}>✏️ Útiles</option>
-                            <option value="otro" ${catAct==='otro'?'selected':''}>📦 Otro</option>
+                            <option value="comida" ${catAct === 'comida' ? 'selected' : ''}>🍛 Comida (Menú)</option>
+                            <option value="bebida" ${catAct === 'bebida' ? 'selected' : ''}>🥤 Bebidas</option>
+                            <option value="pan" ${catAct === 'pan' ? 'selected' : ''}>🥖 Pan / Sándwich</option>
+                            <option value="galleta" ${catAct === 'galleta' ? 'selected' : ''}>🍪 Galletas</option>
+                            <option value="keke" ${catAct === 'keke' ? 'selected' : ''}>🧁 Kekes / Porciones</option>
+                            <option value="postre" ${catAct === 'postre' ? 'selected' : ''}>🍮 Postres</option>
+                            <option value="dulce" ${catAct === 'dulce' ? 'selected' : ''}>🍬 Dulces</option>
+                            <option value="snack" ${catAct === 'snack' ? 'selected' : ''}>🍟 Snacks</option>
+                            <option value="utiles" ${catAct === 'utiles' ? 'selected' : ''}>✏️ Útiles</option>
+                            <option value="otro" ${catAct === 'otro' ? 'selected' : ''}>📦 Otro</option>
                         </select>
                     </div>
                 `,
@@ -577,7 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             let valor = item.getAttribute("data-val");
             let texto = item.textContent;
-            
+
             if (mesFiltro.value !== valor) {
                 mesFiltro.value = valor;
                 if (textoMesVisual) textoMesVisual.textContent = texto;
@@ -607,7 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 mesFiltro.value = mesDeLaFecha;
                 let optionSelec = Array.from(mesFiltro.options).find(opt => opt.value === mesDeLaFecha);
                 if (textoMesVisual && optionSelec) textoMesVisual.textContent = optionSelec.text;
-                
+
                 renderizarConsumos();
                 recalcularSaldoGlobal();
                 renderizarListaPagos();
@@ -620,7 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
         mesFiltro.value = fechaHoy.getMonth().toString();
         let optionSeleccionadaInicial = Array.from(mesFiltro.options).find(opt => opt.value === mesFiltro.value);
         if (textoMesVisual && optionSeleccionadaInicial) {
-             textoMesVisual.textContent = optionSeleccionadaInicial.text;
+            textoMesVisual.textContent = optionSeleccionadaInicial.text;
         }
     }
 
@@ -739,7 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let grp = getGroupData(r.fecha, mesSeleccionado);
             let semanaDoc = semanasPagadas.find(s => s.idGrupo === grp.idGrupo);
             let itemPagado = r.pagado === true || (semanaDoc && (!r.timestamp || r.timestamp <= semanaDoc.timestamp));
-            
+
             if (!itemPagado) {
                 deudaVisualReal += r.precio;
             }
@@ -867,7 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let totalConsumoMes = consumosDelMes.reduce((acc, r) => acc + r.precio, 0);
             let totalPagosMes = pagosDelMes.reduce((acc, p) => acc + p.monto, 0);
-            
+
             let deudaVisualMes = 0;
             consumosDelMes.forEach(r => {
                 let grp = getGroupData(r.fecha, mesSeleccionado);
@@ -892,9 +892,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', denyButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
                     didOpen: () => {
                         let confirmBtn = Swal.getConfirmButton();
-                        if(confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
+                        if (confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
                         let denyBtn = Swal.getDenyButton();
-                        if(denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
+                        if (denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
                     }
                 }).then(async (result) => {
                     if (result.isConfirmed || result.isDenied) {
@@ -981,9 +981,9 @@ document.addEventListener("DOMContentLoaded", () => {
             customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', denyButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
             didOpen: () => {
                 let confirmBtn = Swal.getConfirmButton();
-                if(confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
+                if (confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
                 let denyBtn = Swal.getDenyButton();
-                if(denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
+                if (denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
             }
         }).then(async (result) => {
             if (result.isConfirmed || result.isDenied) {
@@ -1047,9 +1047,9 @@ document.addEventListener("DOMContentLoaded", () => {
             customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', denyButton: 'btn btn-lg rounded-pill px-4 fw-bold border-0', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
             didOpen: () => {
                 let confirmBtn = Swal.getConfirmButton();
-                if(confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
+                if (confirmBtn) confirmBtn.style.cssText = 'background-color: #198754 !important; color: white !important;';
                 let denyBtn = Swal.getDenyButton();
-                if(denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
+                if (denyBtn) denyBtn.style.cssText = 'background-color: #742384 !important; color: white !important;';
             }
         }).then(async (result) => {
             if (result.isConfirmed || result.isDenied) {
@@ -1247,7 +1247,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.editarPago = async (id, montoActual, fechaDB, metodoActual, pagadorActual) => {
         let p = fechaDB.split('-');
-        
+
         let { value: formValues } = await Swal.fire({
             title: '<h3 class="fw-bold mb-0">Editar Pago</h3>',
             html: `
@@ -1387,8 +1387,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (!productoEncontrado && precioPersonalizado === null) {
                     Swal.fire({
-                        title: '<h3 class="fw-bold mb-0 text-danger">Producto Inválido</h3>', 
-                        html: `<p class="fs-5">El producto <b>"${nombreLimpio}"</b> no está registrado.</p>`, 
+                        title: '<h3 class="fw-bold mb-0 text-danger">Producto Inválido</h3>',
+                        html: `<p class="fs-5">El producto <b>"${nombreLimpio}"</b> no está registrado.</p>`,
                         icon: 'error',
                         customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-danger btn-lg rounded-pill px-4 fw-bold border-0 text-white' }
                     });
@@ -1410,12 +1410,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (cat === "comida" || cat === "menu" || cat === "menú" || nom.includes("comida") || nom.includes("menu")) {
                         let precioSeleccionado = 5;
                         let handleKeyPrecio = null;
+                        let timerTeclado = null;
 
                         let { value: precioIngresado } = await Swal.fire({
                             title: `<h3 class="fw-bold">Precio de ${productoEncontrado.nombre}</h3>`,
                             html: `
-                                <p class="text-muted mb-3">Selecciona el precio o presiona <b>Espacio</b> para S/ 5.00:</p>
+                                <p class="text-muted mb-3">Toca un precio o presiona <b>Enter / Espacio</b> para S/ 5.00:</p>
                                 <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                                    <div class="price-box" data-price="3">S/ 3.00</div>
                                     <div class="price-box selected" data-price="5">S/ 5.00</div>
                                     <div class="price-box" data-price="7">S/ 7.00</div>
                                     <div class="price-box" data-price="8">S/ 8.00</div>
@@ -1423,13 +1425,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div class="price-box" data-price="12">S/ 12.00</div>
                                 </div>
                                 <div class="mt-2">
-                                    <button type="button" id="btn-otro-precio" class="btn btn-link btn-sm text-decoration-none fw-semibold p-0">
+                                    <button type="button" id="btn-otro-precio" tabindex="-1" class="btn btn-link btn-sm text-decoration-none fw-semibold p-0 shadow-none">
                                         ¿Precio no registrado? Presiona aquí
                                     </button>
                                 </div>
                                 <div id="contenedor-precio-manual" class="mt-3 text-start d-none">
                                     <label class="form-label text-muted small fw-bold">Ingresa el precio manual (S/):</label>
-                                    <input type="number" id="custom-price-input" step="0.01" class="form-control form-control-lg fw-bold text-primary text-center" placeholder="Coloca el precio a cobrar aqui">
+                                    <input type="number" id="custom-price-input" step="0.01" class="form-control form-control-lg fw-bold text-primary text-center" placeholder="Coloque el precio a cobrar aqui">
                                 </div>
                                 <style>
                                     .price-box { width: 30%; border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px 5px; cursor: pointer; transition: all 0.2s; font-weight: bold; font-size: 1.1rem; color: var(--bs-body-color); text-align: center; }
@@ -1437,6 +1439,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     .price-box.selected { border-color: #0d6efd; background-color: #0d6efd; color: #ffffff !important; transform: scale(1.05); }
                                     [data-bs-theme="dark"] .price-box { border-color: #495057; }
                                     [data-bs-theme="dark"] .price-box:hover { border-color: #0d6efd; background-color: rgba(13, 110, 253, 0.2); }
+                                    #btn-otro-precio:focus { outline: none !important; box-shadow: none !important; }
                                 </style>
                             `,
                             focusConfirm: false,
@@ -1449,6 +1452,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                 const btnOtro = document.getElementById('btn-otro-precio');
                                 const contManual = document.getElementById('contenedor-precio-manual');
                                 const inputManual = document.getElementById('custom-price-input');
+                                const confirmBtn = Swal.getConfirmButton();
+
+
+                                if (confirmBtn) confirmBtn.classList.add('d-none');
+                                if (document.activeElement) document.activeElement.blur();
+
 
                                 boxes.forEach(box => {
                                     box.addEventListener('click', () => {
@@ -1457,31 +1466,36 @@ document.addEventListener("DOMContentLoaded", () => {
                                         precioSeleccionado = parseFloat(box.getAttribute('data-price'));
                                         contManual.classList.add('d-none');
                                         inputManual.value = '';
+                                        Swal.clickConfirm();
                                     });
                                 });
 
                                 btnOtro.addEventListener('click', () => {
                                     boxes.forEach(b => b.classList.remove('selected'));
                                     contManual.classList.remove('d-none');
+                                    if (confirmBtn) confirmBtn.classList.remove('d-none');
                                     inputManual.focus();
                                 });
 
-                                handleKeyPrecio = (ev) => {
-                                    const escribiendoManual = document.activeElement === inputManual;
-                                    if ((ev.code === 'Space' || ev.key === ' ') && !escribiendoManual) {
-                                        ev.preventDefault();
-                                        Swal.clickConfirm();
-                                    } else if (ev.key === 'Enter' && escribiendoManual) {
-                                        ev.preventDefault();
-                                        Swal.clickConfirm();
-                                    }
-                                };
-                                document.addEventListener('keydown', handleKeyPrecio);
+                                timerTeclado = setTimeout(() => {
+                                    handleKeyPrecio = (ev) => {
+                                        const modoManual = !contManual.classList.contains('d-none');
+                                        if (!modoManual && (ev.key === 'Enter' || ev.code === 'Space' || ev.key === ' ')) {
+                                            ev.preventDefault();
+                                            ev.stopPropagation();
+                                            Swal.clickConfirm();
+                                        } else if (modoManual && ev.key === 'Enter') {
+                                            ev.preventDefault();
+                                            ev.stopPropagation();
+                                            Swal.clickConfirm();
+                                        }
+                                    };
+                                    document.addEventListener('keydown', handleKeyPrecio, true);
+                                }, 120);
                             },
                             willClose: () => {
-                                if (handleKeyPrecio) {
-                                    document.removeEventListener('keydown', handleKeyPrecio);
-                                }
+                                if (timerTeclado) clearTimeout(timerTeclado);
+                                if (handleKeyPrecio) document.removeEventListener('keydown', handleKeyPrecio, true);
                             },
                             preConfirm: () => {
                                 const contManual = document.getElementById('contenedor-precio-manual');
@@ -1716,15 +1730,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             } else {
                 let consumosDelMes = historialConsumos.filter(r => obtenerDatosSemana(r.fecha).mesEfectivo == mesSeleccionado);
-                
+
                 if (consumosDelMes.length === 0) {
-                    Swal.fire({title: 'Vacío', text: 'No hay datos en este mes.', icon: 'info'});
+                    Swal.fire({ title: 'Vacío', text: 'No hay datos en este mes.', icon: 'info' });
                     return;
                 }
 
                 if (tipoCuentaActiva === 'semanal') {
-                    let semanasUnicas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).numSemana))].sort((a,b) => a - b);
-                    
+                    let semanasUnicas = [...new Set(consumosDelMes.map(r => getGroupData(r.fecha, mesSeleccionado).numSemana))].sort((a, b) => a - b);
+
                     let checkboxesHTML = semanasUnicas.map(s => `
                         <div class="form-check d-flex align-items-center mb-3">
                             <input class="form-check-input swal-week-checkbox shadow-sm me-3" type="checkbox" value="${s}" id="sem${s}" style="transform: scale(1.5); cursor: pointer;">
@@ -1762,18 +1776,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (!isConfirmed || !semanasElegidas) return;
 
                     consumosExportar = consumosDelMes.filter(r => semanasElegidas.includes(getGroupData(r.fecha, mesSeleccionado).numSemana));
-                    
+
                     if (semanasElegidas.length === semanasUnicas.length) {
                         tituloPeriodo = `MES DE ${nombreMesHeader.toUpperCase()}`;
                         fileNamePersonalizado += `_${nombreMesHeader}`;
                     } else {
                         let numFormateados = semanasElegidas.map(s => `0${s}`).join(', ');
                         tituloPeriodo = `SEMANAS: ${numFormateados} - ${nombreMesHeader.toUpperCase()}`;
-                        
-                        if(semanasElegidas.length === 1) {
-                            fileNamePersonalizado += `_Sem${semanasElegidas[0]}_${nombreMesHeader.substring(0,3)}`;
+
+                        if (semanasElegidas.length === 1) {
+                            fileNamePersonalizado += `_Sem${semanasElegidas[0]}_${nombreMesHeader.substring(0, 3)}`;
                         } else {
-                            fileNamePersonalizado += `_Sems${semanasElegidas.join('-')}_${nombreMesHeader.substring(0,3)}`;
+                            fileNamePersonalizado += `_Sems${semanasElegidas.join('-')}_${nombreMesHeader.substring(0, 3)}`;
                         }
                     }
                 } else {
@@ -1787,7 +1801,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         customClass: { popup: 'rounded-4 py-4', confirmButton: 'btn btn-danger btn-lg rounded-pill px-4 fw-bold border-0 text-white', cancelButton: 'btn btn-secondary btn-lg rounded-pill px-4 fw-bold border-0 text-white' },
                         didOpen: () => { Swal.getConfirmButton().style.cssText = 'background-color: #dc3545 !important; color: white !important;'; }
                     });
-                    if(!isConfirmed) return;
+                    if (!isConfirmed) return;
                     consumosExportar = consumosDelMes;
                     tituloPeriodo = `MES DE ${nombreMesHeader.toUpperCase()}`;
                     fileNamePersonalizado += `_${nombreMesHeader}`;
